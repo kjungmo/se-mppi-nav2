@@ -1,0 +1,88 @@
+# SE-MPPI ablation matrix — evaluation protocol §3.
+#
+# Each config is a *param overlay* over the base Nav2 params yaml (which is the
+# full SE-MPPI config, F). `set` keys are dotted paths RELATIVE to the
+# FollowPath controller namespace (fp_prefix); `drop_critics` removes plugins
+# from FollowPath.critics. `inherit` pulls a parent's set/drop first.
+#
+# Toggle mapping (controller params, verified against safe_escape_controller.cpp):
+#   se_enabled .................. master CBF + coordinator on/off
+#   se_alpha_base/se_alpha_escape  equal => alpha NOT modulated (independent E)
+#   se_obstacle_max_speed ....... 0 => CV prediction disabled (static)
+#   EscapeCritic.always_on ...... true => always-on repulsion (no detect-switch)
+#   EscapeCritic.use_apf ........ APF repulsion vs cost-proxy
+#   EscapeCritic.use_gap_search . gap-seeking subgoal on/off
+
+base: ../sim/nav2_se_loopback.yaml
+fp_prefix: controller_server.ros__parameters.FollowPath
+
+configs:
+  A_stock:
+    desc: "Stock MPPI — no escape, no CBF (1차 baseline)"
+    set:
+      se_enabled: false
+    drop_critics: [EscapeCritic]
+
+  B_escape_alwayson:
+    desc: "Escape always-on (DRPA-like), no CBF"
+    set:
+      se_enabled: false
+      EscapeCritic.always_on: true
+      EscapeCritic.use_apf: true
+      EscapeCritic.use_gap_search: true
+
+  C_escape_detect:
+    desc: "Escape detect-and-switch (the contribution), no CBF"
+    set:
+      se_enabled: false
+      EscapeCritic.always_on: false
+      EscapeCritic.use_apf: true
+      EscapeCritic.use_gap_search: true
+
+  D_cbf_only:
+    desc: "CBF safety filter only, no escape (Shield-MPPI-like)"
+    set:
+      se_enabled: true
+    drop_critics: [EscapeCritic]
+
+  E_escape_cbf_indep:
+    desc: "Escape + CBF, INDEPENDENT (alpha_escape == alpha_base => no coordination)"
+    set:
+      se_enabled: true
+      EscapeCritic.always_on: false
+      se_alpha_base: 2.0
+      se_alpha_escape: 2.0
+
+  F_se_full:
+    desc: "SE-MPPI full — coordinated alpha (the system)"
+    set:
+      se_enabled: true
+      EscapeCritic.always_on: false
+      EscapeCritic.use_apf: true
+      EscapeCritic.use_gap_search: true
+      se_alpha_base: 2.0
+      se_alpha_escape: 6.0
+
+  F_minus_gap:
+    desc: "SE − gap search (subgoal ablation)"
+    inherit: F_se_full
+    set:
+      EscapeCritic.use_gap_search: false
+
+  F_proxy:
+    desc: "SE, APF → cost-proxy repulsion"
+    inherit: F_se_full
+    set:
+      EscapeCritic.use_apf: false
+
+  F_static:
+    desc: "SE − prediction (dynamic obstacles treated as static)"
+    inherit: F_se_full
+    set:
+      se_obstacle_max_speed: 0.0
+
+  F_no_conformal:
+    desc: "SE − conformal (fixed margins; isolates the N3 contribution)"
+    inherit: F_se_full
+    set:
+      se_conformal: false

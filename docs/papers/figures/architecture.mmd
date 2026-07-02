@@ -1,0 +1,36 @@
+%% SE-MPPI architecture / system data-flow (Paper 1, contributions C1-C4).
+%% Renders with Mermaid (mermaid-cli `mmdc -i architecture.mmd -o architecture.png`
+%% or any Mermaid-aware viewer). Paper-1 scope only: the conformal margin and
+%% learned prediction (SE-Predict / Paper 2) are intentionally NOT shown.
+flowchart LR
+    plan["global plan (Nav2 planner)"]
+    costmap["local costmap"]
+    odom["odom"]
+
+    subgraph ctrl["SafeEscapeController (nav2_core::Controller plugin)"]
+        direction LR
+        opt["MPPI optimizer<br/>(mppi::Optimizer, reused)"]
+        crit["EscapeCritic<br/>(mppi::critics, distance-field APF + gap search)"]
+        coord["Escape-safety coordinator<br/>(resolve gain alpha; TTC override)"]
+        cbf["CBF safety filter<br/>(look-ahead DCBF-QP, OSQP)"]
+        tracker["DynamicObstacleTracker<br/>(costmap clusters -> p_o, R_o, v_o)"]
+        ent(("entrapment signal<br/>shared single source of truth"))
+
+        crit -- "u_nom (Twist)" --> coord
+        opt --- crit
+        ent -. "trapped?" .-> crit
+        ent -. "trapped?" .-> coord
+        coord -- "alpha" --> cbf
+        tracker --> coord
+        tracker --> cbf
+        coord --> opt
+    end
+
+    plan --> opt
+    plan --> ent
+    costmap --> opt
+    costmap --> tracker
+    odom --> opt
+
+    cbf -- "u_safe (cmd_vel)" --> cm["collision_monitor<br/>(reactive last line)"]
+    cm --> robot["robot base"]

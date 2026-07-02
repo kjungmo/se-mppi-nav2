@@ -1,0 +1,221 @@
+<?xml version="1.0" ?>
+<sdf version="1.10">
+  <world name="testbed">
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics" />
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands" />
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster" />
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu" />
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact" />
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <light name="sun" type="directional">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>0.5 0.1 -0.9</direction>
+    </light>
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>12.000 12.000</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>12.000 12.000</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.600 0.600 0.600 1</ambient>
+            <diffuse>0.600 0.600 0.600 1</diffuse>
+            <specular>0.700 0.700 0.700 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="perimeter_north">
+      <static>true</static>
+      <pose>0.000000 4.000000 0.500000 0.000000 0.000000 0.000000</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.400 0.400 0.450 1</ambient>
+            <diffuse>0.400 0.400 0.450 1</diffuse>
+            <specular>0.500 0.500 0.550 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="perimeter_south">
+      <static>true</static>
+      <pose>0.000000 -4.000000 0.500000 0.000000 0.000000 0.000000</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.400 0.400 0.450 1</ambient>
+            <diffuse>0.400 0.400 0.450 1</diffuse>
+            <specular>0.500 0.500 0.550 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="perimeter_west">
+      <static>true</static>
+      <pose>-4.000000 0.000000 0.500000 0.000000 0.000000 1.570796</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.400 0.400 0.450 1</ambient>
+            <diffuse>0.400 0.400 0.450 1</diffuse>
+            <specular>0.500 0.500 0.550 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="perimeter_east">
+      <static>true</static>
+      <pose>4.000000 0.000000 0.500000 0.000000 0.000000 1.570796</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>8.000000 0.100000 1.000000</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.400 0.400 0.450 1</ambient>
+            <diffuse>0.400 0.400 0.450 1</diffuse>
+            <specular>0.500 0.500 0.550 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="u_back">
+      <static>true</static>
+      <pose>1.000000 0.000000 0.500000 0.000000 0.000000 1.570796</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>2.000000 0.300000 1.000000</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>2.000000 0.300000 1.000000</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.750 0.500 0.300 1</ambient>
+            <diffuse>0.750 0.500 0.300 1</diffuse>
+            <specular>0.850 0.600 0.400 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="u_top">
+      <static>true</static>
+      <pose>0.000000 1.000000 0.500000 0.000000 0.000000 3.141593</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>2.000000 0.300000 1.000000</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>2.000000 0.300000 1.000000</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.750 0.500 0.300 1</ambient>
+            <diffuse>0.750 0.500 0.300 1</diffuse>
+            <specular>0.850 0.600 0.400 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+    <model name="u_bot">
+      <static>true</static>
+      <pose>0.000000 -1.000000 0.500000 0.000000 0.000000 3.141593</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>2.000000 0.300000 1.000000</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>2.000000 0.300000 1.000000</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.750 0.500 0.300 1</ambient>
+            <diffuse>0.750 0.500 0.300 1</diffuse>
+            <specular>0.850 0.600 0.400 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

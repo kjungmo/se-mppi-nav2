@@ -1,0 +1,26 @@
+# DynaBARN (T2 dynamic, non-social) example scenario — protocol §5.
+# Two moving obstacles cross a narrow corridor; tests CBF + CV prediction.
+# NOTE: BARN/DynaBARN worlds are ROS1/Gazebo-classic canonical — the workstation
+# must bridge them (meta.requires_ros1_bridge is set by the loader). `map`/`world`
+# are placeholders; supply the bridged assets. See runner/dynabarn.py.
+name: example_crosstraffic
+tier: dynabarn
+map: crosstraffic.yaml
+world: crosstraffic.world
+start: [-2.0, 0.0]
+goal:  [ 2.0, 0.0]
+barn_index: 312
+dynamic_obstacles:
+  - id: 0
+    shape: cylinder
+    radius: 0.3
+    init: [0.0, 1.5]
+    velocity: [0.0, -0.5]      # constant-velocity (matches the controller's CV model)
+  - id: 1
+    shape: box
+    size: [0.4, 0.4]
+    waypoints: [[1.0, 1.0], [1.0, -1.0]]
+    speed: 0.6
+meta:
+  kind: dynamic-crosstraffic
+  note: moving obstacles cross a narrow corridor; tests CBF + CV prediction

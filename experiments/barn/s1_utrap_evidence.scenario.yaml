@@ -1,0 +1,22 @@
+# S1-evidence — entrapment-transition capture variant of s1_utrap.
+# Purpose: produce a committed launch-log artifact for the Sec. VI-B claim that
+# entrapment detection fires and the EscapeCritic injects escape cost in the
+# LIVE stack. The robot starts inside the U pocket facing the back wall, so
+# monotone path progress stalls within the detector window and the
+# "SE escape ENTER" / "escape-cost injection BEGIN" transitions are logged
+# regardless of whether the subsequent escape completes on this host.
+# Not part of the quantitative benchmark set.
+name: s1_utrap_evidence
+tier: barn
+map: ../se_mppi_utrap/maps/utrap_loc.yaml
+start: [0.0, 0.0, 0.0]
+goal:  [3.0, 0.0, 0.0]
+meta:
+  kind: u-trap-evidence
+  note: starts inside the pocket; captures detection/injection log transitions
+  launch:
+    pkg: se_mppi_utrap
+    file: utrap_bench.launch.py
+    pass_map: true
+    pass_spawn: true
+    use_sim_time: true

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>nav2_se_controller</name>
+  <version>0.0.1</version>
+  <description>
+    Safe-Escape MPPI (SE-MPPI): a Nav2-native local controller combining online
+    local-minima detection/escape with a CBF dynamic-obstacle safety filter,
+    reconciled by an escape-safety coordinator. Provides the SafeEscapeController
+    (nav2_core controller plugin), the EscapeCritic (pluginlib MPPI critic for
+    sampling-time escape), the CBF safety filter, the escape-safety coordinator,
+    and a dynamic-obstacle tracker.
+  </description>
+  <maintainer email="kangjmo91@gmail.com">Jungmo Kang</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>nav2_mppi_controller</depend>
+  <depend>nav2_core</depend>
+  <depend>nav2_costmap_2d</depend>
+  <depend>pluginlib</depend>
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>visualization_msgs</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,12 @@
+goal:
+- 2.5
+- 0.7
+map: example_utrap.yaml
+meta:
+  kind: u-trap
+  note: local-minimum pocket; escape must back out
+name: example_utrap
+start:
+- 2.5
+- 3.5
+tier: barn

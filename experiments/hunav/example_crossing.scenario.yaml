@@ -1,0 +1,26 @@
+# HuNavSim (T3 social) example scenario — protocol §5.
+# A single pedestrian crosses the robot's straight path; the robot must yield /
+# replan socially. Field names match HuNavSim's hunav_loader (agents.yaml).
+# `map`/`world` are workstation assets (placeholders here): supply a nav2 map +
+# the gz world HuNavSim populates. See runner/hunav.py for the full schema.
+name: example_crossing
+tier: hunav
+map: crossing.yaml
+world: crossing.sdf
+start: [0.0, 0.0]
+goal:  [6.0, 0.0]
+agents:
+  - id: 1
+    behavior: 1            # regular SFM
+    skin: 0
+    max_vel: 1.5
+    radius: 0.35
+    init_pose: {x: 3.0, y: 2.0, h: -1.5708}
+    goals:
+      - {x: 3.0, y: -2.0, h: -1.5708}
+      - {x: 3.0, y: 2.0, h: 1.5708}
+    goal_radius: 0.3
+    cyclic_goals: true
+meta:
+  kind: social-crossing
+  note: pedestrian crosses the robot's lane; tests yielding / replanning

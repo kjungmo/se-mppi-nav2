@@ -1,0 +1,21 @@
+# S1 — U-trap escape (headline). The U walls are physical in the gz world
+# (sensed by lidar) but ABSENT from the localization map (empty box), so NavFn
+# plans a straight line east straight through the pocket. Only the local
+# controller's escape logic can get the robot out — stock MPPI is expected to
+# stall against the back wall; SE-MPPI should detect entrapment and escape.
+# Reachability is checked against the empty-box map (trivially reachable); the
+# difficulty is physical, not a map artefact.
+name: s1_utrap
+tier: barn
+map: ../se_mppi_utrap/maps/utrap_loc.yaml
+start: [-3.0, 0.0, 0.0]
+goal:  [3.0, 0.0, 0.0]
+meta:
+  kind: u-trap
+  note: physical U-trap absent from planner map; local-minimum escape test
+  launch:
+    pkg: se_mppi_utrap
+    file: utrap_bench.launch.py
+    pass_map: true
+    pass_spawn: true
+    use_sim_time: true

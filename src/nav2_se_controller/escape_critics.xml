@@ -1,0 +1,7 @@
+<library path="escape_critic">
+  <class type="mppi::critics::EscapeCritic" base_class_type="mppi::critics::CriticFunction">
+    <description>
+      Detect-and-switch local-minima escape critic for the Nav2 MPPI controller (SE-MPPI).
+    </description>
+  </class>
+</library>

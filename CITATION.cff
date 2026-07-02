@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use SE-MPPI in your research, please cite it as below."
+title: "SE-MPPI: Safe-Escape MPPI — a Nav2-native local controller with certified-safe local-minima escape"
+authors:
+  - family-names: "Kang"
+    given-names: "Jung Mo"
+    email: "kangjmo91@gmail.com"
+repository-code: "https://github.com/kjungmo/se-mppi-nav2"
+license: Apache-2.0
+date-released: "2026-07-03"
+keywords:
+  - ROS 2
+  - Nav2
+  - MPPI
+  - control barrier functions
+  - local planner
+  - collision avoidance
+preferred-citation:
+  type: unpublished
+  title: "Safe-Escape MPPI: Coordinating Online Local-Minima Escape with Control-Barrier-Function Safety in a Nav2-Native Controller"
+  authors:
+    - family-names: "Kang"
+      given-names: "Jung Mo"
+  year: 2026
+  notes: "Preprint. Manuscript and artifacts at https://github.com/kjungmo/se-mppi-nav2"

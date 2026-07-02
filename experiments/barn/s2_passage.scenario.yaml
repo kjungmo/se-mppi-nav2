@@ -1,0 +1,19 @@
+# S2 — tb3_sandbox corridor-bend goal. A second, independent testbed on the
+# default tb3_simulation stack: from the spawn the robot must round the bend
+# into the south corridor. No meta.launch => the runner uses
+# nav2_bringup/tb3_simulation_launch.py (the regression path), whose default
+# spawn (-2.0,-0.5) matches this start.
+#   NOTE: the handoff's (0.9,-2.25) and a first retry (0.9,-1.8) both sit within
+#   the inflated global costmap (robot_radius 0.22 + inflation 0.25) near the
+#   south wall, so NavFn refuses to plan there ("Failed to create plan"). The
+#   goal below clears every obstacle at a strict 0.35 m margin (pilot-verified
+#   NavFn-plannable) and still forces the robot to weave ~3.5 m east through
+#   tb3_sandbox's interior pillars — a genuine cluttered-passage task.
+name: s2_passage
+tier: barn
+map: tb3_sandbox.yaml
+start: [-2.0, -0.5, 0.0]
+goal:  [1.5, 0.5, 0.0]
+meta:
+  kind: passage-bend
+  note: verified tb3_sandbox bend goal; tb3_simulation_launch default path

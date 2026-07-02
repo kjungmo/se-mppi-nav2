@@ -1,0 +1,28 @@
+# Runner suite settings (design §3, §5). Consumed by run_suite's CLI.
+# Tiers map to scenario directories; seeds give the per-scenario repetitions
+# (protocol §5 calls for N ≥ 20). Configs default to the full ablation matrix.
+
+ablations: ./ablations.yaml
+
+tiers:
+  - barn          # T1 static congestion (BARN-like)
+  - dynabarn      # T2 dynamic non-social (DynaBARN-like)
+  - hunav         # T3 social / crowds (HuNavSim)
+
+# Use all configs from ablations.yaml unless overridden here.
+configs: null
+
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+trial:
+  robot_radius: 0.22
+  goal_tol: 0.5
+  setup_timeout_s: 120.0
+  # Wall-clock drive budget. The WSL2 host runs Gazebo at RTF 0.3-0.6, so a
+  # legitimate ~60 s(sim) escape-and-complete needs 100-200 s of wall time;
+  # 120 s truncated live trials mid-maneuver.
+  watchdog_s: 300.0
+  setup_retries: 1
+
+results_dir: ../results
+resume: true

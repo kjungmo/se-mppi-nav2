@@ -1,0 +1,105 @@
+# Nav2 controller_server configuration for the SE-MPPI SafeEscapeController.
+#
+# Merge this into your Nav2 params file (or load alongside it). The controller
+# subclasses the stock MPPI controller, so all standard MPPI / critic parameters
+# apply; the SE-MPPI additions are the `se_*` keys and the EscapeCritic entry in
+# the `critics` list.
+#
+# Usage: set the controller_server's FollowPath plugin to
+#   nav2_se_controller::SafeEscapeController
+#
+# Verified to build against ROS 2 Jazzy + Nav2 (RoboStack). Runtime tuning of
+# the gains below is expected per robot/platform.
+
+controller_server:
+  ros__parameters:
+    controller_frequency: 20.0
+    FollowPath:
+      plugin: "nav2_se_controller::SafeEscapeController"
+
+      # ---- SE-MPPI additions ----
+      se_enabled: true
+      # Entrapment detection (detect-and-switch local-minima escape).
+      se_progress_stall_window: 30      # control cycles without path progress
+      # Escape-safety coordination (CBF class-K gain modulation).
+      se_alpha_base: 2.0                # conservative gain (normal driving)
+      se_alpha_escape: 6.0              # relaxed gain while escaping (tighter detours)
+      se_ttc_override_threshold: 1.5    # [s] below this dynamic TTC, safety overrides
+      # CBF safety filter (look-ahead-point DCBF-QP).
+      se_cbf_lookahead: 0.2             # [m] look-ahead point distance (> 0)
+      se_cbf_safety_margin: 0.05        # [m] extra clearance per obstacle
+      se_cbf_slack_weight: 1000.0       # QP slack penalty (feasibility)
+      # Dynamic obstacle tracker (costmap clustering + CV velocity).
+      se_obstacle_cost_threshold: 253   # INSCRIBED_INFLATED_OBSTACLE
+      se_obstacle_min_cells: 2
+      # Static/dynamic classification (SE-Predict N1, occupancy persistence).
+      # A cluster on cells occupied >= se_static_min_frames is static: zero
+      # velocity, excluded from the CBF (prevents wall-freeze on association
+      # jitter). ~1 s of frames at your controller rate is a good default.
+      se_classify_static: true
+      se_static_min_frames: 10          # frames of occupancy before a cell is static
+      se_static_fraction: 0.5           # static-cell fraction to call a cluster static
+      # Track + horizon prediction (SE-Predict N2). Horizons are published on
+      # TrackedObstacle; the CBF consumes them from N3 (conformal radius).
+      # "cv" is the safe default; "cvca" measurably helps on accelerating /
+      # turning agents but hurts on oscillatory ones (see
+      # experiments/prediction/ade_fde_eval.py before enabling).
+      se_predict_horizon: true
+      se_predict_model: "cv"            # "cv" | "cvca"
+      se_predict_steps: 15              # horizon length (steps)
+      se_predict_dt: 0.1                # horizon spacing (s) -> 1.5 s total
+      se_track_history: 10              # per-track history (frames) for the LS fit
+      se_track_max_missed: 3            # frames a track survives unmatched
+      # Conformal calibration (SE-Predict N3): online per-step bounds q_k on
+      # the prediction error. The CBF inflates each dynamic obstacle's radius
+      # by q[0] (time-varying radius -> bounded prediction error keeps the true
+      # barrier valid), and aggressive escape is sanctioned only while
+      # max q <= se_q_trust_threshold ("bold only when the prediction is
+      # trustworthy"). max_q caps over-conservatism.
+      se_conformal: true
+      se_conformal_coverage: 0.9
+      se_conformal_lr: 0.02
+      se_conformal_initial_q: 0.05
+      se_conformal_max_q: 0.40
+      se_q_trust_threshold: 0.25
+      # Multi-robot coordination (Multi-SE-MPPI N2, OFF by default). Enable on
+      # each robot of a fleet; list the OTHER robots' odom topics (list index =
+      # their priority id; se_priority_id is THIS robot's id, lower passes).
+      # Neighbor clusters get the reciprocal CBF budget share; on mutual
+      # deadlock the lower id passes (alpha_escape, pass_lambda) and the other
+      # holds back (yield_lambda, se_yield_v_max cap).
+      se_multirobot: false
+      # se_priority_id: 0
+      # se_neighbor_odom_topics: ["/robot1/odom", "/robot2/odom"]
+      # se_neighbor_match_radius: 0.5
+      # se_reciprocal_lambda: 0.5
+      # se_pass_lambda: 0.7
+      # se_yield_lambda: 0.3
+      # se_deadlock_range: 1.6
+      # se_deadlock_speed: 0.12
+      # se_yield_v_max: 0.10
+
+      # ---- Stock MPPI parameters (subset; see nav2_mppi_controller docs) ----
+      time_steps: 56
+      model_dt: 0.05
+      batch_size: 1000
+      vx_std: 0.2
+      wz_std: 0.4
+      vx_max: 0.5
+      vx_min: -0.35
+      wz_max: 1.9
+      iteration_count: 1
+      temperature: 0.3
+      gamma: 0.015
+      motion_model: "DiffDrive"
+      # EscapeCritic is appended to the stock critic stack: its sampling-time
+      # repulsion (gated by entrapment) complements the output CBF filter.
+      critics: [
+        "ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic",
+        "PathAlignCritic", "PathFollowCritic", "PathAngleCritic",
+        "PreferForwardCritic", "EscapeCritic"]
+      EscapeCritic:
+        enabled: true
+        progress_stall_window: 30
+        repulsion_weight: 2.0
+        repulsion_power: 1

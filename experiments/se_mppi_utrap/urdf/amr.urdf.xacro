@@ -1,0 +1,227 @@
+<?xml version="1.0"?>
+<robot name="amr" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- base_footprint at floor level (navigation root). -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_to_base_link" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.103000" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link">
+    <visual>
+      <geometry><box size="0.280000 0.300000 0.140000"/></geometry>
+      <material name="chassis_color"><color rgba="0.2 0.5 0.8 1"/></material>
+    </visual>
+    <collision>
+      <geometry><box size="0.280000 0.300000 0.140000"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="2.940000"/>
+      <inertia ixx="0.026852" iyy="0.024010" izz="0.041258"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+
+  <!-- Wheels -->
+  <link name="left_wheel">
+    <visual>
+      <geometry><cylinder radius="0.033000" length="0.040000"/></geometry>
+      <material name="wheel_color"><color rgba="0.05 0.05 0.05 1"/></material>
+      <origin rpy="1.5708 0 0"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.033000" length="0.040000"/></geometry>
+      <origin rpy="1.5708 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.034212"/>
+      <inertia ixx="0.000014" iyy="0.000014" izz="0.000019"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <origin xyz="0 0.143500 -0.070000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <link name="right_wheel">
+    <visual>
+      <geometry><cylinder radius="0.033000" length="0.040000"/></geometry>
+      <material name="wheel_color"><color rgba="0.05 0.05 0.05 1"/></material>
+      <origin rpy="1.5708 0 0"/>
+    </visual>
+    <collision>
+      <geometry><cylinder radius="0.033000" length="0.040000"/></geometry>
+      <origin rpy="1.5708 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.034212"/>
+      <inertia ixx="0.000014" iyy="0.000014" izz="0.000019"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel"/>
+    <origin xyz="0 -0.143500 -0.070000" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+  </joint>
+
+  <!-- Passive caster at the back -->
+  <link name="caster_wheel">
+    <visual>
+      <geometry><sphere radius="0.013200"/></geometry>
+      <material name="caster_color"><color rgba="0.3 0.3 0.3 1"/></material>
+    </visual>
+    <collision>
+      <geometry><sphere radius="0.013200"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.002409"/>
+      <inertia ixx="0.000000" iyy="0.000000" izz="0.000000"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="caster_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_wheel"/>
+    <origin xyz="-0.126800 0 -0.089800" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Passive caster at the FRONT. With only the rear caster the robot
+       nose-dived onto its front chassis edge under MPPI-scale decelerations
+       (gz showed a constant 13.6 deg pitch) and the dragging face produced a
+       systematic veer + wheel-slip odometry corruption. Mirrors the rear. -->
+  <link name="caster_wheel_front">
+    <visual>
+      <geometry><sphere radius="0.013200"/></geometry>
+      <material name="caster_color"><color rgba="0.3 0.3 0.3 1"/></material>
+    </visual>
+    <collision>
+      <geometry><sphere radius="0.013200"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.002409"/>
+      <inertia ixx="0.000000" iyy="0.000000" izz="0.000000"
+               ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="caster_front_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_wheel_front"/>
+    <origin xyz="0.126800 0 -0.089800" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Lidar mount. NO visual: gz's gpu_lidar renders the scene's VISUAL
+       geometry, and the sensor origin sits at this link's origin — a visual
+       cylinder here surrounds the ray origin, so every beam terminated on the
+       robot's own housing at the 0.08 m min-range clamp. The costmap became a
+       lethal ring around the robot (blind navigation); found via a live scan
+       probe reading range 0.080 at every bearing. -->
+  <link name="lidar_link">
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="1e-5" iyy="1e-5" izz="1e-5" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0 0 0.100000" rpy="0 0 0"/>
+  </joint>
+
+  <!-- IMU at chassis center -->
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="1e-6" iyy="1e-6" izz="1e-6" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Gazebo materials + plugins -->
+  <gazebo reference="base_link"><material>Gazebo/Blue</material></gazebo>
+  <gazebo reference="left_wheel"><material>Gazebo/Black</material></gazebo>
+  <gazebo reference="right_wheel"><material>Gazebo/Black</material></gazebo>
+  <gazebo reference="caster_wheel"><material>Gazebo/Grey</material></gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <wheel_separation>0.287000</wheel_separation>
+      <wheel_radius>0.033000</wheel_radius>
+      <odom_publish_frequency>30</odom_publish_frequency>
+      <topic>cmd_vel</topic>
+      <odom_topic>odom</odom_topic>
+      <tf_topic>tf</tf_topic>
+      <frame_id>odom</frame_id>
+      <!-- Publish odom->base_footprint (the URDF root); RSP then provides
+           base_footprint->base_link. Emitting odom->base_link here would give
+           base_link two TF parents (odom AND base_footprint) and break AMCL,
+           whose base_frame_id is base_footprint. Matches nav2's tb3 gz sdf. -->
+      <child_frame_id>base_footprint</child_frame_id>
+    </plugin>
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <topic>joint_states</topic>
+    </plugin>
+  </gazebo>
+
+  <gazebo reference="lidar_link">
+    <sensor name="lidar" type="gpu_lidar">
+      <update_rate>10</update_rate>
+      <topic>scan</topic>
+      <gz_frame_id>lidar_link</gz_frame_id>
+      <ignition_frame_id>lidar_link</ignition_frame_id>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>1</samples>
+            <resolution>0.01</resolution>
+            <min_angle>0</min_angle>
+            <max_angle>0</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>0.08</min>
+          <!-- Limited sensing (1.5 m), the standard local-minima-benchmark
+               setup (e.g. DRPA-MPPI): the U's back wall only becomes visible
+               once the robot is inside the pocket, so the trap actually traps.
+               With the original 10 m range the controller saw the whole U from
+               the spawn and simply flanked around it — no local minimum at
+               all. Identical for every ablation config (A/B-fair). -->
+          <max>1.5</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <always_on>1</always_on>
+      <visualize>true</visualize>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="imu_link">
+    <sensor name="imu" type="imu">
+      <always_on>1</always_on>
+      <update_rate>100</update_rate>
+      <topic>imu</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+      <ignition_frame_id>imu_link</ignition_frame_id>
+    </sensor>
+  </gazebo>
+
+</robot>

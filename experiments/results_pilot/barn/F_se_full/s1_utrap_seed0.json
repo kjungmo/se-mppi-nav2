@@ -1,0 +1,34 @@
+{
+  "scenario": "s1_utrap",
+  "tier": "barn",
+  "config": "F_se_full",
+  "seed": 0,
+  "outcome": "STUCK",
+  "metrics": {
+    "n_samples": 1245,
+    "reached_goal": false,
+    "collided": false,
+    "success": false,
+    "min_clearance": null,
+    "time_to_goal": 254.5,
+    "path_length": 8.52314887534048,
+    "spl": 0.0,
+    "barn_score": 0.0,
+    "optimal_length": 2.99,
+    "optimal_time": 5.98,
+    "compute": {
+      "n": 0,
+      "mean_ms": null,
+      "median_ms": null,
+      "p95_ms": null,
+      "max_ms": null
+    },
+    "smoothness": {
+      "lin_jerk_mean": 0.36082595870206496,
+      "ang_jerk_mean": 0.704648699383206
+    },
+    "oscillation_ratio": 0.06827309236947791
+  },
+  "setup_attempts": 2,
+  "error": null
+}

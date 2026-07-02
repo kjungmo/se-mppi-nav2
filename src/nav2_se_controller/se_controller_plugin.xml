@@ -1,0 +1,8 @@
+<library path="safe_escape_controller">
+  <class type="nav2_se_controller::SafeEscapeController" base_class_type="nav2_core::Controller">
+    <description>
+      SE-MPPI: stock MPPI with online local-minima escape and dynamic-obstacle
+      CBF safety, reconciled by an escape-safety coordinator.
+    </description>
+  </class>
+</library>
