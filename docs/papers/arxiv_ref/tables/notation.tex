@@ -1,0 +1,26 @@
+\begin{table}[!htbp]
+\centering
+\caption{\textbf{Notation.}}
+\label{tab:notation}
+\small
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\mathbf{x}_t=(x_t,y_t,\theta_t)$, $\mathbf{p}_t$ & robot pose, robot position \\
+$\mathbf{u}_t=(v_t,\omega_t)$, $\mathcal{U}$ & control (linear, angular velocity), admissible box \\
+$\sigma=(\sigma_1,\dots,\sigma_M)$ & global path from the Nav2 planner \\
+$k_t,\ k^{\max}_t$ & nearest and furthest-reached path index \\
+$s_t,\ W,\ e_t$ & stall counter, stall window, entrapment flag \\
+$\mathcal{O}_t$; $\mathbf{p}_o, R_o, \mathbf{v}_o$ & tracked dynamic obstacles; position, radius, velocity \\
+$\mathbf{P}_t,\ L,\ G(\theta)$ & look-ahead point, its offset, its Jacobian \\
+$h_o,\ R^{\mathrm{eff}}_o$ & barrier for obstacle $o$, effective radius $r+R_o+m$ \\
+$\alpha_t$; $\alpha_{\mathrm{base}},\alpha_{\mathrm{escape}}$ & class-$\mathcal{K}$ gain; its two scheduled values \\
+$\delta,\ \rho,\ \epsilon_\delta$ & QP slack, slack weight, braking threshold \\
+$\mathrm{TTC}_t,\ \tau$ & minimum time-to-collision, override threshold \\
+$S^k,\ w^k,\ \lambda$ & rollout cost, softmax weight, temperature \\
+$C_{\mathrm{apf}},\ C_{\mathrm{gap}}$ & escape costs (repulsion, gap attraction) \\
+$\psi^\star$ & bearing of the selected free-space gap \\
+\bottomrule
+\end{tabular}
+\end{table}

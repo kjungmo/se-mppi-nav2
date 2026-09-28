@@ -1,0 +1,54 @@
+\section{Reproduction}\label{app:repro}
+
+All paths are relative to the code release (\url{https://github.com/kjungmo/se-mppi-nav2}, Apache-2.0).
+
+\noindent\textbf{Software.} ROS~2 Jazzy, Nav2 and Gazebo are installed through RoboStack (conda channels \code{robostack-jazzy} and \code{conda-forge}) by \code{scripts/setup_ros2_env.sh}, which also installs \code{osqp-eigen} and \code{eigen} for the CBF-QP and a compiler toolchain, so the build does not depend on the host OS version.
+
+\noindent\textbf{Benchmark regeneration.} Every benchmark number is generated from the committed per-trial file by committed scripts. The committed data use $N=50$:
+{\small
+\begin{verbatim}
+export MAMBA_ROOT_PREFIX=$HOME/micromamba
+micromamba run -n ros2 python3 -m experiments.benchmark2d.runner \
+    --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400
+micromamba run -n ros2 python3 -m experiments.benchmark2d.report
+\end{verbatim}
+}
+\noindent The figures and tables of this paper are regenerated from those outputs, and the mechanism runs of \cref{tab:mechanism} are re-executed, by
+{\small
+\begin{verbatim}
+micromamba run -n ros2 python3 docs/papers/arxiv_ref/scripts/make_figures.py
+python3 docs/papers/arxiv_ref/scripts/make_tables.py
+python3 scripts/check_paper_numbers.py --arxiv
+\end{verbatim}
+}
+
+\noindent\textbf{Scenarios and seeds.} Seeds $0$--$49$ per family; the generators in \code{experiments/benchmark2d/scenarios.py} seed \code{numpy} generators with a per-family offset plus the trial seed ($10^{6}$ U-trap, $2\times10^{6}$ clutter, $3\times10^{6}$ dynamic, $4\times10^{6}$ narrow-dynamic), and the MPPI noise stream uses the same trial seed (\code{experiments/benchmark2d/runner.py}), so every configuration sees identical worlds and rollout noise. The six toggle sets are in \code{experiments/benchmark2d/configs.py}; the overlays for the deferred full-scale protocol are in \code{experiments/configs/ablations.yaml}.
+
+\noindent\textbf{Data.} Raw per-trial data: \code{experiments/results_2d/trials.csv} ($1{,}200$ rows). Aggregates and statistics: \code{summary.csv}, \code{stats.json}, \code{tables.md} in the same directory. Live pilot telemetry and logs: \code{experiments/results_pilot/}. The claim-to-artifact map for this paper is \code{docs/papers/arxiv_ref/NUMBERS.md}.
+
+\section{Parameters}\label{app:params}
+
+\input{tables/params}
+
+\section{Differences Between the 2D Mirror and the Nav2 Controller}\label{app:mirror}
+
+The 2D mirror (\code{experiments/prototype/se_mppi_proto.py}, driven by \code{experiments/benchmark2d/rollout.py}) reuses the controller's formulas but differs in the following documented ways.
+\begin{itemize}
+    \item \emph{Progress signal.} Without a global path, entrapment is declared when the best distance-to-goal has not improved by $10^{-3}$\,m for $W=15$ cycles, instead of the stall of $k^{\max}_t$ in \eqref{eq:detect}.
+    \item \emph{Gap use.} The selected gap bearing places a temporary subgoal $2.5$\,m along the opening, replacing the goal in the MPPI cost while entrapped, in lieu of Nav2's global routing and the critic's $C_{\mathrm{gap}}$ term; the gap choice carries a hysteresis term toward the previous bearing so that symmetric openings do not flip every cycle.
+    \item \emph{Geometry.} Obstacles, including walls built from chains of discs, are circles; APF distances and ray lengths are computed analytically against them rather than on a costmap distance field.
+    \item \emph{Obstacle knowledge.} The CBF and TTC receive the true positions and velocities of the moving obstacles, so the tracker of \cref{sec:track} is not exercised.
+    \item \emph{Costs.} The MPPI cost is a goal-distance, path-progress and obstacle-proximity cost rather than Nav2's critic stack; parameters differ as listed in \cref{tab:params}.
+    \item \emph{Mechanism scenes.} \Cref{tab:mechanism} comes from \code{run_validation.py}, whose CBF sees all obstacles, including the static wall discs; the benchmark mirror restricts the CBF to movers, as the Nav2 controller does.
+\end{itemize}
+
+\section{Extended Results}\label{app:results}
+
+\input{tables/bench_full}
+\input{tables/slack}
+
+\Cref{tab:full} lists every configuration and family of the benchmark, and \cref{tab:slack} the slack usage behind the discussion of \cref{sec:coord,sec:ablation}. Configurations E and F coincide exactly on U-trap and clutter because the CBF sees no obstacle in those mover-free families, so the gain schedule is irrelevant there.
+
+\section{Notation}\label{app:notation}
+
+\input{tables/notation}

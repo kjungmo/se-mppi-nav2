@@ -1,0 +1,16 @@
+\begin{table}[!htbp]
+\centering
+\caption{\textbf{CBF slack usage.} Trials (of 50) in which the QP relaxed a barrier row at least once, and the largest per-trial \texttt{slack\_max}. Configurations without a CBF (A, C) are zero by construction; on the mover-free families the CBF sees no obstacle. Source: \texttt{experiments/results\_2d/stats.json} (\texttt{slack\_usage}).}
+\label{tab:slack}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+Family & A & C & D & E & F & F$^{-}$ \\
+\midrule
+U-trap & 0 & 0 & 0 & 0 & 0 & 0 \\
+Clutter & 0 & 0 & 0 & 0 & 0 & 0 \\
+Dynamic & 0 & 0 & 47 (0.015) & 48 (0.015) & 48 (0.015) & 47 (0.015) \\
+Narrow-dyn. & 0 & 0 & 26 (0.469) & 34 (0.469) & 34 (0.469) & 26 (0.469) \\
+\bottomrule
+\end{tabular}
+\end{table}

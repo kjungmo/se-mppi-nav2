@@ -1,0 +1,31 @@
+\begin{table}[!htbp]
+\centering
+\caption{\textbf{Parameters.} Released-controller defaults come from the package's parameter file and parameter getters; 2D-mirror values from the prototype primitives and the benchmark rollout (\cref{app:repro,app:mirror}).}
+\label{tab:params}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llcc}
+\toprule
+Symbol & Meaning & Released controller & 2D mirror \\
+\midrule
+$T,\ \Delta t$ & MPPI horizon steps, step (s) & 56, 0.05 & 25, 0.1 \\
+$K$ & rollouts per cycle & 1000 & 600 \\
+$\lambda$ & MPPI temperature & 0.3 & 0.3 \\
+$\Sigma^{1/2}$ & sampling std.\ of $(v,\omega)$ & (0.2, 0.4) & (0.25, 0.6) \\
+$\mathcal{U}$ & $v\in[v_{\min},v_{\max}]$, $|\omega|\le\omega_{\max}$ & $[-0.35, 0.5]$, 1.9 & $[-0.35, 0.5]$, 1.9 \\
+$W$ & entrapment stall window (cycles) & 30 & 15 \\
+$\epsilon_{\mathrm{goal}}$ & entrapment suppression radius (m) & 0.5 & -- \\
+$d_0,\ \eta$ & APF influence distance (m), gain & 0.6, 1.0 & 0.8, 0.3 \\
+$N_r,\ r_{\max},\ r_{\min}$ & gap rays, ray range (m), min.\ clearance (m) & 36, 2.0, 0.6 & 72, 3.0, 2.4 \\
+$w_g$ & gap-attraction weight & 4.0 & subgoal (\cref{app:mirror}) \\
+$L$ & look-ahead distance (m) & 0.2 & 0.2 \\
+$r,\ m$ & robot radius (m), safety margin (m) & 0.225 (logged), 0.05 & 0.22, 0.05 \\
+$\rho$ & QP slack weight & $10^{3}$ & $10^{3}$ \\
+$\epsilon_\delta$ & slack threshold for braking & $10^{-3}$ & $10^{-3}$ \\
+$N_{\mathrm{obs}}$ & obstacles kept in the QP & 20 & all dynamic \\
+$\alpha_{\mathrm{base}},\ \alpha_{\mathrm{escape}}$ & CBF class-$\mathcal{K}$ gains & 2.0, 6.0 & 2.0, 6.0 \\
+$\tau$ & TTC override threshold (s) & 1.5 & 1.5 \\
+$v_{\mathrm{dyn}},\ R_{\max}$ & CBF admission: min.\ speed (m/s), max.\ radius (m) & 0.1, 1.0 & $\|\mathbf{v}_o\|>0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
