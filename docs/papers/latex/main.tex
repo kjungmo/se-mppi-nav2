@@ -6,6 +6,9 @@
 \usepackage{booktabs}
 \usepackage[hidelinks]{hyperref}
 
+% "holds in part" mark for the positioning table
+\newcommand{\pmark}{\ensuremath{\circ}}
+
 \begin{document}
 
 \title{Safe-Escape MPPI: Coordinating Online Local-Minima Escape with\\
@@ -22,25 +25,34 @@ Seoul, Republic of Korea (e-mail: kangjmo91@gmail.com).}}
 
 \begin{abstract}
 The Model Predictive Path Integral (MPPI) controller shipped with ROS~2
-Nav2 is among the strongest deployable local controllers for mobile robots,
-yet in narrow, crowded, dynamic spaces it is prone to local-minima
-entrapment and enforces collision avoidance only through soft costs, with
-no formal safety guarantee. Prior work treats these weaknesses in
-isolation, and none ships as a deployable Nav2 controller. We present
-Safe-Escape MPPI (SE-MPPI), a single Nav2-native controller that unifies
-online local-minima detection-and-escape with a dynamic-obstacle
-control-barrier-function (CBF) safety filter, reconciled by a coordinator
-that modulates the barrier's class-$\mathcal{K}$ gain on detected
-entrapment. Forward invariance is preserved for any positive gain, so an
-escape maneuver admitted by a raised gain stays certified-safe. In a randomized $1{,}200$-trial 2D benchmark
-mirroring the controller math one-to-one, the detection-and-escape layer
-is the decisive contribution on both trap families, with the free-space
-gap search load-bearing. The escape--safety coordination instead matches an
-independent escape+CBF stack -- a null result: outcomes are insensitive to
-the barrier-gain schedule even where the barrier engages -- so we claim it
-as a certified-safe mechanism, not an empirical gain. The controller also
-runs inside a live ROS~2 Jazzy + Nav2 + Gazebo stack, and we report the
-deployment faults live integration exposes.
+Nav2 is a widely used deployable local controller for mobile robots, yet
+in narrow, crowded, dynamic spaces it can stall in local minima, and its
+critics avoid collisions only through soft costs, with no formal safety
+guarantee. Methods exist for each weakness, and several works outside
+Nav2 address both together, but we know of no public Nav2 controller
+plugin that combines local-minima escape with a barrier-based safety
+filter. This system paper presents Safe-Escape MPPI (SE-MPPI), a Nav2
+controller plugin that integrates online local-minima detection-and-escape
+for MPPI with a control-barrier-function (CBF) safety filter for tracked
+dynamic obstacles. One path-progress entrapment signal switches repulsion
+and free-space gap costs into the MPPI rollouts and, through a
+coordinator, raises the barrier's class-$\mathcal{K}$ gain. By a standard
+argument for time-varying CBF gains, this schedule preserves forward
+invariance of the barrier's safe set, a conditional guarantee that covers
+only a look-ahead point and the tracked dynamic obstacles, assumes that
+the barrier inequality holds between control updates, and requires the
+quadratic program to use no slack, a condition that the benchmark QP
+violates at least once in most trials with moving obstacles. In a
+randomized, paired $1{,}200$-trial benchmark run on a Python 2D mirror of
+the controller's primitives, not on the Nav2 controller itself, the
+detection-and-escape layer is the decisive contribution on both trap
+families, with the free-space gap search load-bearing. The escape--safety
+coordination instead matches an independent escape+CBF stack -- a null
+result: outcomes are insensitive to the barrier-gain schedule even where
+the barrier engages -- so we claim the coordination only as a mechanism,
+not as an empirical gain. The controller also runs inside a live ROS~2
+Jazzy + Nav2 + Gazebo stack, and we report the deployment faults live
+integration exposes, although no live run has yet reached its goal.
 \end{abstract}
 
 \begin{IEEEkeywords}

@@ -67,7 +67,8 @@ def t_success(sm):
         '\\begin{table}[t]', '\\centering',
         '\\caption{\\textbf{Main result: success rate} in \\% with Wilson 95\\% '
         'confidence interval, $N=50$ paired scenarios per cell '
-        '($1{,}200$ trials). Best per family in bold. On the two trap families '
+        '($1{,}200$ trials of the Python 2D mirror, not the Nav2 controller). '
+        'Best per family in bold. On the two trap families '
         'the escape configurations (C, E, F) separate from stock (A), CBF only '
         '(D) and the no-gap ablation (F$^{-}$), which all stay at $0\\%$. '
         'Source: \\texttt{experiments/results\\_2d/summary.csv}.}',
@@ -95,7 +96,8 @@ def t_contrasts(st):
     lines = [
         '\\begin{table}[t]', '\\centering',
         '\\caption{\\textbf{Paired contrasts against F} (McNemar on success, '
-        'Holm-adjusted within each family of 16 tests). $b$ = trials the '
+        'Holm-adjusted within each family of 16 tests), Python 2D mirror. '
+        '$b$ = trials the '
         'baseline solves and F does not; $c$ = the reverse. $^{*}$ marks '
         '$p_{\\mathrm{adj}}<0.05$. The escape contrast (A$\\to$F) is decisive '
         'on both trap families; the coordination contrast (E$\\to$F) is null '
@@ -128,7 +130,7 @@ def num(x, nd=2):
 def t_full(sm):
     lines = [
         '\\begin{table}[!htbp]', '\\centering',
-        '\\caption{\\textbf{Full per-family results} of the 2D benchmark '
+        '\\caption{\\textbf{Full per-family results} of the Python 2D-mirror benchmark '
         '($N=50$ per cell). Rates in \\%; time-to-goal and path length are '
         'means over successful trials only (\\,$\\pm$ 95\\% CI half-width); '
         'minimum clearance is over all trials. Source: '
@@ -159,7 +161,7 @@ def t_full(sm):
 def t_slack(st):
     lines = [
         '\\begin{table}[!htbp]', '\\centering',
-        '\\caption{\\textbf{CBF slack usage.} Trials (of 50) in which the QP '
+        '\\caption{\\textbf{CBF slack usage} in the Python 2D mirror. Trials (of 50) in which the QP '
         'relaxed a barrier row at least once, and the largest per-trial '
         '\\texttt{slack\\_max}. Configurations without a CBF (A, C) are zero by '
         'construction; on the mover-free families the CBF sees no obstacle. '

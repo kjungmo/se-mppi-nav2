@@ -1,20 +1,26 @@
 \begin{table}[t]
 \centering
-\caption{\textbf{Positioning.} (a)~ships as a Nav2 controller plugin; (b)~online local-minima escape; (c)~CBF-style safety layer (for DualGuard, Hamilton--Jacobi reachability); (d)~escape--safety gain coordination. Each reviewed system holds one of the four; \sname{} is designed to hold all four. The review behind this table (June 2026) covered the Nav2 MPPI critic ecosystem, the CBF--MPPI papers cited here, and the public issue trackers of these projects.}
+\caption{\textbf{Positioning.} (a)~ships as a Nav2 controller plugin; (b)~online local-minimum escape or avoidance; (c)~an explicit safety constraint, filter or backup enforced at run time (for DualGuard, Hamilton--Jacobi reachability; for Soloperto et al., a safe backup trajectory; for Safer Gap, zeroing barrier functions); (d)~online adaptation of the CBF class-$\mathcal{K}$ gain. \cmark{} = holds; \pmark{} = holds in part: stock Nav2 detects stalls at the stack level and runs generic recoveries rather than a steered escape; the 3Laws Supervisor is integrated with Nav2 as a separate node after the controller, not as a controller plugin; the gap-based planners guide the robot through free-space gaps rather than escaping a detected minimum, and the provable collision-free properties of Potential Gap and Dynamic Gap follow from the planners' gap construction rather than from an explicit run-time constraint or filter; Kim et al.\ reduce predicted deadlock through class-$\mathcal{K}$ parameter selection rather than escaping a detected minimum. For the 3Laws Supervisor, (b) is marked absent because neither cited source describes a local-minimum escape mechanism. $^{\dagger}$Concurrent work (posted in 2026). For \sname, (c) is marked in part because its barrier covers only tracked dynamic obstacles, at a look-ahead point, and its invariance argument is conditional (\cref{prop:invariance}); static structure is handled only by MPPI costs. Its (b) is demonstrated only in the Python 2D mirror, not in a live Nav2 run. No reviewed system holds all four; several hold two. The review behind this table (June 2026, extended in September 2026) covered the Nav2 MPPI critic ecosystem, the Nav2 documentation, the public issue trackers of these projects, and the works cited here; it is not exhaustive.}
 \label{tab:positioning}
 \small
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{llcccc}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{0.34\linewidth}>{\raggedright\arraybackslash}Xcccc}
 \toprule
 System & Reference & (a) & (b) & (c) & (d) \\
 \midrule
-DRPA-MPPI & \citet{drpa_mppi} & \xmark & \cmark & \xmark & \xmark \\
-Shield-MPPI, BR-MPPI & \citet{shield_mppi,br_mppi} & \xmark & \xmark & \cmark & \xmark \\
-CBFKit & \citet{cbfkit} & \xmark & \xmark & \cmark & \xmark \\
-SCBF-MPPI, DualGuard & \citet{scbf_mppi,dualguard} & \xmark & \xmark & \cmark & \xmark \\
-GS-MPPI & \citet{gs_mppi} & \xmark & \xmark & \cmark & \xmark \\
-DPCBF & \citet{dpcbf} & \xmark & \xmark & \cmark & \xmark \\
-\rowcolor{black!6}\textbf{\sname{} (ours)} & this paper & \cmark & \cmark & \cmark & \cmark \\
+Nav2 MPPI with progress checker and recoveries & \citet{nav2,nav2_progress,nav2_bt} & \cmark & \pmark & \xmark & \xmark \\
+3Laws Supervisor in Nav2 & \citet{nav2_3laws,threelaws_pr} & \pmark & \xmark & \cmark & \xmark \\
+DRPA-MPPI, GP-MPPI & \citet{drpa_mppi,gp_mppi} & \xmark & \cmark & \xmark & \xmark \\
+Dynamic Gap, Potential Gap & \citet{dynamic_gap,potential_gap} & \xmark & \pmark & \pmark & \xmark \\
+Safer Gap & \citet{safer_gap} & \xmark & \pmark & \cmark & \xmark \\
+Backup-trajectory MPC & \citet{soloperto} & \xmark & \cmark & \cmark & \xmark \\
+MILP-MPC with CBF$^{\dagger}$; MCBF-QP; predictive MCBF$^{\dagger}$ & \citet{chen_milp_cbf,mcbf_qp,xue_proactive} & \xmark & \cmark & \cmark & \xmark \\
+DualGuard, SCBF-MPPI, GS-MPPI, Shield-MPPI & \citet{dualguard,scbf_mppi,gs_mppi,shield_mppi} & \xmark & \xmark & \cmark & \xmark \\
+CBFKit, DPCBF & \citet{cbfkit,dpcbf} & \xmark & \xmark & \cmark & \xmark \\
+BR-MPPI & \citet{br_mppi} & \xmark & \xmark & \cmark & \cmark \\
+Rate-tunable, adaptive, optimal-decay CBFs & \citet{rt_cbf,ada_cbf,optdecay_cbf} & \xmark & \xmark & \cmark & \cmark \\
+Deadlock-aware parameter adaptation & \citet{kim_adaptive_cbf} & \xmark & \pmark & \cmark & \cmark \\
+\rowcolor{black!6}\textbf{\sname{} (ours)} & this paper & \cmark & \cmark & \pmark & \cmark \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
