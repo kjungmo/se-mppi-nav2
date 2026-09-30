@@ -1,9 +1,16 @@
-\begin{thebibliography}{30}
+\begin{thebibliography}{56}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[{ACCESS Newswire}(2025)]{threelaws_pr}
+{ACCESS Newswire}.
+\newblock {Open Navigation and 3Laws Demonstrate Capabilities of Nav2 and 3Laws Supervisor Integration}.
+\newblock Press release, 18 December 2025, as syndicated by The Globe and Mail, 2025.
+\newblock URL \url{https://www.theglobeandmail.com/investing/markets/markets-news/ACCESS%20Newswire/36691510/open-navigation-and-3laws-demonstrate-capabilities-of-nav2-and-3laws-supervisor-integration/}.
+\newblock Accessed 2026-09-30.
 
 \bibitem[Ames et~al.(2017)Ames, Xu, Grizzle, and Tabuada]{ames_cbf_tac}
 A.~D. Ames, X.~Xu, J.~W. Grizzle, and P.~Tabuada.
@@ -18,6 +25,13 @@ A.~D. Ames, S.~Coogan, M.~Egerstedt, G.~Notomista, K.~Sreenath, and P.~Tabuada.
 \newblock In \emph{2019 18th European Control Conference (ECC)}, pages 3420--3431, 2019.
 \newblock \doi{10.23919/ECC.2019.8796030}.
 \newblock URL \url{https://arxiv.org/abs/1903.11199}.
+
+\bibitem[Asselmeier et~al.(2025)Asselmeier, Ahuja, Zaro, Abuaish, Zhao, and Vela]{dynamic_gap}
+M.~Asselmeier, D.~Ahuja, A.~Zaro, A.~Abuaish, Y.~Zhao, and P.~A. Vela.
+\newblock {Dynamic Gap: Safe Gap-based Navigation in Dynamic Environments}.
+\newblock In \emph{2025 IEEE International Conference on Robotics and Automation (ICRA)}, pages 12870--12876, 2025.
+\newblock \doi{10.1109/ICRA55743.2025.11127543}.
+\newblock URL \url{https://arxiv.org/abs/2210.05022}.
 
 \bibitem[Black et~al.(2024)Black, Fainekos, Hoxha, Okamoto, and Prokhorov]{cbfkit}
 M.~Black, G.~Fainekos, B.~Hoxha, H.~Okamoto, and D.~Prokhorov.
@@ -40,11 +54,30 @@ L.~Busellato, F.~Cunico, D.~Dall'Alba, M.~Emporio, A.~Giachetti, R.~Muradore, an
 \newblock \doi{10.1016/j.robot.2025.105291}.
 \newblock URL \url{https://arxiv.org/abs/2508.20812}.
 
+\bibitem[Chen et~al.(2026)Chen, Ghori, Adil, Feron, and Belta]{chen_milp_cbf}
+Y.-H. Chen, S.~Ghori, A.~Adil, E.~Feron, and C.~Belta.
+\newblock {Long-Horizon Geometry-Aware Navigation among Polytopes via MILP-MPC and Minkowski-Based CBFs}.
+\newblock arXiv preprint arXiv:2604.00162, 2026.
+\newblock URL \url{https://arxiv.org/abs/2604.00162}.
+
+\bibitem[Cliff(1993)]{cliff_delta}
+N.~Cliff.
+\newblock {Dominance statistics: Ordinal analyses to answer ordinal questions}.
+\newblock \emph{Psychological Bulletin}, 114\penalty0 (3):\penalty0 494--509, 1993.
+\newblock \doi{10.1037/0033-2909.114.3.494}.
+\newblock URL \url{https://doi.org/10.1037/0033-2909.114.3.494}.
+
 \bibitem[Dixit et~al.(2023)Dixit, Lindemann, Wei, Cleaveland, Pappas, and Burdick]{dixit}
 A.~Dixit, L.~Lindemann, S.~X. Wei, M.~Cleaveland, G.~J. Pappas, and J.~W. Burdick.
 \newblock {Adaptive Conformal Prediction for Motion Planning among Dynamic Agents}.
 \newblock In \emph{Proceedings of the 5th Annual Learning for Dynamics and Control Conference (L4DC)}, volume 211 of \emph{Proceedings of Machine Learning Research}, pages 300--314, 2023.
 \newblock URL \url{https://proceedings.mlr.press/v211/dixit23a.html}.
+
+\bibitem[Feng et~al.(2023)Feng, Abuaish, and Vela]{safer_gap}
+S.~Feng, A.~Abuaish, and P.~A. Vela.
+\newblock {Safer Gap: A Gap-based Local Planner for Safe Navigation with Nonholonomic Mobile Robots}.
+\newblock arXiv preprint arXiv:2303.08243, 2023.
+\newblock URL \url{https://arxiv.org/abs/2303.08243}.
 
 \bibitem[Fox et~al.(1997)Fox, Burgard, and Thrun]{dwa}
 D.~Fox, W.~Burgard, and S.~Thrun.
@@ -52,12 +85,19 @@ D.~Fox, W.~Burgard, and S.~Thrun.
 \newblock \emph{IEEE Robotics \& Automation Magazine}, 4\penalty0 (1):\penalty0 23--33, 1997.
 \newblock \doi{10.1109/100.580977}.
 
-\bibitem[Fuke et~al.(2025)Fuke, Endo, Honda, and Ishigami]{drpa_mppi}
+\bibitem[Fuke et~al.(2025{\natexlab{a}})Fuke, Endo, Honda, and Ishigami]{drpa_mppi}
 T.~Fuke, M.~Endo, K.~Honda, and G.~Ishigami.
 \newblock {DRPA-MPPI: Dynamic Repulsive Potential Augmented MPPI for Reactive Navigation in Unstructured Environments}.
-\newblock In \emph{2025 IEEE 21st International Conference on Automation Science and Engineering (CASE)}, pages 961--968, 2025.
+\newblock In \emph{2025 IEEE 21st International Conference on Automation Science and Engineering (CASE)}, pages 961--968, 2025{\natexlab{a}}.
 \newblock \doi{10.1109/CASE58245.2025.11163902}.
 \newblock URL \url{https://arxiv.org/abs/2503.20134}.
+
+\bibitem[Fuke et~al.(2025{\natexlab{b}})Fuke, Endo, Honda, and Ishigami]{drpa_sii}
+T.~Fuke, M.~Endo, K.~Honda, and G.~Ishigami.
+\newblock {Towards Local Minima-free Robotic Navigation: Model Predictive Path Integral Control via Repulsive Potential Augmentation}.
+\newblock In \emph{2025 IEEE/SICE International Symposium on System Integration (SII)}, pages 1112--1117, 2025{\natexlab{b}}.
+\newblock \doi{10.1109/SII59315.2025.10871026}.
+\newblock URL \url{https://arxiv.org/abs/2410.11379}.
 
 \bibitem[Gonzales et~al.(2025)Gonzales, Mizuta, Leung, and Ratliff]{conformal_hri}
 J.~Gonzales, K.~Mizuta, K.~Leung, and L.~J. Ratliff.
@@ -66,12 +106,32 @@ J.~Gonzales, K.~Mizuta, K.~Leung, and L.~J. Ratliff.
 \newblock \doi{10.1109/IROS60139.2025.11247339}.
 \newblock URL \url{https://arxiv.org/abs/2603.10392}.
 
+\bibitem[Holm(1979)]{holm}
+S.~Holm.
+\newblock {A Simple Sequentially Rejective Multiple Test Procedure}.
+\newblock \emph{Scandinavian Journal of Statistics}, 6\penalty0 (2):\penalty0 65--70, 1979.
+\newblock URL \url{https://www.jstor.org/stable/4615733}.
+
 \bibitem[Honda et~al.(2024)Honda, Akai, Suzuki, Aoki, Hosogaya, Okuda, and Suzuki]{svg_mppi}
 K.~Honda, N.~Akai, K.~Suzuki, M.~Aoki, H.~Hosogaya, H.~Okuda, and T.~Suzuki.
 \newblock {Stein Variational Guided Model Predictive Path Integral Control: Proposal and Experiments with Fast Maneuvering Vehicles}.
 \newblock In \emph{2024 IEEE International Conference on Robotics and Automation (ICRA)}, pages 7020--7026, 2024.
 \newblock \doi{10.1109/ICRA57147.2024.10611021}.
 \newblock URL \url{https://arxiv.org/abs/2309.11040}.
+
+\bibitem[Khatib(1986)]{khatib_apf}
+O.~Khatib.
+\newblock {Real-Time Obstacle Avoidance for Manipulators and Mobile Robots}.
+\newblock \emph{The International Journal of Robotics Research}, 5\penalty0 (1):\penalty0 90--98, 1986.
+\newblock \doi{10.1177/027836498600500106}.
+\newblock URL \url{https://doi.org/10.1177/027836498600500106}.
+
+\bibitem[Kim et~al.(2025)Kim, Kee, and Panagou]{kim_adaptive_cbf}
+T.~Kim, R.~I. Kee, and D.~Panagou.
+\newblock {Learning to Refine Input Constrained Control Barrier Functions via Uncertainty-Aware Online Parameter Adaptation}.
+\newblock In \emph{2025 IEEE International Conference on Robotics and Automation (ICRA)}, pages 3868--3875, 2025.
+\newblock \doi{10.1109/ICRA55743.2025.11128840}.
+\newblock URL \url{https://arxiv.org/abs/2409.14616}.
 
 \bibitem[Lindemann et~al.(2023)Lindemann, Cleaveland, Shim, and Pappas]{lindemann}
 L.~Lindemann, M.~Cleaveland, G.~Shim, and G.~J. Pappas.
@@ -94,6 +154,20 @@ S.~Macenski, S.~Singh, F.~Mart{\'i}n, and J.~Gin{\'e}s.
 \newblock \doi{10.1007/s10514-023-10097-6}.
 \newblock URL \url{https://arxiv.org/abs/2305.20026}.
 
+\bibitem[Mann and Whitney(1947)]{mann_whitney}
+H.~B. Mann and D.~R. Whitney.
+\newblock {On a Test of Whether one of Two Random Variables is Stochastically Larger than the Other}.
+\newblock \emph{The Annals of Mathematical Statistics}, 18\penalty0 (1):\penalty0 50--60, 1947.
+\newblock \doi{10.1214/aoms/1177730491}.
+\newblock URL \url{https://doi.org/10.1214/aoms/1177730491}.
+
+\bibitem[McNemar(1947)]{mcnemar}
+Q.~McNemar.
+\newblock {Note on the Sampling Error of the Difference Between Correlated Proportions or Percentages}.
+\newblock \emph{Psychometrika}, 12\penalty0 (2):\penalty0 153--157, 1947.
+\newblock \doi{10.1007/BF02295996}.
+\newblock URL \url{https://doi.org/10.1007/BF02295996}.
+
 \bibitem[Mohamed et~al.(2022)Mohamed, Yin, and Liu]{log_mppi}
 I.~S. Mohamed, K.~Yin, and L.~Liu.
 \newblock {Autonomous Navigation of AGVs in Unknown Cluttered Environments: log-MPPI Control Strategy}.
@@ -101,11 +175,39 @@ I.~S. Mohamed, K.~Yin, and L.~Liu.
 \newblock \doi{10.1109/LRA.2022.3192772}.
 \newblock URL \url{https://arxiv.org/abs/2203.16599}.
 
+\bibitem[Mohamed et~al.(2023)Mohamed, Ali, and Liu]{gp_mppi}
+I.~S. Mohamed, M.~Ali, and L.~Liu.
+\newblock {GP-Guided MPPI for Efficient Navigation in Complex Unknown Cluttered Environments}.
+\newblock In \emph{2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)}, pages 7463--7470, 2023.
+\newblock \doi{10.1109/IROS55552.2023.10341382}.
+\newblock URL \url{https://arxiv.org/abs/2307.04019}.
+
 \bibitem[Nair et~al.(2022)Nair, Jiang, Hou, Xu, Li, Xiao, and Stone]{dynabarn}
 A.~Nair, F.~Jiang, K.~Hou, Z.~Xu, S.~Li, X.~Xiao, and P.~Stone.
 \newblock {DynaBARN: Benchmarking Metric Ground Navigation in Dynamic Environments}.
 \newblock In \emph{2022 IEEE International Symposium on Safety, Security, and Rescue Robotics (SSRR)}, pages 347--352. IEEE, 2022.
 \newblock \doi{10.1109/SSRR56537.2022.10018758}.
+
+\bibitem[{Nav2 contributors}(2026{\natexlab{a}})]{nav2_3laws}
+{Nav2 contributors}.
+\newblock {Enhanced Safety for Nav2 using 3Laws Supervisor}.
+\newblock Nav2 documentation, 2026{\natexlab{a}}.
+\newblock URL \url{https://docs.nav2.org/rolling/tutorials/general_tutorials/using_3laws_supervisor/using_3laws_supervisor/}.
+\newblock Accessed 2026-09-30.
+
+\bibitem[{Nav2 contributors}(2026{\natexlab{b}})]{nav2_bt}
+{Nav2 contributors}.
+\newblock {Detailed Behavior Tree Walkthrough}.
+\newblock Nav2 documentation, 2026{\natexlab{b}}.
+\newblock URL \url{https://docs.nav2.org/rolling/getting_started/nav2_behavior_trees/detailed_behavior_tree_walkthrough/detailed_behavior_tree_walkthrough/}.
+\newblock Accessed 2026-09-30.
+
+\bibitem[{Nav2 contributors}(2026{\natexlab{c}})]{nav2_progress}
+{Nav2 contributors}.
+\newblock {nav2\_controller, branch jazzy: controller\_server.cpp and simple\_progress\_checker.cpp}.
+\newblock Nav2 source code, GitHub repository ros-navigation/navigation2, 2026{\natexlab{c}}.
+\newblock URL \url{https://github.com/ros-navigation/navigation2/tree/jazzy/nav2_controller}.
+\newblock Accessed 2026-09-30.
 
 \bibitem[Park et~al.(2025)Park, Kim, and Panagou]{dpcbf}
 H.~K. Park, T.~Kim, and D.~Panagou.
@@ -113,6 +215,13 @@ H.~K. Park, T.~Kim, and D.~Panagou.
 \newblock arXiv preprint arXiv:2510.01402, 2025.
 \newblock URL \url{https://arxiv.org/abs/2510.01402}.
 \newblock Accepted to IEEE International Conference on Robotics and Automation (ICRA) 2026.
+
+\bibitem[Parwana and Panagou(2025)]{rt_cbf}
+H.~Parwana and D.~Panagou.
+\newblock {Rate-Tunable Control Barrier Functions: Methods and Algorithms for Online Adaptation}.
+\newblock In \emph{2025 American Control Conference (ACC)}, pages 275--282, 2025.
+\newblock \doi{10.23919/ACC63710.2025.11108110}.
+\newblock URL \url{https://arxiv.org/abs/2303.12966}.
 
 \bibitem[Parwana et~al.(2024)Parwana, Black, Fainekos, Hoxha, Okamoto, and Prokhorov]{scbf_mppi}
 H.~Parwana, M.~Black, G.~Fainekos, B.~Hoxha, H.~Okamoto, and D.~Prokhorov.
@@ -122,9 +231,15 @@ H.~Parwana, M.~Black, G.~Fainekos, B.~Hoxha, H.~Okamoto, and D.~Prokhorov.
 
 \bibitem[Parwana et~al.(2025)Parwana, Kim, Long, Hoxha, Okamoto, Fainekos, and Panagou]{br_mppi}
 H.~Parwana, T.~Kim, K.~Long, B.~Hoxha, H.~Okamoto, G.~Fainekos, and D.~Panagou.
-\newblock {BR-MPPI: Barrier Rate Guided MPPI for Enforcing Multiple Inequality Constraints with Learned Signed Distance Field}.
+\newblock {BR-MPPI: Barrier-Rate Guided MPPI for Enforcing Multiple Inequality Constraints with Learned Signed Distance Fields}.
 \newblock arXiv preprint arXiv:2506.07325, 2025.
 \newblock URL \url{https://arxiv.org/abs/2506.07325}.
+
+\bibitem[Paudel et~al.(2026)Paudel, Joshi, Madai, Bartaula, Rimal, and Neupane]{paudel_dualbarrier}
+H.~Paudel, B.~Joshi, D.~R. Madai, A.~Bartaula, B.~Rimal, and S.~Neupane.
+\newblock {A Closed-Form Dual-Barrier CBF Safety Filter for Holonomic Robots on Incrementally Built Occupancy Grid Maps}.
+\newblock arXiv preprint arXiv:2605.05182, 2026.
+\newblock URL \url{https://arxiv.org/abs/2605.05182}.
 
 \bibitem[P{\'e}rez-Higueras et~al.(2023)P{\'e}rez-Higueras, Otero, Caballero, and Merino]{hunavsim}
 N.~P{\'e}rez-Higueras, R.~Otero, F.~Caballero, and L.~Merino.
@@ -147,6 +262,13 @@ P.~Rabiee and J.~B. Hoagg.
 \newblock \doi{10.1109/CDC57313.2025.11312129}.
 \newblock URL \url{https://arxiv.org/abs/2410.02154}.
 
+\bibitem[Reis et~al.(2021)Reis, Aguiar, and Tabuada]{reis_cbf_equilibria}
+M.~F. Reis, A.~P. Aguiar, and P.~Tabuada.
+\newblock {Control Barrier Function-Based Quadratic Programs Introduce Undesirable Asymptotically Stable Equilibria}.
+\newblock \emph{IEEE Control Systems Letters}, 5\penalty0 (2):\penalty0 731--736, 2021.
+\newblock \doi{10.1109/LCSYS.2020.3004797}.
+\newblock URL \url{https://doi.org/10.1109/LCSYS.2020.3004797}.
+
 \bibitem[R\"{o}smann et~al.(2012)R\"{o}smann, Feiten, W\"{o}sch, Hoffmann, and Bertram]{teb}
 C.~R\"{o}smann, W.~Feiten, T.~W\"{o}sch, F.~Hoffmann, and T.~Bertram.
 \newblock {Trajectory Modification Considering Dynamic Constraints of Autonomous Robots}.
@@ -158,6 +280,13 @@ J.~Sacks and B.~Boots.
 \newblock {Learning Sampling Distributions for Model Predictive Control}.
 \newblock In \emph{Proceedings of the 6th Conference on Robot Learning (CoRL)}, volume 205 of \emph{Proceedings of Machine Learning Research}, pages 1733--1742, 2022.
 \newblock URL \url{https://proceedings.mlr.press/v205/sacks23a.html}.
+
+\bibitem[Soloperto et~al.(2023)Soloperto, Mesbah, and Allg{\"o}wer]{soloperto}
+R.~Soloperto, A.~Mesbah, and F.~Allg{\"o}wer.
+\newblock {Safe Exploration and Escape Local Minima With Model Predictive Control Under Partially Unknown Constraints}.
+\newblock \emph{IEEE Transactions on Automatic Control}, 68\penalty0 (12):\penalty0 7530--7545, 2023.
+\newblock \doi{10.1109/TAC.2023.3283731}.
+\newblock URL \url{https://arxiv.org/abs/2205.03614}.
 
 \bibitem[Stellato et~al.(2020)Stellato, Banjac, Goulart, Bemporad, and Boyd]{osqp}
 B.~Stellato, G.~Banjac, P.~Goulart, A.~Bemporad, and S.~Boyd.
@@ -173,6 +302,13 @@ E.~Trevisan and J.~Alonso-Mora.
 \newblock \doi{10.1109/LRA.2024.3397083}.
 \newblock URL \url{https://arxiv.org/abs/2401.09241}.
 
+\bibitem[Walia and Leahy(2026)]{walia_conflict}
+R.~Walia and K.~Leahy.
+\newblock {Conflict-Aware Switching for CBF-CLF-Based Multi-Goal Navigation}.
+\newblock arXiv preprint arXiv:2606.21577, 2026.
+\newblock URL \url{https://arxiv.org/abs/2606.21577}.
+\newblock CDC 2026 submission copy.
+
 \bibitem[Wang et~al.(2021)Wang, So, Gibson, Vlahov, Gandhi, Liu, and Theodorou]{tsallis_mppi}
 Z.~Wang, O.~So, J.~Gibson, B.~Vlahov, M.~S. Gandhi, G.-H. Liu, and E.~A. Theodorou.
 \newblock {Variational Inference MPC using Tsallis Divergence}.
@@ -187,6 +323,19 @@ G.~Williams, P.~Drews, B.~Goldfain, J.~M. Rehg, and E.~A. Theodorou.
 \newblock \doi{10.1109/TRO.2018.2865891}.
 \newblock URL \url{https://arxiv.org/abs/1707.02342}.
 
+\bibitem[Wilson(1927)]{wilson_ci}
+E.~B. Wilson.
+\newblock {Probable Inference, the Law of Succession, and Statistical Inference}.
+\newblock \emph{Journal of the American Statistical Association}, 22\penalty0 (158):\penalty0 209--212, 1927.
+\newblock \doi{10.1080/01621459.1927.10502953}.
+\newblock URL \url{https://doi.org/10.1080/01621459.1927.10502953}.
+
+\bibitem[Xiao et~al.(2020)Xiao, Belta, and Cassandras]{ada_cbf}
+W.~Xiao, C.~Belta, and C.~G. Cassandras.
+\newblock {Adaptive Control Barrier Functions for Safety-Critical Systems}.
+\newblock arXiv preprint arXiv:2002.04577, 2020.
+\newblock URL \url{https://arxiv.org/abs/2002.04577}.
+
 \bibitem[Xiao et~al.(2024)Xiao, Xu, Datar, Warnell, Stone, Damanik, Jung, Deresa, Huy, Jinyu, Yichen, Cahyono, Wu, Mo, Lv, Lan, Meng, Tao, and Cheng]{barn_challenge}
 X.~Xiao, Z.~Xu, A.~Datar, G.~Warnell, P.~Stone, J.~J. Damanik, J.~Jung, C.~A. Deresa, T.~D. Huy, C.~Jinyu, C.~Yichen, J.~A. Cahyono, J.~Wu, L.~Mo, M.~Lv, B.~Lan, Q.~Meng, W.~Tao, and L.~Cheng.
 \newblock {Autonomous Ground Navigation in Highly Constrained Spaces: Lessons Learned From the Third BARN Challenge at ICRA 2024}.
@@ -194,12 +343,38 @@ X.~Xiao, Z.~Xu, A.~Datar, G.~Warnell, P.~Stone, J.~J. Damanik, J.~Jung, C.~A. De
 \newblock \doi{10.1109/MRA.2024.3427891}.
 \newblock URL \url{https://arxiv.org/abs/2407.01862}.
 
+\bibitem[Xu et~al.(2021)Xu, Feng, and Vela]{potential_gap}
+R.~Xu, S.~Feng, and P.~A. Vela.
+\newblock {Potential Gap: Using Reactive Policies to Guarantee Safe Navigation}.
+\newblock arXiv preprint arXiv:2103.11491, 2021.
+\newblock URL \url{https://arxiv.org/abs/2103.11491}.
+
+\bibitem[Xue and Figueroa(2025)]{mcbf_qp}
+Y.~Xue and N.~Figueroa.
+\newblock {No Minima, No Collisions: Combining Modulation and Control Barrier Function Strategies for Feasible Dynamic Collision Avoidance}.
+\newblock arXiv preprint arXiv:2502.14238, 2025.
+\newblock URL \url{https://arxiv.org/abs/2502.14238}.
+
+\bibitem[Xue et~al.(2026)Xue, Zhang, {\AA}kesson, and Figueroa]{xue_proactive}
+Y.~Xue, Z.~Zhang, K.~{\AA}kesson, and N.~Figueroa.
+\newblock {Proactive Local-Minima-Free Robot Navigation: Blending Motion Prediction With Safe Control}.
+\newblock \emph{IEEE Robotics and Automation Letters}, 11\penalty0 (4):\penalty0 5096--5103, 2026.
+\newblock \doi{10.1109/LRA.2026.3668447}.
+\newblock URL \url{https://arxiv.org/abs/2601.10233}.
+
 \bibitem[Yin et~al.(2023)Yin, Dawson, Fan, and Tsiotras]{shield_mppi}
 J.~Yin, C.~Dawson, C.~Fan, and P.~Tsiotras.
 \newblock {Shield Model Predictive Path Integral: A Computationally Efficient Robust MPC Method Using Control Barrier Functions}.
 \newblock \emph{IEEE Robotics and Automation Letters}, 8\penalty0 (11):\penalty0 7106--7113, 2023.
 \newblock \doi{10.1109/LRA.2023.3315211}.
 \newblock URL \url{https://arxiv.org/abs/2302.11719}.
+
+\bibitem[Zeng et~al.(2021)Zeng, Zhang, Li, and Sreenath]{optdecay_cbf}
+J.~Zeng, B.~Zhang, Z.~Li, and K.~Sreenath.
+\newblock {Safety-Critical Control using Optimal-decay Control Barrier Function with Guaranteed Point-wise Feasibility}.
+\newblock In \emph{2021 American Control Conference (ACC)}, pages 3856--3863, 2021.
+\newblock \doi{10.23919/ACC50511.2021.9482626}.
+\newblock URL \url{https://arxiv.org/abs/2103.12375}.
 
 \bibitem[Zhou et~al.(2024)Zhou, Zhang, and Luo]{acp_yang}
 H.~Zhou, Y.~Zhang, and W.~Luo.
