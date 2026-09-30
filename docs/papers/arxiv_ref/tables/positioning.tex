@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\caption{\textbf{Positioning.} (a)~ships as a Nav2 controller plugin; (b)~online local-minima escape; (c)~CBF-style safety layer (for DualGuard, Hamilton--Jacobi reachability); (d)~escape--safety gain coordination. Each reviewed system holds one of the four; \sname{} is designed to hold all four. The review behind this table (June 2026) covered the Nav2 MPPI critic ecosystem, the CBF--MPPI papers cited here, and the public issue trackers of these projects.}
+\label{tab:positioning}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llcccc}
+\toprule
+System & Reference & (a) & (b) & (c) & (d) \\
+\midrule
+DRPA-MPPI & \citet{drpa_mppi} & \xmark & \cmark & \xmark & \xmark \\
+Shield-MPPI, BR-MPPI & \citet{shield_mppi,br_mppi} & \xmark & \xmark & \cmark & \xmark \\
+CBFKit & \citet{cbfkit} & \xmark & \xmark & \cmark & \xmark \\
+SCBF-MPPI, DualGuard & \citet{scbf_mppi,dualguard} & \xmark & \xmark & \cmark & \xmark \\
+GS-MPPI & \citet{gs_mppi} & \xmark & \xmark & \cmark & \xmark \\
+DPCBF & \citet{dpcbf} & \xmark & \xmark & \cmark & \xmark \\
+\rowcolor{black!6}\textbf{\sname{} (ours)} & this paper & \cmark & \cmark & \cmark & \cmark \\
+\bottomrule
+\end{tabular}
+\end{table}

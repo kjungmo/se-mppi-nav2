@@ -1,0 +1,40 @@
+\begin{table}[!htbp]
+\centering
+\caption{\textbf{Full per-family results} of the 2D benchmark ($N=50$ per cell). Rates in \%; time-to-goal and path length are means over successful trials only (\,$\pm$ 95\% CI half-width); minimum clearance is over all trials. Source: \texttt{experiments/results\_2d/summary.csv}.}
+\label{tab:full}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llcccccc}
+\toprule
+Family & Config & Succ. & Coll. & Timeout & Time-to-goal (s) & Path (m) & Min.\ clear.\ (m) \\
+\midrule
+\multirow{6}{*}{U-trap} & A & 0 & 0 & 100 & -- & -- & 0.33\stdv{0.00} \\
+ & C & 90 & 0 & 10 & 31.34\stdv{1.36} & 8.12\stdv{0.33} & 0.32\stdv{0.00} \\
+ & D & 0 & 0 & 100 & -- & -- & 0.33\stdv{0.00} \\
+ & E & 88 & 0 & 12 & 31.20\stdv{1.36} & 8.09\stdv{0.32} & 0.32\stdv{0.00} \\
+ & F & 88 & 0 & 12 & 31.20\stdv{1.36} & 8.09\stdv{0.32} & 0.32\stdv{0.00} \\
+ & F$^{-}$ & 0 & 0 & 100 & -- & -- & 0.33\stdv{0.00} \\
+\midrule
+\multirow{6}{*}{Clutter} & A & 52 & 0 & 48 & 15.23\stdv{0.49} & 5.81\stdv{0.17} & 0.36\stdv{0.02} \\
+ & C & 62 & 0 & 38 & 17.67\stdv{2.11} & 6.14\stdv{0.32} & 0.35\stdv{0.02} \\
+ & D & 52 & 0 & 48 & 15.23\stdv{0.49} & 5.81\stdv{0.17} & 0.36\stdv{0.02} \\
+ & E & 62 & 0 & 38 & 17.67\stdv{2.11} & 6.14\stdv{0.32} & 0.35\stdv{0.02} \\
+ & F & 62 & 0 & 38 & 17.67\stdv{2.11} & 6.14\stdv{0.32} & 0.35\stdv{0.02} \\
+ & F$^{-}$ & 52 & 0 & 48 & 15.23\stdv{0.49} & 5.81\stdv{0.17} & 0.36\stdv{0.02} \\
+\midrule
+\multirow{6}{*}{Dynamic} & A & 80 & 20 & 0 & 22.48\stdv{1.44} & 7.99\stdv{0.55} & 0.12\stdv{0.03} \\
+ & C & 76 & 20 & 4 & 21.87\stdv{1.36} & 7.75\stdv{0.53} & 0.13\stdv{0.03} \\
+ & D & 82 & 16 & 2 & 22.74\stdv{1.52} & 8.02\stdv{0.65} & 0.13\stdv{0.03} \\
+ & E & 78 & 18 & 4 & 21.77\stdv{1.25} & 7.56\stdv{0.47} & 0.13\stdv{0.03} \\
+ & F & 78 & 18 & 4 & 21.78\stdv{1.25} & 7.57\stdv{0.47} & 0.13\stdv{0.03} \\
+ & F$^{-}$ & 84 & 16 & 0 & 23.01\stdv{1.66} & 8.14\stdv{0.68} & 0.13\stdv{0.03} \\
+\midrule
+\multirow{6}{*}{Narrow-dyn.} & A & 0 & 18 & 82 & -- & -- & 0.22\stdv{0.04} \\
+ & C & 78 & 18 & 4 & 30.52\stdv{1.30} & 8.33\stdv{0.44} & 0.21\stdv{0.04} \\
+ & D & 0 & 32 & 68 & -- & -- & 0.19\stdv{0.04} \\
+ & E & 64 & 32 & 4 & 30.55\stdv{1.50} & 8.24\stdv{0.55} & 0.18\stdv{0.04} \\
+ & F & 62 & 32 & 6 & 30.36\stdv{1.51} & 8.11\stdv{0.50} & 0.18\stdv{0.04} \\
+ & F$^{-}$ & 0 & 32 & 68 & -- & -- & 0.19\stdv{0.04} \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,45 @@
+\documentclass{kjpaper}
+\usepackage[authoryear,sort&compress,round]{natbib}
+\bibliographystyle{abbrvnat}
+\usetikzlibrary{positioning,fit,arrows.meta,backgrounds,calc}
+\usepackage{pifont}
+% ---- project macros ----
+\newcommand{\sname}{SE-MPPI}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\textcolor{gray}{--}}
+\DeclareUrlCommand\code{\urlstyle{tt}}
+\renewcommand{\UrlBreaks}{\do\/\do\.\do\_\do\-\do\:}
+\setlength{\emergencystretch}{2em}
+\crefname{section}{Section}{Sections}
+\crefname{subsection}{Section}{Sections}
+\crefname{appendix}{Appendix}{Appendices}
+\crefname{subappendix}{Appendix}{Appendices}
+\crefname{table}{Table}{Tables}
+\crefname{figure}{Figure}{Figures}
+\crefname{equation}{Eq.}{Eqs.}
+\creflabelformat{equation}{#2(#1)#3}
+\crefname{assumption}{Assumption}{Assumptions}
+\crefname{proposition}{Proposition}{Propositions}
+\crefname{corollary}{Corollary}{Corollaries}
+\crefname{algorithm}{Algorithm}{Algorithms}
+\crefname{algocf}{Algorithm}{Algorithms}
+\title{\sname: Coordinating Online Local-Minima Escape with Control-Barrier-Function Safety in a Nav2-Native Controller}
+\correspondingauthor{kangjmo91@gmail.com}
+\paperurl{https://github.com/kjungmo/se-mppi-nav2}
+\author[1]{Jungmo Kang}
+\affil[1]{Independent Researcher, Seoul, Republic of Korea}
+\keywords{model predictive path integral control, control barrier functions, local minima, collision avoidance, ROS~2 Nav2}
+\begin{document}
+\input{sections/0_abstract}
+\maketitle
+\input{sections/1_introduction}
+\input{sections/2_related_works}
+\input{sections/3_method}
+\input{sections/4_experiments}
+\input{sections/5_discussion}
+\input{sections/6_conclusion}
+\bibliography{main}
+\clearpage
+\appendix
+\input{sections/appendix}
+\end{document}

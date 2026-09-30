@@ -1,0 +1,18 @@
+\begin{table}[t]
+\centering
+\caption{\textbf{Main result: success rate} in \% with Wilson 95\% confidence interval, $N=50$ paired scenarios per cell ($1{,}200$ trials). Best per family in bold. On the two trap families the escape configurations (C, E, F) separate from stock (A), CBF only (D) and the no-gap ablation (F$^{-}$), which all stay at $0\%$. Source: \texttt{experiments/results\_2d/summary.csv}.}
+\label{tab:main}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Configuration & U-trap & Clutter & Dynamic & Narrow-dyn. \\
+\midrule
+A\,stock MPPI & 0\,{\scriptsize[0,7]} & 52\,{\scriptsize[39,65]} & 80\,{\scriptsize[67,89]} & 0\,{\scriptsize[0,7]} \\
+C\,escape only & \textbf{90}\,{\scriptsize[79,96]} & \textbf{62}\,{\scriptsize[48,74]} & 76\,{\scriptsize[63,86]} & \textbf{78}\,{\scriptsize[65,87]} \\
+D\,CBF only & 0\,{\scriptsize[0,7]} & 52\,{\scriptsize[39,65]} & 82\,{\scriptsize[69,90]} & 0\,{\scriptsize[0,7]} \\
+E\,escape+CBF (indep.) & 88\,{\scriptsize[76,94]} & \textbf{62}\,{\scriptsize[48,74]} & 78\,{\scriptsize[65,87]} & 64\,{\scriptsize[50,76]} \\
+\textbf{F\,\sname{} (coord.)} & 88\,{\scriptsize[76,94]} & \textbf{62}\,{\scriptsize[48,74]} & 78\,{\scriptsize[65,87]} & 62\,{\scriptsize[48,74]} \\
+F$^{-}$\,F without gap search & 0\,{\scriptsize[0,7]} & 52\,{\scriptsize[39,65]} & \textbf{84}\,{\scriptsize[71,92]} & 0\,{\scriptsize[0,7]} \\
+\bottomrule
+\end{tabular}
+\end{table}

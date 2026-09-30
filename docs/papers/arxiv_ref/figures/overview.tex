@@ -1,0 +1,49 @@
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  blk/.style={draw=#1!70!black, fill=#1!10, rounded corners=2pt, thick,
+    text width=2.75cm, minimum height=1.0cm, align=center, inner sep=3pt},
+  blk/.default=blue,
+  io/.style={draw=gray, dashed, rounded corners=2pt, text width=1.75cm,
+    minimum height=0.8cm, align=center, inner sep=2pt},
+  arr/.style={-{Stealth[length=5pt]}, thick, draw=black!75},
+  sig/.style={-{Stealth[length=5pt]}, thick, dashed, draw=violet!80!black},
+  lab/.style={font=\scriptsize, fill=white, inner sep=1pt},
+]
+% inputs
+\node[io] (plan) at (0, 1.45) {global plan\\$\sigma$};
+\node[io] (odom) at (0, 0) {odometry\\$\mathbf{x}_t$};
+\node[io] (cmap) at (0,-1.45) {local\\costmap};
+% controller internals
+\node[blk=violet] (crit) at (3.35, 1.45) {\textbf{EscapeCritic}\\APF + gap attraction,\\injected only if $e_t{=}1$};
+\node[blk] (mppi) at (7.05, 1.45) {\textbf{MPPI optimizer}\\(Nav2, reused)\\$K$ rollouts, softmax};
+\node[blk=violet] (det) at (3.35, 0) {\textbf{Entrapment detector}\\stall of $k^{\max}_t$ $\Rightarrow e_t$};
+\node[blk=orange] (trk) at (3.35,-1.45) {\textbf{Obstacle tracker}\\clusters $\to(\mathbf{p}_o,R_o,\mathbf{v}_o)$};
+\node[blk=violet] (crd) at (7.05,-0.72) {\textbf{Coordinator}\\$\alpha_t$ from $e_t$ and TTC};
+\node[blk=teal] (cbf) at (10.75, 0) {\textbf{CBF-QP filter}\\look-ahead point,\\OSQP, brake if $\delta{>}\epsilon$};
+\node[io, text width=2.0cm] (cm) at (13.9, 0) {\texttt{collision\_}\\\texttt{monitor} $\to$ base};
+% container
+\begin{scope}[on background layer]
+\node[draw=black!60, fill=black!2, rounded corners=4pt, inner sep=7pt,
+  fit=(crit)(mppi)(det)(trk)(crd)(cbf),
+  label={[font=\footnotesize\bfseries, anchor=south west, inner sep=2pt]north west:\sname\ \texttt{SafeEscapeController} (\texttt{nav2\_core::Controller} plugin)}] (box) {};
+\end{scope}
+% edges
+\draw[arr] (plan) -- (crit);
+\draw[arr] (plan.north) -- ++(0,0.55) -| node[lab, pos=0.25] {path, goal} (mppi.north);
+\draw[arr] (odom) -- node[lab, above] {pose} (det);
+\draw[arr] (cmap) -- (trk);
+\draw[arr] (crit) -- node[lab, above] {costs} (mppi);
+\draw[sig] (det) -- node[lab, right] {$e_t$} (crit);
+\draw[sig] (det.east) -- ++(0.35,0) |- node[lab, pos=0.75, above] {$e_t$} (crd.west);
+\draw[arr] (trk.east) -- ++(0.35,0) |- (crd.west |- 0,-1.0);
+\draw[arr] (trk.south) -- ++(0,-0.35) -| node[lab, pos=0.25] {dynamic obstacles only} (cbf.south);
+\draw[arr] (mppi.east) -| node[lab, pos=0.3, above] {$\mathbf{u}^{\mathrm{nom}}_t$} (cbf.north);
+\draw[arr] (crd.east) -- ++(0.3,0) |- node[lab, pos=0.7, below] {$\alpha_t$} (cbf.west);
+\draw[arr] (cbf) -- node[lab, above] {$\mathbf{u}^{\mathrm{safe}}_t$} (cm);
+\end{tikzpicture}}
+\caption{\textbf{Overview of \sname.} The stock Nav2 MPPI optimizer produces a nominal command from sampled rollouts. A single entrapment signal $e_t$, computed from monotone progress along the global path (\cref{sec:detect}), switches the \texttt{EscapeCritic}'s repulsion and gap-attraction costs into the rollout scoring (\cref{sec:escape}) and tells the coordinator to raise the CBF gain $\alpha_t$ unless a tracked obstacle's time-to-collision is imminent (\cref{sec:coord}). The CBF-QP filter then projects the nominal command onto the barrier-safe set for the tracked dynamic obstacles (\cref{sec:cbf}); Nav2's \texttt{collision\_monitor} remains the last reactive layer.}
+\label{fig:overview}
+\end{figure}
