@@ -146,6 +146,17 @@ void SafeEscapeController::configure(
     }
   }
 
+  // The CBF filter's velocity box is MPPI's own limits (declared by the MPPI
+  // optimizer above), not separate hard-coded values: a robot configured with
+  // vx_max = 1.0 must not be clamped to 0.5 by the safety layer.
+  if (auto node = parent_.lock()) {
+    node->get_parameter(name_ + ".vx_max", fc_.v_max);
+    node->get_parameter(name_ + ".vx_min", fc_.v_min);
+    node->get_parameter(name_ + ".wz_max", fc_.w_max);
+    // Braking to a stop must stay feasible even when MPPI's vx_min > 0.
+    fc_.v_min = std::min(fc_.v_min, 0.0);
+  }
+
   pending_reapply_ = kAllConsumers;
   reapplyConfig();
   // MPPI runs post-set callbacks under its parameter lock, which the SE part
@@ -167,9 +178,30 @@ void SafeEscapeController::configure(
             result.reason = p.get_name() +
             " is read only at configure; set it while the controller_server is "
             "unconfigured (lifecycle cleanup), then configure";
-            break;
+            return result;
           }
         }
+        // MPPI's own velocity limits: follow them into the CBF box. The node
+        // value is not committed yet here, so take the incoming value.
+        std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+        for (const auto & p : params) {
+          if (p.get_type() != rclcpp::ParameterType::PARAMETER_DOUBLE) {
+            continue;
+          }
+          if (p.get_name() == name_ + ".vx_max") {
+            fc_.v_max = p.as_double();
+          } else if (p.get_name() == name_ + ".vx_min") {
+            fc_.v_min = std::min(p.as_double(), 0.0);  // stopping stays feasible
+          } else if (p.get_name() == name_ + ".wz_max") {
+            fc_.w_max = p.as_double();
+          } else {
+            continue;
+          }
+          pending_reapply_ |= kFilter;
+        }
+        // Apply here: rclcpp does not guarantee this callback runs before
+        // MPPI's handler (and its post-set re-apply).
+        reapplyConfig();
         return result;
       });
   }
