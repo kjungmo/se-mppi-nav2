@@ -179,6 +179,34 @@ TEST_F(ControllerBehaviour, CbfVelocityLimitsFollowMppiLimits)
   EXPECT_DOUBLE_EQ(controller_->cbf().v_min, 0.0);
 }
 
+// Review finding on the limits fix: Nav2's speed filter limits the controller
+// through setSpeedLimit(). MPPI scales its own limits; the CBF box must follow,
+// or the min-deviation QP could raise v up to vx_max inside a slow zone.
+TEST_F(ControllerBehaviour, CbfBoxFollowsNav2SpeedLimit)
+{
+  Options opt;
+  opt.overrides = {
+    rclcpp::Parameter("FollowPath.vx_max", 1.0),
+    rclcpp::Parameter("FollowPath.vx_min", -0.4),
+    rclcpp::Parameter("FollowPath.wz_max", 2.0)};
+  start(opt);
+
+  controller_->setSpeedLimit(25.0, true);  // percent of the maximum
+  EXPECT_DOUBLE_EQ(controller_->cbf().v_max, 0.25);
+  EXPECT_DOUBLE_EQ(controller_->cbf().v_min, -0.1);
+  EXPECT_DOUBLE_EQ(controller_->cbf().w_max, 0.5);
+
+  controller_->setSpeedLimit(0.5, false);  // absolute m/s: ratio 0.5 / vx_max
+  EXPECT_DOUBLE_EQ(controller_->cbf().v_max, 0.5);
+  EXPECT_DOUBLE_EQ(controller_->cbf().v_min, -0.2);
+  EXPECT_DOUBLE_EQ(controller_->cbf().w_max, 1.0);
+
+  controller_->setSpeedLimit(0.0, false);  // nav2_costmap_2d::NO_SPEED_LIMIT
+  EXPECT_DOUBLE_EQ(controller_->cbf().v_max, 1.0);
+  EXPECT_DOUBLE_EQ(controller_->cbf().v_min, -0.4);
+  EXPECT_DOUBLE_EQ(controller_->cbf().w_max, 2.0);
+}
+
 // Audit finding 8: the CBF disc used the footprint's INSCRIBED radius, so the
 // corners of a rectangular robot were outside the certified safe set.
 TEST_F(ControllerBehaviour, CbfRadiusCoversAPolygonFootprint)

@@ -67,6 +67,9 @@ public:
 
   void setPlan(const nav_msgs::msg::Path & path) override;
 
+  /// Nav2's speed filter: MPPI scales its limits, and the CBF box follows.
+  void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
+
   void cleanup() override;
   void activate() override;
   void deactivate() override;
@@ -111,7 +114,8 @@ protected:
   TrackerConfig tc_;          // cost_threshold / predictor model derived on re-apply
   MultiRobotConfig mc_;
   int cost_threshold_{253};
-  double cbf_robot_radius_{0.0};  // se_cbf_robot_radius; <= 0: footprint circumscribed radius
+  double cbf_robot_radius_{0.0};
+  double speed_limit_ratio_{1.0};  // Nav2 speed limit applied to the CBF box  // se_cbf_robot_radius; <= 0: footprint circumscribed radius
   std::string predict_model_{"cv"};
   unsigned pending_reapply_{0};
   bool config_applied_once_{false};  // warn on calibration resets after configure

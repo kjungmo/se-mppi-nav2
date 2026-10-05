@@ -266,6 +266,10 @@ void SafeEscapeController::reapplyConfig()
     robot_radius_ = cbf_robot_radius_ > 0.0 ? cbf_robot_radius_ :
       costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
     CbfConfig fc = fc_;
+    // Same scaling MPPI's Optimizer::setSpeedLimit applies to its limits.
+    fc.v_max = fc_.v_max * speed_limit_ratio_;
+    fc.v_min = fc_.v_min * speed_limit_ratio_;
+    fc.w_max = fc_.w_max * speed_limit_ratio_;
     fc.alpha = cc_.alpha_base;
     fc.robot_radius = robot_radius_;
     filter_.configure(fc);
@@ -302,6 +306,21 @@ void SafeEscapeController::reapplyConfig()
   }
   se_enabled_mirror_.store(se_enabled_);
   config_applied_once_ = true;
+}
+
+void SafeEscapeController::setSpeedLimit(const double & speed_limit, const bool & percentage)
+{
+  MPPIController::setSpeedLimit(speed_limit, percentage);
+  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+  if (speed_limit == 0.0) {  // nav2_costmap_2d::NO_SPEED_LIMIT
+    speed_limit_ratio_ = 1.0;
+  } else if (percentage) {
+    speed_limit_ratio_ = speed_limit / 100.0;
+  } else {
+    speed_limit_ratio_ = fc_.v_max > 0.0 ? speed_limit / fc_.v_max : 1.0;
+  }
+  pending_reapply_ |= kFilter;
+  reapplyConfig();
 }
 
 void SafeEscapeController::cleanup()
