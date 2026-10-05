@@ -36,7 +36,9 @@ controller_server:
       # Static/dynamic classification (SE-Predict N1, occupancy persistence).
       # A cluster on cells occupied >= se_static_min_frames is static: zero
       # velocity, excluded from the CBF (prevents wall-freeze on association
-      # jitter). ~1 s of frames at your controller rate is a good default.
+      # jitter). A "frame" is a local-costmap update the tracker has not seen
+      # yet (repeated grids are skipped), so ~1-2 s of costmap updates is a good
+      # default.
       se_classify_static: true
       se_static_min_frames: 10          # frames of occupancy before a cell is static
       se_static_fraction: 0.5           # static-cell fraction to call a cluster static

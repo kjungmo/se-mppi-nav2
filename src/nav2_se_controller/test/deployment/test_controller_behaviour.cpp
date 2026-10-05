@@ -47,6 +47,7 @@ public:
   double robotRadius() const {return robot_radius_;}
   bool entrapped() const {return prev_entrapped_;}
   std::size_t trackCount() const {return tracker_.trackCount();}
+  int cbfObstacles() const {return counters_.cbf_obstacles.load();}
 };
 
 struct Options
@@ -296,6 +297,30 @@ TEST_F(ControllerBehaviour, NewGoalResetsTheTaskState)
   EXPECT_EQ(controller_->trackCount(), 0u);
   step(0.5, 0.0);
   EXPECT_FALSE(controller_->entrapped());
+}
+
+// Audit finding 4: the tracker was advanced every control cycle with the
+// cycle's clock. When the controller runs faster than the costmap (typical:
+// 20 Hz controller, 5 Hz local costmap) the repeated grid gave every moving
+// obstacle zero velocity on the repeated cycles (and double velocity on the
+// others), so it dropped out of the CBF on those cycles.
+TEST_F(ControllerBehaviour, MovingObstacleStaysInTheCbfWhenTheCostmapIsSlower)
+{
+  start(Options{});
+  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  int missing = 0;
+  for (int k = 0; k < 24; ++k) {
+    if (k % 2 == 0) {  // the costmap updates every second control cycle
+      clearCostmap();
+      block(20 + k / 2, 60, 4);  // one 0.05 m cell per update, ~0.5 m/s
+    }
+    step(0.0, 0.0);
+    if (k >= 4 && controller_->cbfObstacles() == 0) {
+      ++missing;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  EXPECT_EQ(missing, 0) << "cycles on which the moving obstacle was not in the CBF";
 }
 
 }  // namespace

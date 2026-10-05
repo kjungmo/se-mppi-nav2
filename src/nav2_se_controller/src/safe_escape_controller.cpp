@@ -344,6 +344,8 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
   rebase_progress_ = false;
   detector_.reset();
   tracker_.reset();
+  last_grid_.clear();
+  last_tracked_.clear();
   furthest_progress_ = 0;
   has_stamp_ = false;
   if (shared_) {
@@ -357,6 +359,8 @@ void SafeEscapeController::reset()
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   detector_.reset();
   tracker_.reset();
+  last_grid_.clear();
+  last_tracked_.clear();
   multi_.reset();
   furthest_progress_ = 0;
   has_stamp_ = false;
@@ -487,7 +491,23 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   {
     nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
-    tracked = tracker_.update(*costmap, stamp);
+    const unsigned int w = costmap->getSizeInCellsX();
+    const unsigned int h = costmap->getSizeInCellsY();
+    const unsigned char * grid = costmap->getCharMap();
+    const bool unchanged = !last_grid_.empty() && w == last_grid_w_ && h == last_grid_h_ &&
+      costmap->getOriginX() == last_grid_ox_ && costmap->getOriginY() == last_grid_oy_ &&
+      std::equal(last_grid_.begin(), last_grid_.end(), grid);
+    if (unchanged) {
+      tracked = last_tracked_;  // same frame as last cycle: keep its estimates
+    } else {
+      tracked = tracker_.update(*costmap, stamp);
+      last_grid_.assign(grid, grid + static_cast<std::size_t>(w) * h);
+      last_grid_w_ = w;
+      last_grid_h_ = h;
+      last_grid_ox_ = costmap->getOriginX();
+      last_grid_oy_ = costmap->getOriginY();
+      last_tracked_ = tracked;
+    }
   }
   const std::size_t dropped = tracker_.droppedTrackCount();
   const std::uint64_t dropped_before = counters_.tracks_dropped.exchange(dropped);

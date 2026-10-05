@@ -181,6 +181,16 @@ protected:
   double goal_x_{0.0};
   double goal_y_{0.0};
   bool rebase_progress_{false};
+
+  // The tracker advances only when the costmap content changed: the control
+  // loop usually runs faster than the local costmap, and re-reading the same
+  // grid with a new stamp gave moving obstacles zero velocity.
+  std::vector<unsigned char> last_grid_;
+  unsigned int last_grid_w_{0};
+  unsigned int last_grid_h_{0};
+  double last_grid_ox_{0.0};
+  double last_grid_oy_{0.0};
+  std::vector<TrackedObstacle> last_tracked_;
   double prev_stamp_{0.0};
   bool has_stamp_{false};
   bool prev_entrapped_{false};  // for ENTER/EXIT escape-mode transition logs
