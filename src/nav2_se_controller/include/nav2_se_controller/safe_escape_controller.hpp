@@ -174,6 +174,13 @@ protected:
   // Single entrapment source of truth, shared with the EscapeCritic.
   std::shared_ptr<SharedEntrapment> shared_;
   std::size_t furthest_progress_{0};  // monotonic furthest reached path index
+  // Same-goal replanning (Nav2's default tree replans at 1 Hz) keeps the task
+  // state; only the progress index is re-anchored on the new path.
+  bool has_goal_{false};
+  std::string goal_frame_;
+  double goal_x_{0.0};
+  double goal_y_{0.0};
+  bool rebase_progress_{false};
   double prev_stamp_{0.0};
   bool has_stamp_{false};
   bool prev_entrapped_{false};  // for ENTER/EXIT escape-mode transition logs

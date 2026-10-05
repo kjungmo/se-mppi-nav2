@@ -324,7 +324,24 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
   MPPIController::setPlan(path);
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   global_plan_ = path;
-  // New reference path => reset the per-task escape/tracking state.
+  if (path.poses.empty()) {
+    return;
+  }
+  const auto & g = path.poses.back().pose.position;
+  const bool same_goal = has_goal_ && path.header.frame_id == goal_frame_ &&
+    std::hypot(g.x - goal_x_, g.y - goal_y_) < 1.0e-3;
+  has_goal_ = true;
+  goal_frame_ = path.header.frame_id;
+  goal_x_ = g.x;
+  goal_y_ = g.y;
+  if (same_goal) {
+    // Replanned path to the same goal: obstacle tracks and the stall count are
+    // world/task state, not path state. Only the path-index baseline changes.
+    rebase_progress_ = true;
+    return;
+  }
+  // New goal => reset the per-task escape/tracking state.
+  rebase_progress_ = false;
   detector_.reset();
   tracker_.reset();
   furthest_progress_ = 0;
@@ -343,6 +360,8 @@ void SafeEscapeController::reset()
   multi_.reset();
   furthest_progress_ = 0;
   has_stamp_ = false;
+  has_goal_ = false;
+  rebase_progress_ = false;
   if (shared_) {
     shared_->entrapped.store(false, std::memory_order_relaxed);
   }
@@ -413,6 +432,11 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   bool entrapped = prev_entrapped_;
   if (plan_frame_ok) {
     const std::size_t nearest = nearestPathIndex(global_plan_, plan_x, plan_y);
+    if (rebase_progress_) {
+      furthest_progress_ = nearest;
+      detector_.rebase(nearest);
+      rebase_progress_ = false;
+    }
     furthest_progress_ = std::max(furthest_progress_, nearest);
     entrapped = detector_.update(furthest_progress_);
 

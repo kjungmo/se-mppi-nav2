@@ -252,6 +252,52 @@ TEST_F(ControllerFrames, NoEscapeWhenParkedAtTheGoal)
   }
 }
 
+// Audit finding 5: every setPlan() reset the entrapment detector, the obstacle
+// tracker and its static-structure evidence. Nav2's default behaviour tree
+// replans at 1 Hz towards the same goal, so a stall longer than ~1 s was never
+// declared and tracks were rebuilt every second.
+TEST_F(ControllerBehaviour, ReplanToTheSameGoalKeepsStallCountAndTracks)
+{
+  Options opt;
+  opt.overrides = {rclcpp::Parameter("FollowPath.se_progress_stall_window", 5)};
+  start(opt);
+  block(80, 60, 4);  // an obstacle cluster away from the path
+  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  for (int k = 0; k < 3; ++k) {
+    step(0.5, 0.0);  // stuck
+  }
+  ASSERT_FALSE(controller_->entrapped());
+  ASSERT_EQ(controller_->trackCount(), 1u);
+
+  // Replanned path from the robot to the SAME goal.
+  controller_->setPlan(straightPath("map", 0.5, 2.0, 0.0));
+  EXPECT_EQ(controller_->trackCount(), 1u);
+  bool entrapped = false;
+  for (int k = 0; k < 4; ++k) {
+    step(0.5, 0.0);
+    entrapped = entrapped || controller_->entrapped();
+  }
+  EXPECT_TRUE(entrapped);
+}
+
+TEST_F(ControllerBehaviour, NewGoalResetsTheTaskState)
+{
+  Options opt;
+  opt.overrides = {rclcpp::Parameter("FollowPath.se_progress_stall_window", 5)};
+  start(opt);
+  block(80, 60, 4);
+  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  for (int k = 0; k < 8; ++k) {
+    step(0.5, 0.0);
+  }
+  ASSERT_TRUE(controller_->entrapped());
+
+  controller_->setPlan(straightPath("map", 0.5, 2.0, 1.0));  // different goal
+  EXPECT_EQ(controller_->trackCount(), 0u);
+  step(0.5, 0.0);
+  EXPECT_FALSE(controller_->entrapped());
+}
+
 }  // namespace
 
 int main(int argc, char ** argv)
