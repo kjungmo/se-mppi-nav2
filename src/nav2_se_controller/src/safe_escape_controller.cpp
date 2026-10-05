@@ -348,8 +348,14 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   }
   prev_stamp_ = stamp;
   has_stamp_ = true;
-  const std::vector<TrackedObstacle> tracked =
-    tracker_.update(*costmap_ros_->getCostmap(), stamp);
+  // The stock MPPI step released the costmap lock when it returned; take it
+  // again so the costmap update thread cannot rewrite cells mid-read.
+  std::vector<TrackedObstacle> tracked;
+  {
+    nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+    std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
+    tracked = tracker_.update(*costmap, stamp);
+  }
 
   // Keep only genuinely DYNAMIC obstacles for the CBF/coordinator: static walls
   // (large, ~zero velocity) are the MPPI/costmap's job, and would otherwise enter
