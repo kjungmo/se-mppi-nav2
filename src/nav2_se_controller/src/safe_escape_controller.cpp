@@ -195,6 +195,9 @@ void SafeEscapeController::configure(
   if (auto node = parent_.lock()) {
     diag_name_ = std::string(node->get_name()) + ": se_mppi (" + name_ + ")";
     diag_hardware_id_ = node->get_namespace();
+    double controller_frequency = 20.0;
+    node->get_parameter("controller_frequency", controller_frequency);
+    qp_failure_streak_.configure(controller_frequency);
     diag_pub_ = node->create_publisher<diagnostic_msgs::msg::DiagnosticArray>(
       "/diagnostics", rclcpp::QoS(10));
   }
@@ -314,6 +317,7 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
 void SafeEscapeController::reset()
 {
   MPPIController::reset();
+  qp_failure_streak_.clear();
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   detector_.reset();
   tracker_.reset();

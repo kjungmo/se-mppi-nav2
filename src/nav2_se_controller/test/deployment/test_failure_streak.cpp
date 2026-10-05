@@ -61,3 +61,30 @@ TEST(FailureStreak, IdleLoopDoesNotKeepAStaleStreak)
   EXPECT_TRUE(s.longerThan(2501 * kMs, kDuration, kStale));
   EXPECT_FALSE(s.longerThan(4000 * kMs, kDuration, kStale));  // no cycle for 1.5 s
 }
+
+TEST(FailureStreak, IdleGapStartsANewStreak)
+{
+  FailureStreak s;
+  s.configure(20.0);  // gap bound: 3 periods = 0.15 s
+  for (std::int64_t t = 1; t <= 2500; t += 50) {  // goal ends with 2.5 s of failure
+    s.record(true, t * kMs);
+  }
+  // Idle for 3 s, then one failing cycle on the next goal.
+  s.record(true, 5500 * kMs);
+  EXPECT_FALSE(s.longerThan(5501 * kMs, kDuration, kStale));
+  // Continuous failure from there still escalates.
+  for (std::int64_t t = 5550; t <= 7600; t += 50) {
+    s.record(true, t * kMs);
+  }
+  EXPECT_TRUE(s.longerThan(7601 * kMs, kDuration, kStale));
+}
+
+TEST(FailureStreak, ClearEndsTheStreak)
+{
+  FailureStreak s;
+  for (std::int64_t t = 1; t <= 2500; t += 50) {
+    s.record(true, t * kMs);
+  }
+  s.clear();
+  EXPECT_FALSE(s.longerThan(2501 * kMs, kDuration, kStale));
+}
