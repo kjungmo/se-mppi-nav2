@@ -78,6 +78,31 @@ public:
   }
 
   void emitDiagnostics() {publishDiagnostics();}
+
+  std::vector<double> conformalBounds() const {return tracker_.calibrator().qAll();}
+
+  // Feed the tracker directly: one obstacle accelerating along +x, so the
+  // constant-velocity predictions miss and the conformal bounds move.
+  void learnConformalBounds()
+  {
+    double x = 20.0;
+    double step = 1.0;
+    for (int k = 0; k < 40; ++k) {
+      nav2_costmap_2d::Costmap2D grid(120, 120, 0.05, -3.0, -3.0, 0);
+      const auto cx = static_cast<unsigned int>(x);
+      for (unsigned int i = cx; i < cx + 3; ++i) {
+        for (unsigned int j = 60; j < 63; ++j) {
+          grid.setCost(i, j, 254);
+        }
+      }
+      tracker_.update(grid, 0.1 * k);
+      x += step;
+      step += (k % 4 == 0) ? 1.0 : -0.5;
+      if (step < 0.5) {
+        step = 0.5;
+      }
+    }
+  }
 };
 
 class ControllerRuntime : public ::testing::Test
@@ -167,6 +192,8 @@ protected:
   bool controller_active_{false};
 };
 
+}  // namespace
+
 TEST_F(ControllerRuntime, RunsInsideStockMppiOptimizerWithEscapeCritic)
 {
   for (int i = 0; i < 5; ++i) {
@@ -246,6 +273,42 @@ TEST_F(ControllerRuntime, PublishesDiagnosticsStatus)
   EXPECT_TRUE(has_cycles);
 }
 
+TEST_F(ControllerRuntime, ConfigureOnlySwitchesAreRejected)
+{
+  for (const auto & p : {rclcpp::Parameter("FollowPath.se_multirobot", false),
+      rclcpp::Parameter("FollowPath.se_viz", false)})
+  {
+    const auto r = set(p);
+    EXPECT_FALSE(r.successful) << p.get_name();
+    EXPECT_NE(r.reason.find("configure"), std::string::npos) << r.reason;
+  }
+  EXPECT_TRUE(node_->get_parameter("FollowPath.se_multirobot").as_bool());
+  EXPECT_TRUE(node_->get_parameter("FollowPath.se_viz").as_bool());
+}
+
+TEST_F(ControllerRuntime, TrackerParameterChangeKeepsLearnedConformalBounds)
+{
+  controller_->learnConformalBounds();
+  const std::vector<double> learned = controller_->conformalBounds();
+  ASSERT_FALSE(learned.empty());
+  bool moved = false;
+  for (double q : learned) {
+    moved = moved || std::abs(q - 0.05) > 1e-9;
+  }
+  ASSERT_TRUE(moved) << "the fixture must move q away from se_conformal_initial_q";
+
+  // A non-conformal tracker parameter: the learned bounds stay.
+  ASSERT_TRUE(set(rclcpp::Parameter("FollowPath.se_track_history", 8)).successful);
+  EXPECT_EQ(controller_->tracker().history_length, 8);
+  EXPECT_EQ(controller_->conformalBounds(), learned);
+
+  // A conformal parameter: the calibration restarts from initial_q (with a WARN).
+  ASSERT_TRUE(set(rclcpp::Parameter("FollowPath.se_conformal_lr", 0.05)).successful);
+  for (double q : controller_->conformalBounds()) {
+    EXPECT_DOUBLE_EQ(q, 0.05);
+  }
+}
+
 TEST_F(ControllerRuntime, ParameterThatCannotBeReappliedIsRejected)
 {
   const auto r = set(
@@ -257,8 +320,6 @@ TEST_F(ControllerRuntime, ParameterThatCannotBeReappliedIsRejected)
     node_->get_parameter("FollowPath.se_neighbor_odom_topics").as_string_array(),
     std::vector<std::string>{"/probe_neighbor/odom"});
 }
-
-}  // namespace
 
 int main(int argc, char ** argv)
 {

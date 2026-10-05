@@ -169,6 +169,9 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_controller_runtime
     nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros diagnostic_msgs)
 
+  ament_add_gtest(test_failure_streak test/deployment/test_failure_streak.cpp)
+  target_include_directories(test_failure_streak PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
   ament_add_gtest(test_escape_critic_params test/deployment/test_escape_critic_params.cpp)
   target_link_libraries(test_escape_critic_params escape_critic)
   ament_target_dependencies(test_escape_critic_params

@@ -33,6 +33,7 @@
 #include "nav2_se_controller/entrapment_detector.hpp"
 #include "nav2_se_controller/entrapment_state.hpp"
 #include "nav2_se_controller/escape_safety_coordinator.hpp"
+#include "nav2_se_controller/failure_streak.hpp"
 #include "nav2_se_controller/multi_robot_coordinator.hpp"
 
 namespace nav2_se_controller
@@ -101,7 +102,8 @@ protected:
   enum Consumer : unsigned
   {
     kDetector = 1u, kCoordinator = 2u, kFilter = 4u, kTracker = 8u, kMulti = 16u,
-    kAllConsumers = 31u
+    kConformal = 32u,  // the tracker's conformal calibration must restart
+    kAllConsumers = 63u
   };
   EntrapmentConfig ec_;
   CoordinationConfig cc_;
@@ -111,6 +113,7 @@ protected:
   int cost_threshold_{253};
   std::string predict_model_{"cv"};
   unsigned pending_reapply_{0};
+  bool config_applied_once_{false};  // warn on calibration resets after configure
   void reapplyConfig();
 
   // Static parameters that cannot be re-applied at runtime; the set callback
@@ -162,6 +165,13 @@ protected:
   Counters counters_;
   std::uint64_t reported_forced_stops_{0};  // diagnostics timer only
   std::uint64_t reported_qp_failures_{0};   // diagnostics timer only
+  // Continuous CBF QP failure (forced v = 0 every cycle) for longer than this
+  // turns the status ERROR. 2 s is 40 cycles at Nav2's default 20 Hz: no
+  // longer a transient, and well inside the default progress-checker
+  // allowance (10 s), so the operator sees the cause before the goal aborts.
+  static constexpr double kQpFailureErrorAfterSec = 2.0;
+  FailureStreak qp_failure_streak_;
+  std::atomic<bool> se_enabled_mirror_{true};  // se_enabled_ for the timer, lock-free
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
   rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr
     diag_pub_;
