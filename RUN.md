@@ -109,7 +109,8 @@ source /opt/ros/jazzy/setup.bash
 cd se-mppi-nav2
 colcon build --packages-select nav2_se_controller
 source install/setup.bash
-colcon test --packages-select nav2_se_controller   # (선택) 164 checks green 확인
+colcon test --packages-select nav2_se_controller   # (선택) 테스트·린터 실행
+colcon test-result --verbose                         # 2026-10-05 기준 결과 270건, 실패 0, 건너뜀 43(cppcheck 2.21 자체 생략)
 ```
 
 ---

@@ -6,6 +6,7 @@ stays certified-safe.**
 
 Jung Mo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
 
+[![ci](https://github.com/kjungmo/se-mppi-nav2/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kjungmo/se-mppi-nav2/actions/workflows/ci.yml)
 [![ROS 2 Jazzy](https://img.shields.io/badge/ROS%202-Jazzy-22314E?logo=ros&logoColor=white)](https://docs.ros.org/en/jazzy/)
 [![Nav2](https://img.shields.io/badge/Nav2-controller%20plugin-1f6feb)](https://docs.nav2.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-D22128)](LICENSE)
@@ -98,7 +99,11 @@ coordinated gain.
    bounded gain schedule (see the paper's certified-safe-escape proposition).
 5. **82 C++ unit tests across 13 files** (gtest) plus linters, covering the
    entrapment detector, CBF filter, coordinator, tracker, gap search, repulsion,
-   path progress, and plugin loading.
+   path progress, and plugin loading. These are the algorithm unit tests in
+   `src/nav2_se_controller/test/test_*.cpp`, the count the paper cites.
+   Deployment tests live separately in `src/nav2_se_controller/test/deployment/`
+   (the controller on a lifecycle node inside the stock MPPI optimizer, runtime
+   parameter changes, `/diagnostics`).
 6. **Committed benchmark artifacts.** The 1,200-trial randomized 2D benchmark
    ships its raw per-trial CSV, summary, statistics, tables, and figures; a
    number guard (`scripts/check_paper_numbers.py`) asserts that every headline
@@ -146,6 +151,40 @@ colcon test --packages-select nav2_se_controller && colcon test-result --verbose
 > The `setup_ros2_env.sh` script prints the exact activation commands for your
 > environment on exit (root/container prefixes differ from the local non-root
 > prefix shown above).
+
+### Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to
+`main` and every pull request, in a minimal RoboStack Jazzy environment pinned in
+[`.github/environment-jazzy.yml`](.github/environment-jazzy.yml):
+
+- build `nav2_se_controller`, then `colcon test` (algorithm unit tests,
+  deployment tests, linters);
+- `scripts/check_simd_abi.py`: `libescape_critic` must use the same xtensor
+  storage type as the installed `libmppi_controller` (see the ABI note at the top
+  of `src/nav2_se_controller/CMakeLists.txt`);
+- `scripts/check_param_binding.py`: `controller_server` is lifecycle-configured
+  headless with `config/nav2_se_controller_params.yaml` and
+  `experiments/sim/nav2_se_loopback.yaml`, and every `FollowPath.*` key must be
+  declared and hold the YAML value (a few keys in the experiment YAML are known to
+  be unread and listed in the workflow; an injected unknown key must fail);
+- the deployment tests again under AddressSanitizer;
+- `scripts/check_paper_numbers.py` (default mode).
+
+### Runtime parameters and diagnostics
+
+All `se_*` parameters except `se_neighbor_odom_topics` can be changed at runtime
+(`ros2 param set /controller_server FollowPath.se_alpha_base 3.0`); the new value
+reaches the detector, coordinator, CBF filter or tracker before the next control
+cycle. A tracker parameter change reinitializes the conformal bounds.
+`se_neighbor_odom_topics` is read at configure only; a runtime set is rejected
+with a reason.
+
+The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
+`/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
+forced the forward velocity to zero in the last second (QP failure or barrier
+slack), and carries counters for those events, dropped obstacle tracks, escape
+entries and the current alpha. The same events are logged as throttled warnings.
 
 ## Quick start
 
