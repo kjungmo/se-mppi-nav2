@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Transform.h"
 #include "tf2/utils.hpp"
 
 #include "nav2_se_controller/path_progress.hpp"
@@ -368,21 +370,62 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   state.y = robot_pose.pose.position.y;
   state.yaw = tf2::getYaw(robot_pose.pose.orientation);
 
+  // 0. Frames: the global plan is in the planner's frame (e.g. map), the pose
+  //    in the local costmap's frame (e.g. odom). Express the robot in the plan
+  //    frame for progress and goal distance, and the goal in the robot frame
+  //    for the multi-robot coordinator.
+  double plan_x = state.x;
+  double plan_y = state.y;
+  Eigen::Vector2d goal_xy(state.x, state.y);
+  bool plan_frame_ok = true;
+  if (!global_plan_.poses.empty()) {
+    const auto & g = global_plan_.poses.back().pose.position;
+    goal_xy = Eigen::Vector2d(g.x, g.y);
+    const std::string & plan_frame = global_plan_.header.frame_id;
+    if (!plan_frame.empty() && plan_frame != robot_pose.header.frame_id) {
+      try {
+        const auto t = tf_buffer_->lookupTransform(
+          plan_frame, robot_pose.header.frame_id, tf2::TimePointZero);
+        const tf2::Transform plan_from_robot(
+          tf2::Quaternion(
+            t.transform.rotation.x, t.transform.rotation.y,
+            t.transform.rotation.z, t.transform.rotation.w),
+          tf2::Vector3(
+            t.transform.translation.x, t.transform.translation.y,
+            t.transform.translation.z));
+        const tf2::Vector3 r = plan_from_robot * tf2::Vector3(state.x, state.y, 0.0);
+        plan_x = r.x();
+        plan_y = r.y();
+        const tf2::Vector3 gr = plan_from_robot.inverse() * tf2::Vector3(g.x, g.y, 0.0);
+        goal_xy = Eigen::Vector2d(gr.x(), gr.y());
+      } catch (const tf2::TransformException & e) {
+        plan_frame_ok = false;
+        RCLCPP_WARN_THROTTLE(
+          logger_, steady_clock_, 2000,
+          "SE: no transform %s -> %s (%s); entrapment detection holds its state",
+          robot_pose.header.frame_id.c_str(), plan_frame.c_str(), e.what());
+      }
+    }
+  }
+
   // 1. Entrapment from MONOTONIC global-path progress (single source of truth).
   //    nearestPathIndex is non-monotonic, so track the furthest reached index.
-  const std::size_t nearest = nearestPathIndex(global_plan_, state.x, state.y);
-  furthest_progress_ = std::max(furthest_progress_, nearest);
-  bool entrapped = detector_.update(furthest_progress_);
+  bool entrapped = prev_entrapped_;
+  if (plan_frame_ok) {
+    const std::size_t nearest = nearestPathIndex(global_plan_, plan_x, plan_y);
+    furthest_progress_ = std::max(furthest_progress_, nearest);
+    entrapped = detector_.update(furthest_progress_);
 
-  // Suppress entrapment near the goal: a robot finishing at the path end would
-  // otherwise stall the progress signal and trigger a false escape.
-  if (!global_plan_.poses.empty()) {
-    const auto & goal = global_plan_.poses.back().pose.position;
-    const double dist_to_goal = std::hypot(goal.x - state.x, goal.y - state.y);
-    if (dist_to_goal <= goal_reached_tolerance_) {
-      entrapped = false;
-      detector_.reset();
-      furthest_progress_ = 0;
+    // Suppress entrapment near the goal: a robot finishing at the path end would
+    // otherwise stall the progress signal and trigger a false escape.
+    if (!global_plan_.poses.empty()) {
+      const auto & goal = global_plan_.poses.back().pose.position;
+      const double dist_to_goal = std::hypot(goal.x - plan_x, goal.y - plan_y);
+      if (dist_to_goal <= goal_reached_tolerance_) {
+        entrapped = false;
+        detector_.reset();
+        furthest_progress_ = 0;
+      }
     }
   }
   if (shared_) {
@@ -452,12 +495,6 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   //     the reciprocal budget share and run the deadlock/priority machine.
   MultiRobotCoordinator::Role role = MultiRobotCoordinator::Role::kNone;
   if (multirobot_enabled_) {
-    Eigen::Vector2d goal_xy(state.x, state.y);
-    if (!global_plan_.poses.empty()) {
-      goal_xy = Eigen::Vector2d(
-        global_plan_.poses.back().pose.position.x,
-        global_plan_.poses.back().pose.position.y);
-    }
     // Snapshot under the lock: the odom callbacks run on the executor thread.
     std::vector<NeighborRobot> neighbors;
     {

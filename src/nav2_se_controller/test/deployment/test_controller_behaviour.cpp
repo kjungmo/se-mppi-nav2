@@ -201,6 +201,57 @@ TEST_F(ControllerBehaviour, CbfRadiusCanBeSetExplicitly)
   EXPECT_DOUBLE_EQ(controller_->cbf().robot_radius, 0.42);
 }
 
+// Audit finding 2: the global plan arrives in the planner frame (map) while
+// the robot pose is in the local costmap frame (odom). Entrapment progress and
+// the near-goal suppression compared the two without a transform, so any
+// map->odom offset broke them.
+class ControllerFrames : public ControllerBehaviour
+{
+protected:
+  void SetUp() override
+  {
+    Options opt;
+    opt.costmap_frame = "odom";
+    opt.overrides = {rclcpp::Parameter("FollowPath.se_progress_stall_window", 5)};
+    start(opt);
+    // odom's origin sits at (10, 0) in map: p_map = p_odom + (10, 0).
+    geometry_msgs::msg::TransformStamped t;
+    t.header.frame_id = "map";
+    t.header.stamp = node_->now();
+    t.child_frame_id = "odom";
+    t.transform.translation.x = 10.0;
+    t.transform.rotation.w = 1.0;
+    tf_->setTransform(t, "test", true);
+    controller_->setPlan(straightPath("map", 10.0, 12.0, 0.0));
+  }
+};
+
+TEST_F(ControllerFrames, ProgressIsMeasuredInThePlanFrame)
+{
+  for (int k = 0; k < 30; ++k) {
+    step(0.05 * k, 0.0);  // odom; drives along the plan
+    EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
+  }
+}
+
+TEST_F(ControllerFrames, StallMidPathIsStillDetected)
+{
+  bool entrapped = false;
+  for (int k = 0; k < 20 && !entrapped; ++k) {
+    step(0.5, 0.0);  // odom; stuck a quarter of the way along the plan
+    entrapped = controller_->entrapped();
+  }
+  EXPECT_TRUE(entrapped);
+}
+
+TEST_F(ControllerFrames, NoEscapeWhenParkedAtTheGoal)
+{
+  for (int k = 0; k < 20; ++k) {
+    step(2.0, 0.0);  // odom (2, 0) == map (12, 0), the goal
+    EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
+  }
+}
+
 }  // namespace
 
 int main(int argc, char ** argv)
