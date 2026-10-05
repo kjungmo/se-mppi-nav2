@@ -193,13 +193,24 @@ python3 scripts/check_simd_abi.py \
   --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
   --critic ws/install/nav2_se_controller/lib/libescape_critic.so
 
-# Parameter binding (headless controller_server, lifecycle configure)
+# Parameter binding (headless controller_server, lifecycle configure), as in CI
 source ws/install/setup.bash
-ros2 run nav2_controller controller_server --ros-args \
-  --params-file src/nav2_se_controller/config/nav2_se_controller_params.yaml &
-python3 scripts/check_param_binding.py \
-  src/nav2_se_controller/config/nav2_se_controller_params.yaml --configure
-kill %1
+check() {  # check <yaml> [script args...]
+  ros2 run nav2_controller controller_server --ros-args --params-file "$1" &
+  python3 scripts/check_param_binding.py "$@" --configure; rc=$?
+  kill %1; wait; return $rc
+}
+check src/nav2_se_controller/config/nav2_se_controller_params.yaml
+check experiments/sim/nav2_se_loopback.yaml \
+  --allow-unread FollowPath.TwirlingCritic.enabled \
+  --allow-unread FollowPath.TwirlingCritic.twirling_cost_power \
+  --allow-unread FollowPath.TwirlingCritic.twirling_cost_weight \
+  --allow-unread FollowPath.AckermannConstraints.min_turning_r \
+  --allow-unread FollowPath.verbose
+# Negative fixture: must fail with "NOT DECLARED ... FollowPath.se_not_a_parameter"
+sed 's/^      se_enabled: true$/      se_enabled: true\n      se_not_a_parameter: 1.0/' \
+  src/nav2_se_controller/config/nav2_se_controller_params.yaml > /tmp/bogus.yaml
+check /tmp/bogus.yaml && echo "UNEXPECTED PASS"
 
 # AddressSanitizer build of the deployment tests (separate workspace)
 mkdir -p ws_asan/src && ln -s "$PWD/src/nav2_se_controller" ws_asan/src/
@@ -207,8 +218,8 @@ mkdir -p ws_asan/src && ln -s "$PWD/src/nav2_se_controller" ws_asan/src/
   "-DCMAKE_CXX_FLAGS=-fsanitize=address -fno-omit-frame-pointer -DEIGEN_MALLOC_ALREADY_ALIGNED=1" \
   "-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address" "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address" \
   && source install/setup.bash \
-  && ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=0:new_delete_type_mismatch=0:alloc_dealloc_mismatch=0 \
-     ./build/nav2_se_controller/test_controller_runtime)
+  && export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=0:new_delete_type_mismatch=0:alloc_dealloc_mismatch=0 \
+  && for t in test_controller_runtime test_controller_behaviour test_escape_critic_params; do ./build/nav2_se_controller/$t || exit 1; done)
 
 python3 scripts/check_paper_numbers.py
 ```
