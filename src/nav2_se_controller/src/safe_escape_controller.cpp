@@ -35,7 +35,11 @@ void SafeEscapeController::configure(
   // Reuse the full MPPI setup (optimizer, path handler, parameters handler).
   MPPIController::configure(parent, name, tf, costmap_ros);
 
-  robot_radius_ = costmap_ros_->getLayeredCostmap()->getInscribedRadius();
+  // CBF disc radius: the footprint's CIRCUMSCRIBED radius, so the certified
+  // disc covers the whole (padded) footprint; the inscribed radius left the
+  // corners of a rectangular robot outside it. se_cbf_robot_radius > 0
+  // overrides it (see reapplyConfig()).
+  robot_radius_ = costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
 
   // Parameters bound directly to members (se_enabled_, ...) stay Dynamic: MPPI's
   // ParametersHandler writes the member on a runtime set and the control loop
@@ -78,6 +82,7 @@ void SafeEscapeController::configure(
   bindConfig(fc_.lookahead, "se_cbf_lookahead", 0.2, kFilter);
   bindConfig(fc_.safety_margin, "se_cbf_safety_margin", 0.05, kFilter);
   bindConfig(fc_.slack_weight, "se_cbf_slack_weight", 1.0e3, kFilter);
+  bindConfig(cbf_robot_radius_, "se_cbf_robot_radius", 0.0, kFilter);
 
   bindConfig(cost_threshold_, "se_obstacle_cost_threshold", 253, kTracker);
   bindConfig(tc_.min_cells, "se_obstacle_min_cells", 2, kTracker);
@@ -246,6 +251,8 @@ void SafeEscapeController::reapplyConfig()
     coordinator_.configure(cc_);
   }
   if (pending & kFilter) {
+    robot_radius_ = cbf_robot_radius_ > 0.0 ? cbf_robot_radius_ :
+      costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
     CbfConfig fc = fc_;
     fc.alpha = cc_.alpha_base;
     fc.robot_radius = robot_radius_;

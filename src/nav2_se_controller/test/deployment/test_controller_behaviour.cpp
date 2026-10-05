@@ -176,6 +176,31 @@ TEST_F(ControllerBehaviour, CbfVelocityLimitsFollowMppiLimits)
   EXPECT_DOUBLE_EQ(controller_->cbf().v_min, 0.0);
 }
 
+// Audit finding 8: the CBF disc used the footprint's INSCRIBED radius, so the
+// corners of a rectangular robot were outside the certified safe set.
+TEST_F(ControllerBehaviour, CbfRadiusCoversAPolygonFootprint)
+{
+  Options opt;
+  opt.footprint = "[[0.3, 0.2], [0.3, -0.2], [-0.3, -0.2], [-0.3, 0.2]]";
+  start(opt);
+  // The costmap pads the footprint (footprint_padding), so take its value and
+  // check it covers the corners.
+  const double circumscribed = costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
+  ASSERT_GE(circumscribed, std::hypot(0.3, 0.2));
+  EXPECT_NEAR(controller_->robotRadius(), circumscribed, 1e-6);
+  EXPECT_NEAR(controller_->cbf().robot_radius, circumscribed, 1e-6);
+}
+
+TEST_F(ControllerBehaviour, CbfRadiusCanBeSetExplicitly)
+{
+  Options opt;
+  opt.footprint = "[[0.3, 0.2], [0.3, -0.2], [-0.3, -0.2], [-0.3, 0.2]]";
+  opt.overrides = {rclcpp::Parameter("FollowPath.se_cbf_robot_radius", 0.42)};
+  start(opt);
+  EXPECT_DOUBLE_EQ(controller_->robotRadius(), 0.42);
+  EXPECT_DOUBLE_EQ(controller_->cbf().robot_radius, 0.42);
+}
+
 }  // namespace
 
 int main(int argc, char ** argv)

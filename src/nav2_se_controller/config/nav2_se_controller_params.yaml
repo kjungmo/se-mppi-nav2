@@ -29,6 +29,7 @@ controller_server:
       se_cbf_lookahead: 0.2             # [m] look-ahead point distance (> 0)
       se_cbf_safety_margin: 0.05        # [m] extra clearance per obstacle
       se_cbf_slack_weight: 1000.0       # QP slack penalty (feasibility)
+      se_cbf_robot_radius: 0.0          # [m] CBF disc radius; <= 0: footprint circumscribed radius
       # Dynamic obstacle tracker (costmap clustering + CV velocity).
       se_obstacle_cost_threshold: 253   # INSCRIBED_INFLATED_OBSTACLE
       se_obstacle_min_cells: 2

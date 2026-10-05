@@ -109,6 +109,7 @@ protected:
   TrackerConfig tc_;          // cost_threshold / predictor model derived on re-apply
   MultiRobotConfig mc_;
   int cost_threshold_{253};
+  double cbf_robot_radius_{0.0};  // se_cbf_robot_radius; <= 0: footprint circumscribed radius
   std::string predict_model_{"cv"};
   unsigned pending_reapply_{0};
   void reapplyConfig();
