@@ -374,8 +374,12 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
     return;
   }
   const auto & g = path.poses.back().pose.position;
+  // Same goal: same frame, endpoint within two costmap cells. Planners with a
+  // goal tolerance, or replanning around a blocked goal, move the endpoint
+  // slightly between replans; that is still the same task.
+  const double same_goal_tolerance = 2.0 * costmap_ros_->getCostmap()->getResolution();
   const bool same_goal = has_goal_ && path.header.frame_id == goal_frame_ &&
-    std::hypot(g.x - goal_x_, g.y - goal_y_) < 1.0e-3;
+    std::hypot(g.x - goal_x_, g.y - goal_y_) <= same_goal_tolerance;
   has_goal_ = true;
   goal_frame_ = path.header.frame_id;
   goal_x_ = g.x;

@@ -311,6 +311,25 @@ TEST_F(ControllerBehaviour, ReplanToTheSameGoalKeepsStallCountAndTracks)
   EXPECT_TRUE(entrapped);
 }
 
+// Review finding: a 1 mm tolerance treated every replan of a planner with a
+// goal tolerance (or a blocked goal) as a new goal. The tolerance is now two
+// costmap cells; the frame must match too.
+TEST_F(ControllerBehaviour, GoalMovedByOneCellIsTheSameGoal)
+{
+  Options opt;
+  start(opt);
+  block(80, 60, 4);
+  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  step(0.5, 0.0);
+  ASSERT_EQ(controller_->trackCount(), 1u);
+
+  controller_->setPlan(straightPath("map", 0.5, 2.05, 0.0));  // endpoint moved 0.05 m
+  EXPECT_EQ(controller_->trackCount(), 1u) << "one-cell goal jitter must not reset";
+
+  controller_->setPlan(straightPath("odom", 0.5, 2.05, 0.0));  // same numbers, other frame
+  EXPECT_EQ(controller_->trackCount(), 0u) << "a goal in another frame is a new goal";
+}
+
 TEST_F(ControllerBehaviour, NewGoalResetsTheTaskState)
 {
   Options opt;
