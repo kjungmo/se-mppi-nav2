@@ -125,6 +125,7 @@ void SafeEscapeController::configure(
           node->create_subscription<nav_msgs::msg::Odometry>(
             topics[i], rclcpp::SensorDataQoS(),
             [this, i](nav_msgs::msg::Odometry::ConstSharedPtr msg) {
+              std::lock_guard<std::mutex> lock(neighbors_mutex_);
               neighbors_[i].position = Eigen::Vector2d(
                 msg->pose.pose.position.x, msg->pose.pose.position.y);
               neighbors_[i].velocity = Eigen::Vector2d(
@@ -290,10 +291,16 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
         global_plan_.poses.back().pose.position.x,
         global_plan_.poses.back().pose.position.y);
     }
+    // Snapshot under the lock: the odom callbacks run on the executor thread.
+    std::vector<NeighborRobot> neighbors;
+    {
+      std::lock_guard<std::mutex> lock(neighbors_mutex_);
+      neighbors = neighbors_;
+    }
     role = multi_.update(
       my_priority_id_, state, goal_xy, cmd.twist.linear.x, entrapped,
-      neighbors_);
-    multi_.markNeighbors(obstacles, neighbors_);
+      neighbors);
+    multi_.markNeighbors(obstacles, neighbors);
   }
 
   // 3. Coordinate the CBF gain (raise it to permit certified-safe escape,

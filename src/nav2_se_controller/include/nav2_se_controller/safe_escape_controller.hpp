@@ -16,6 +16,7 @@
 #define NAV2_SE_CONTROLLER__SAFE_ESCAPE_CONTROLLER_HPP_
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -105,6 +106,7 @@ protected:
   int my_priority_id_{0};
   MultiRobotCoordinator multi_;
   std::vector<NeighborRobot> neighbors_;
+  std::mutex neighbors_mutex_;  // odom callbacks (executor thread) vs the control loop
   std::vector<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr>
   neighbor_subs_;
 
