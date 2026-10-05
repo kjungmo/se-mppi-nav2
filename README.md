@@ -201,6 +201,7 @@ To reproduce the CI jobs locally (from the repository root):
 
 ```bash
 micromamba create -y -n se_ci -f .github/environment-jazzy.yml
+# For the Humble job, use .github/environment-humble.yml instead.
 micromamba activate se_ci
 export AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1
 mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/
@@ -213,7 +214,8 @@ python3 scripts/check_simd_abi.py \
   --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
   --critic ws/install/nav2_se_controller/lib/libescape_critic.so
 
-# Parameter binding (headless controller_server, lifecycle configure), as in CI
+# Parameter binding (headless controller_server, lifecycle configure), as in CI.
+# The Humble job runs only the shipped YAML and the negative fixture.
 source ws/install/setup.bash
 check() {  # check <yaml> [script args...]
   ros2 run nav2_controller controller_server --ros-args --params-file "$1" &
