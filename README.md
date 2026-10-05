@@ -134,13 +134,20 @@ A GPU workstation is recommended: the live Gazebo stack needs hardware rendering
 **ROS 2 Humble.** The controller also builds and passes its unit, deployment and
 lint tests on Humble (Nav2 1.1.x, `nav2_mppi_controller` 1.1.20), checked in CI
 with the RoboStack environment in
-[`.github/environment-humble.yml`](.github/environment-humble.yml). **SE-MPPI's
-control performance on Humble's MPPI has not been evaluated**: every reported
-result comes from the Jazzy stack or the 2D benchmark. Two Humble API differences
-are handled at compile time (`NAV2_SE_CONTROLLER_HUMBLE_API`): Humble's
-`controller_server` never calls the controller's `reset()` (the per-goal reset in
-`setPlan()` still applies), and the escape critic takes the goal bearing from the
-end of the pruned path because Humble's `CriticData` has no goal.
+[`.github/environment-humble.yml`](.github/environment-humble.yml). What differs
+on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
+
+- Humble's `controller_server` never calls the controller's `reset()`. On this
+  branch every `setPlan()` resets the per-goal state, so a new task still starts
+  clean; `reset()`'s own clearing (on goal end or cancel) does not happen.
+- The escape critic's gap search needs a goal bearing. Humble's `CriticData` has
+  no goal, so it uses the end of the pruned local path (MPPI's path window), not
+  the navigation goal. On a curved or long path the two can point in different directions, so
+  the gap choice is not equivalent to Jazzy's.
+- **SE-MPPI's control performance on Humble's MPPI 1.1.x has not been
+  evaluated**: every reported result comes from the Jazzy stack or the 2D
+  benchmark.
+
 See [`RUN.md`](RUN.md) for the full run guide and troubleshooting.
 
 ## Install and build

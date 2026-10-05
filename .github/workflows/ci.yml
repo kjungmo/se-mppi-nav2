@@ -204,11 +204,15 @@ jobs:
               > server.log 2>&1 &
             pid=$!
             status=0
-            timeout 90 python3 scripts/check_param_binding.py "$1" --configure || status=$?
+            timeout 90 python3 scripts/check_param_binding.py "$1" --configure \
+              > binding.log 2>&1 || status=$?
             stop "$pid"
+            cat binding.log
             if [ "$2" = pass ] && [ "$status" -ne 0 ]; then cat server.log; exit 1; fi
-            if [ "$2" = fail ] && [ "$status" -eq 0 ]; then
-              echo "the check passed a YAML with an undeclared key"; exit 1
+            if [ "$2" = fail ]; then
+              [ "$status" -ne 0 ] || { echo "the check passed a YAML with an undeclared key"; exit 1; }
+              grep -q "NOT DECLARED by /controller_server: FollowPath.se_not_a_parameter" binding.log \
+                || { echo "the check failed, but not on the injected key"; exit 1; }
             fi
           }
           # The experiment YAMLs target Jazzy's stack and are checked in the Jazzy job.
