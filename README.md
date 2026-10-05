@@ -104,6 +104,9 @@ coordinated gain.
    Deployment tests live separately in `src/nav2_se_controller/test/deployment/`
    (the controller on a lifecycle node inside the stock MPPI optimizer, runtime
    parameter changes, `/diagnostics`).
+   The paper's results and its "82 TEST cases in 13 files" refer to commit
+   b21b0a5; deployment tests under `test/deployment/` and later fixes are not part
+   of the evaluated code.
 6. **Committed benchmark artifacts.** The 1,200-trial randomized 2D benchmark
    ships its raw per-trial CSV, summary, statistics, tables, and figures; a
    number guard (`scripts/check_paper_numbers.py`) asserts that every headline
@@ -171,20 +174,83 @@ colcon test --packages-select nav2_se_controller && colcon test-result --verbose
 - the deployment tests again under AddressSanitizer;
 - `scripts/check_paper_numbers.py` (default mode).
 
+The lint tests include cppcheck: CI sets `AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1`,
+without which `ament_cppcheck` skips cppcheck 2.x and reports its cases as skipped.
+
+To reproduce the CI jobs locally (from the repository root):
+
+```bash
+micromamba create -y -n se_ci -f .github/environment-jazzy.yml
+micromamba activate se_ci
+export AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1
+mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/
+(cd ws && colcon build --packages-select nav2_se_controller \
+  && colcon test --packages-select nav2_se_controller \
+  && colcon test-result --verbose --test-result-base build/nav2_se_controller)
+
+# ABI guard
+python3 scripts/check_simd_abi.py \
+  --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
+  --critic ws/install/nav2_se_controller/lib/libescape_critic.so
+
+# Parameter binding (headless controller_server, lifecycle configure)
+source ws/install/setup.bash
+ros2 run nav2_controller controller_server --ros-args \
+  --params-file src/nav2_se_controller/config/nav2_se_controller_params.yaml &
+python3 scripts/check_param_binding.py \
+  src/nav2_se_controller/config/nav2_se_controller_params.yaml --configure
+kill %1
+
+# AddressSanitizer build of the deployment tests (separate workspace)
+mkdir -p ws_asan/src && ln -s "$PWD/src/nav2_se_controller" ws_asan/src/
+(cd ws_asan && colcon build --packages-select nav2_se_controller --cmake-args \
+  "-DCMAKE_CXX_FLAGS=-fsanitize=address -fno-omit-frame-pointer -DEIGEN_MALLOC_ALREADY_ALIGNED=1" \
+  "-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address" "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address" \
+  && source install/setup.bash \
+  && ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=0:new_delete_type_mismatch=0:alloc_dealloc_mismatch=0 \
+     ./build/nav2_se_controller/test_controller_runtime)
+
+python3 scripts/check_paper_numbers.py
+```
+
 ### Runtime parameters and diagnostics
 
-All `se_*` parameters except `se_neighbor_odom_topics` can be changed at runtime
-(`ros2 param set /controller_server FollowPath.se_alpha_base 3.0`); the new value
-reaches the detector, coordinator, CBF filter or tracker before the next control
-cycle. A tracker parameter change reinitializes the conformal bounds.
-`se_neighbor_odom_topics` is read at configure only; a runtime set is rejected
-with a reason.
+Runtime-settable (`ros2 param set /controller_server FollowPath.se_alpha_base 3.0`);
+the new value reaches its consumer before the next control cycle:
+
+- controller: `se_enabled`, `se_goal_reached_tolerance`,
+  `se_dynamic_speed_threshold`, `se_max_obstacle_radius`;
+- entrapment detector: `se_progress_stall_window`;
+- coordinator: `se_alpha_base` (also the CBF filter's default gain),
+  `se_alpha_escape`, `se_ttc_override_threshold`, `se_q_trust_threshold`;
+- CBF filter: `se_cbf_lookahead`, `se_cbf_safety_margin`, `se_cbf_slack_weight`;
+- tracker: `se_obstacle_cost_threshold`, `se_obstacle_min_cells`,
+  `se_obstacle_association_gate`, `se_obstacle_max_speed`, `se_classify_static`,
+  `se_static_min_frames`, `se_static_fraction`, `se_predict_horizon`,
+  `se_track_history`, `se_track_max_missed`, `se_predict_model`, `se_conformal`
+  (the learned conformal bounds are kept);
+- tracker, restarting the conformal calibration from `se_conformal_initial_q`
+  (logged as a warning): `se_predict_steps`, `se_predict_dt`,
+  `se_conformal_coverage`, `se_conformal_lr`, `se_conformal_initial_q`,
+  `se_conformal_max_q`;
+- multi-robot (only declared when `se_multirobot` is true): `se_priority_id`,
+  `se_neighbor_match_radius`, `se_reciprocal_lambda`, `se_pass_lambda`,
+  `se_yield_lambda`, `se_deadlock_range`, `se_deadlock_speed`, `se_yield_v_max`.
+
+Configure-only (a runtime set is rejected with a reason; change them while the
+`controller_server` is unconfigured, then configure): `se_multirobot`, `se_viz`,
+`se_neighbor_odom_topics`.
 
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
 forced the forward velocity to zero in the last second (QP failure or barrier
-slack), and carries counters for those events, dropped obstacle tracks, escape
+slack), and ERROR when the QP has failed on every cycle for more than 2 s (40
+cycles at Nav2's default 20 Hz, inside the default 10 s progress-checker
+allowance). It carries counters for those events, dropped obstacle tracks, escape
 entries and the current alpha. The same events are logged as throttled warnings.
+The status name uses the node name, not its namespace (`hardware_id` holds the
+namespace): in a multi-robot setup, namespace or remap `/diagnostics` per robot,
+or read `hardware_id`, to tell the robots apart.
 
 ## Quick start
 
