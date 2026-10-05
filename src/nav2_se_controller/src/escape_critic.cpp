@@ -28,9 +28,11 @@ void EscapeCritic::initialize()
 {
   auto getParam = parameters_handler_->getParamGetter(name_);
 
-  nav2_se_controller::EntrapmentConfig cfg;
-  getParam(cfg.progress_stall_window, "progress_stall_window", 30);
-  detector_.configure(cfg);
+  getParam(stall_cfg_.progress_stall_window, "progress_stall_window", 30);
+  detector_.configure(stall_cfg_);
+  // A runtime set writes stall_cfg_; re-apply it. MPPI runs post-set callbacks
+  // under its parameter lock, which is also held while critics score.
+  parameters_handler_->addPostCallback([this]() {detector_.configure(stall_cfg_);});
 
   // Rendezvous with the controller's single entrapment source (keyed by the
   // parent controller name); falls back to detector_ when not driven.
@@ -53,7 +55,7 @@ void EscapeCritic::initialize()
   RCLCPP_INFO(
     logger_,
     "EscapeCritic[%s] initialized (M1.x): enabled=%d stall_window=%d mode=%s",
-    name_.c_str(), enabled_, cfg.progress_stall_window,
+    name_.c_str(), enabled_, stall_cfg_.progress_stall_window,
     use_apf_ ? "APF" : "cost-proxy");
 }
 

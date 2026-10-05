@@ -37,86 +37,93 @@ void SafeEscapeController::configure(
 
   robot_radius_ = costmap_ros_->getLayeredCostmap()->getInscribedRadius();
 
+  // Parameters bound directly to members (se_enabled_, ...) stay Dynamic: MPPI's
+  // ParametersHandler writes the member on a runtime set and the control loop
+  // reads it under the same lock. The algorithm configs are members too
+  // (ec_, cc_, fc_, tc_, mc_ and the raw values they derive from) and are
+  // re-applied to their consumers by reapplyConfig() from MPPI's post-set
+  // callback. Binding them to configure()-local structs, as before, made a
+  // runtime `ros2 param set` write through a dangling stack reference while
+  // reporting success.
   auto getParam = parameters_handler_->getParamGetter(name_);
+  // Bind a config field: initial value via MPPI (declared Static so MPPI keeps
+  // no reference of its own), runtime changes via our callback, which writes
+  // the member field and marks the consumers to re-apply.
+  auto bindConfig = [this, &getParam](auto & field, const std::string & key,
+    auto default_value, unsigned consumers) {
+    using FieldT = std::decay_t<decltype(field)>;
+    using ParamT = decltype(default_value);
+    parameters_handler_->addDynamicParamCallback(
+      name_ + "." + key,
+      [this, &field, consumers](const rclcpp::Parameter & p) {
+        field = static_cast<FieldT>(p.get_value<ParamT>());
+        pending_reapply_ |= consumers;
+      });
+    getParam(field, key, std::move(default_value), mppi::ParameterType::Static);
+  };
+
   getParam(se_enabled_, "se_enabled", true);
   getParam(goal_reached_tolerance_, "se_goal_reached_tolerance", 0.5);
 
   getParam(dynamic_speed_threshold_, "se_dynamic_speed_threshold", 0.1);
   getParam(max_dynamic_radius_, "se_max_obstacle_radius", 1.0);
 
-  EntrapmentConfig ec;
-  getParam(ec.progress_stall_window, "se_progress_stall_window", 30);
-  detector_.configure(ec);
+  bindConfig(ec_.progress_stall_window, "se_progress_stall_window", 30, kDetector);
 
-  CoordinationConfig cc;
-  getParam(cc.alpha_base, "se_alpha_base", 2.0);
-  getParam(cc.alpha_escape, "se_alpha_escape", 6.0);
-  getParam(cc.ttc_override_threshold, "se_ttc_override_threshold", 1.5);
-  getParam(cc.q_trust_threshold, "se_q_trust_threshold", 0.25);
-  coordinator_.configure(cc);
+  bindConfig(cc_.alpha_base, "se_alpha_base", 2.0, kCoordinator | kFilter);
+  bindConfig(cc_.alpha_escape, "se_alpha_escape", 6.0, kCoordinator);
+  bindConfig(cc_.ttc_override_threshold, "se_ttc_override_threshold", 1.5, kCoordinator);
+  bindConfig(cc_.q_trust_threshold, "se_q_trust_threshold", 0.25, kCoordinator);
 
-  CbfConfig fc;
-  fc.alpha = cc.alpha_base;
-  getParam(fc.lookahead, "se_cbf_lookahead", 0.2);
-  getParam(fc.safety_margin, "se_cbf_safety_margin", 0.05);
-  getParam(fc.slack_weight, "se_cbf_slack_weight", 1.0e3);
-  fc.robot_radius = robot_radius_;
-  filter_.configure(fc);
+  bindConfig(fc_.lookahead, "se_cbf_lookahead", 0.2, kFilter);
+  bindConfig(fc_.safety_margin, "se_cbf_safety_margin", 0.05, kFilter);
+  bindConfig(fc_.slack_weight, "se_cbf_slack_weight", 1.0e3, kFilter);
 
-  TrackerConfig tc;
-  int cost_threshold = 253;
-  getParam(cost_threshold, "se_obstacle_cost_threshold", 253);
-  // Costmap occupied values are 0..254 (LETHAL); clamp to that range so a
-  // threshold can never be set so high (255 == NO_INFORMATION) that no real
-  // obstacle cell ever qualifies and obstacle detection is silently disabled.
-  tc.cost_threshold = static_cast<unsigned char>(std::clamp(cost_threshold, 0, 254));
-  getParam(tc.min_cells, "se_obstacle_min_cells", 2);
-  getParam(tc.association_gate, "se_obstacle_association_gate", 0.6);
-  getParam(tc.max_speed, "se_obstacle_max_speed", 2.0);
+  bindConfig(cost_threshold_, "se_obstacle_cost_threshold", 253, kTracker);
+  bindConfig(tc_.min_cells, "se_obstacle_min_cells", 2, kTracker);
+  bindConfig(tc_.association_gate, "se_obstacle_association_gate", 0.6, kTracker);
+  bindConfig(tc_.max_speed, "se_obstacle_max_speed", 2.0, kTracker);
   // SE-Predict N1: occupancy-persistence static/dynamic classification.
-  getParam(tc.classify_static, "se_classify_static", true);
-  getParam(tc.static_min_frames, "se_static_min_frames", 10);
-  getParam(tc.static_fraction_threshold, "se_static_fraction", 0.5);
+  bindConfig(tc_.classify_static, "se_classify_static", true, kTracker);
+  bindConfig(tc_.static_min_frames, "se_static_min_frames", 10, kTracker);
+  bindConfig(tc_.static_fraction_threshold, "se_static_fraction", 0.5, kTracker);
   // SE-Predict N2: persistent tracks + short-horizon prediction (the horizon
   // is published on TrackedObstacle; the CBF consumes it from N3).
-  getParam(tc.predict_horizon, "se_predict_horizon", true);
-  getParam(tc.history_length, "se_track_history", 10);
-  getParam(tc.max_missed_frames, "se_track_max_missed", 3);
+  bindConfig(tc_.predict_horizon, "se_predict_horizon", true, kTracker);
+  bindConfig(tc_.history_length, "se_track_history", 10, kTracker);
+  bindConfig(tc_.max_missed_frames, "se_track_max_missed", 3, kTracker);
   // Default "cv": CVCA wins on accelerating/turning agents but loses on
   // oscillatory ones; flip after N3's conformal bound absorbs model misfit.
-  std::string predict_model;
-  getParam(predict_model, "se_predict_model", std::string("cv"));
-  tc.predictor.model = (predict_model == "cvca") ?
-    PredictorConfig::Model::kConstantAcceleration :
-    PredictorConfig::Model::kConstantVelocity;
-  getParam(tc.predictor.horizon_steps, "se_predict_steps", 15);
-  getParam(tc.predictor.horizon_dt, "se_predict_dt", 0.1);
-  tc.predictor.max_speed = tc.max_speed;
+  bindConfig(predict_model_, "se_predict_model", std::string("cv"), kTracker);
+  bindConfig(tc_.predictor.horizon_steps, "se_predict_steps", 15, kTracker);
+  bindConfig(tc_.predictor.horizon_dt, "se_predict_dt", 0.1, kTracker);
   // SE-Predict N3: conformal calibration -> time-varying CBF radius + the
   // coordinator's prediction-trust gate.
-  getParam(tc.conformal, "se_conformal", true);
-  getParam(tc.conformal_cfg.coverage, "se_conformal_coverage", 0.9);
-  getParam(tc.conformal_cfg.learning_rate, "se_conformal_lr", 0.02);
-  getParam(tc.conformal_cfg.initial_q, "se_conformal_initial_q", 0.05);
-  getParam(tc.conformal_cfg.max_q, "se_conformal_max_q", 0.40);
-  tracker_.configure(tc);
+  bindConfig(tc_.conformal, "se_conformal", true, kTracker);
+  bindConfig(tc_.conformal_cfg.coverage, "se_conformal_coverage", 0.9, kTracker);
+  bindConfig(tc_.conformal_cfg.learning_rate, "se_conformal_lr", 0.02, kTracker);
+  bindConfig(tc_.conformal_cfg.initial_q, "se_conformal_initial_q", 0.05, kTracker);
+  bindConfig(tc_.conformal_cfg.max_q, "se_conformal_max_q", 0.40, kTracker);
 
   // Multi-SE-MPPI N2: reciprocal coordination with neighbor robots.
   getParam(multirobot_enabled_, "se_multirobot", false);
   if (multirobot_enabled_) {
-    MultiRobotConfig mc;
-    getParam(mc.match_radius, "se_neighbor_match_radius", 0.5);
-    getParam(mc.reciprocal_lambda, "se_reciprocal_lambda", 0.5);
-    getParam(mc.pass_lambda, "se_pass_lambda", 0.7);
-    getParam(mc.yield_lambda, "se_yield_lambda", 0.3);
-    getParam(mc.deadlock_range, "se_deadlock_range", 1.6);
-    getParam(mc.deadlock_speed, "se_deadlock_speed", 0.12);
-    getParam(mc.yield_v_max, "se_yield_v_max", 0.10);
-    multi_.configure(mc);
+    bindConfig(mc_.match_radius, "se_neighbor_match_radius", 0.5, kMulti);
+    bindConfig(mc_.reciprocal_lambda, "se_reciprocal_lambda", 0.5, kMulti);
+    bindConfig(mc_.pass_lambda, "se_pass_lambda", 0.7, kMulti);
+    bindConfig(mc_.yield_lambda, "se_yield_lambda", 0.3, kMulti);
+    bindConfig(mc_.deadlock_range, "se_deadlock_range", 1.6, kMulti);
+    bindConfig(mc_.deadlock_speed, "se_deadlock_speed", 0.12, kMulti);
+    bindConfig(mc_.yield_v_max, "se_yield_v_max", 0.10, kMulti);
     getParam(my_priority_id_, "se_priority_id", 0);
 
+    // The subscriptions are created here only, so the topic list cannot be
+    // re-applied at runtime: Static, and the set callback below rejects it.
     std::vector<std::string> topics;
-    getParam(topics, "se_neighbor_odom_topics", std::vector<std::string>{});
+    getParam(
+      topics, "se_neighbor_odom_topics", std::vector<std::string>{},
+      mppi::ParameterType::Static);
+    configure_only_params_.insert(name_ + ".se_neighbor_odom_topics");
     if (auto node = parent_.lock()) {
       neighbors_.assign(topics.size(), NeighborRobot{});
       for (std::size_t i = 0; i < topics.size(); ++i) {
@@ -139,6 +146,34 @@ void SafeEscapeController::configure(
     }
   }
 
+  pending_reapply_ = kAllConsumers;
+  reapplyConfig();
+  // MPPI runs post-set callbacks under its parameter lock, which the SE part
+  // of computeVelocityCommands also holds, so the consumers never change
+  // mid-cycle.
+  parameters_handler_->addPostCallback([this]() {reapplyConfig();});
+
+  if (auto node = parent_.lock()) {
+    // MPPI's ParametersHandler answers successful=true for a name it has no
+    // callback for, so a Static parameter needs an explicit rejection or a
+    // runtime set would be "successful" with no effect.
+    reject_set_handle_ = node->add_on_set_parameters_callback(
+      [this](const std::vector<rclcpp::Parameter> & params) {
+        rcl_interfaces::msg::SetParametersResult result;
+        result.successful = true;
+        for (const auto & p : params) {
+          if (configure_only_params_.count(p.get_name()) != 0) {
+            result.successful = false;
+            result.reason = p.get_name() +
+            " is read only at configure; set it while the controller_server is "
+            "unconfigured (lifecycle cleanup), then configure";
+            break;
+          }
+        }
+        return result;
+      });
+  }
+
   // RViz introspection markers (CBF discs + q inflation, horizons, status).
   getParam(viz_enabled_, "se_viz", true);
   if (viz_enabled_) {
@@ -157,7 +192,52 @@ void SafeEscapeController::configure(
     logger_,
     "SafeEscapeController[%s] configured: se_enabled=%d robot_radius=%.3f "
     "alpha_base=%.2f alpha_escape=%.2f",
-    name_.c_str(), se_enabled_, robot_radius_, cc.alpha_base, cc.alpha_escape);
+    name_.c_str(), se_enabled_, robot_radius_, cc_.alpha_base, cc_.alpha_escape);
+}
+
+void SafeEscapeController::reapplyConfig()
+{
+  const unsigned pending = pending_reapply_;
+  pending_reapply_ = 0;
+  if (pending & kDetector) {
+    detector_.configure(ec_);
+  }
+  if (pending & kCoordinator) {
+    coordinator_.configure(cc_);
+  }
+  if (pending & kFilter) {
+    CbfConfig fc = fc_;
+    fc.alpha = cc_.alpha_base;
+    fc.robot_radius = robot_radius_;
+    filter_.configure(fc);
+  }
+  if (pending & kTracker) {
+    TrackerConfig tc = tc_;
+    // Costmap occupied values are 0..254 (LETHAL); clamp to that range so a
+    // threshold can never be set so high (255 == NO_INFORMATION) that no real
+    // obstacle cell ever qualifies and obstacle detection is silently disabled.
+    tc.cost_threshold = static_cast<unsigned char>(std::clamp(cost_threshold_, 0, 254));
+    tc.predictor.model = (predict_model_ == "cvca") ?
+      PredictorConfig::Model::kConstantAcceleration :
+      PredictorConfig::Model::kConstantVelocity;
+    tc.predictor.max_speed = tc.max_speed;
+    tracker_.configure(tc);
+  }
+  if (pending & kMulti) {
+    multi_.configure(mc_);
+  }
+}
+
+void SafeEscapeController::cleanup()
+{
+  if (reject_set_handle_) {
+    if (auto node = parent_.lock()) {
+      node->remove_on_set_parameters_callback(reject_set_handle_.get());
+    }
+    reject_set_handle_.reset();
+  }
+  configure_only_params_.clear();
+  MPPIController::cleanup();
 }
 
 void SafeEscapeController::activate()
@@ -179,6 +259,7 @@ void SafeEscapeController::deactivate()
 void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
 {
   MPPIController::setPlan(path);
+  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   global_plan_ = path;
   // New reference path => reset the per-task escape/tracking state.
   detector_.reset();
@@ -193,6 +274,7 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
 void SafeEscapeController::reset()
 {
   MPPIController::reset();
+  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   detector_.reset();
   tracker_.reset();
   multi_.reset();
@@ -211,6 +293,10 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   // Nominal command from the stock MPPI optimizer (incl. EscapeCritic if listed).
   geometry_msgs::msg::TwistStamped cmd =
     MPPIController::computeVelocityCommands(robot_pose, robot_speed, goal_checker);
+
+  // MPPI released its parameter lock on return; hold it for the SE part so a
+  // runtime parameter set (and the config re-apply) cannot land mid-cycle.
+  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
 
   if (!se_enabled_) {
     return cmd;

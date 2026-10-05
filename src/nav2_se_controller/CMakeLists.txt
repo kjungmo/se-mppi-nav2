@@ -158,6 +158,20 @@ if(BUILD_TESTING)
   # Runtime smoke test: load the plugins via pluginlib (needs them installed).
   ament_add_gtest(test_plugin_load test/test_plugin_load.cpp)
   ament_target_dependencies(test_plugin_load pluginlib nav2_core nav2_mppi_controller)
+
+  # Deployment tests (test/deployment/): the controller on a lifecycle node with
+  # the stock MPPI optimizer, runtime parameter changes. Kept apart from the
+  # algorithm unit tests in test/test_*.cpp, which the paper counts.
+  ament_add_gtest(test_controller_runtime test/deployment/test_controller_runtime.cpp
+    TIMEOUT 120)
+  target_link_libraries(test_controller_runtime safe_escape_controller)
+  ament_target_dependencies(test_controller_runtime
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
+
+  ament_add_gtest(test_escape_critic_params test/deployment/test_escape_critic_params.cpp)
+  target_link_libraries(test_escape_critic_params escape_critic)
+  ament_target_dependencies(test_escape_critic_params
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle)
 endif()
 
 ament_export_include_directories(include)

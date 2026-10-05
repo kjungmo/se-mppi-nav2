@@ -58,6 +58,9 @@ protected:
   // (e.g. with the stock MPPI controller). When the controller drives the shared
   // state, the critic follows it so escape and the CBF coordinator agree.
   nav2_se_controller::EntrapmentDetector detector_;
+  // Member (not an initialize() local): MPPI's dynamic-parameter callback keeps
+  // a reference to it, and a post-set callback re-applies it to detector_.
+  nav2_se_controller::EntrapmentConfig stall_cfg_;
   std::shared_ptr<nav2_se_controller::SharedEntrapment> shared_;
 
   // --- parameters ---

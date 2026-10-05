@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -62,6 +63,7 @@ public:
 
   void setPlan(const nav_msgs::msg::Path & path) override;
 
+  void cleanup() override;
   void activate() override;
   void deactivate() override;
   void reset() override;
@@ -88,6 +90,30 @@ protected:
   DynamicObstacleTracker tracker_;
   EscapeSafetyCoordinator coordinator_;
   CbfSafetyFilter filter_;
+
+  // Parameter-bound algorithm configs. They are members (not configure()
+  // locals) because a runtime parameter set writes into them; reapplyConfig()
+  // then pushes the marked ones into their consumers. Guarded by MPPI's
+  // parameter lock (parameters_handler_->getLock()).
+  enum Consumer : unsigned
+  {
+    kDetector = 1u, kCoordinator = 2u, kFilter = 4u, kTracker = 8u, kMulti = 16u,
+    kAllConsumers = 31u
+  };
+  EntrapmentConfig ec_;
+  CoordinationConfig cc_;
+  CbfConfig fc_;              // alpha and robot_radius are filled in on re-apply
+  TrackerConfig tc_;          // cost_threshold / predictor model derived on re-apply
+  MultiRobotConfig mc_;
+  int cost_threshold_{253};
+  std::string predict_model_{"cv"};
+  unsigned pending_reapply_{0};
+  void reapplyConfig();
+
+  // Static parameters that cannot be re-applied at runtime; the set callback
+  // rejects them (MPPI's handler would otherwise report success, no effect).
+  std::set<std::string> configure_only_params_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr reject_set_handle_;
 
   /// RViz introspection (se_viz param): per-obstacle CBF discs inflated by the
   /// conformal bound q, predicted horizons, and a status text (alpha / slack /
