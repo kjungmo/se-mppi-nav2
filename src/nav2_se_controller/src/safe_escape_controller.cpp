@@ -75,6 +75,10 @@ void SafeEscapeController::configure(
   getParam(max_dynamic_radius_, "se_max_obstacle_radius", 1.0);
   bindConfig(
     stale_grid_timeout_param_, "se_tracker_stale_grid_timeout", 0.0, kTracker);
+  getParam(task_idle_threshold_, "se_task_idle_threshold", 1.0);
+  if (auto node = parent_.lock()) {
+    node->get_parameter("controller_frequency", controller_frequency_);
+  }
 
   bindConfig(ec_.progress_stall_window, "se_progress_stall_window", 30, kDetector);
 
@@ -305,6 +309,7 @@ void SafeEscapeController::reapplyConfig()
     multi_.configure(mc_);
   }
   se_enabled_mirror_.store(se_enabled_);
+  task_boundary_.configure(task_idle_threshold_, controller_frequency_);
   config_applied_once_ = true;
 }
 
@@ -384,16 +389,19 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
   goal_frame_ = path.header.frame_id;
   goal_x_ = g.x;
   goal_y_ = g.y;
-  if (same_goal) {
+  const bool new_task = task_boundary_.newPlanStartsTask(steady_clock_.now().seconds());
+  if (same_goal && !new_task) {
     // Replanned path to the same goal: obstacle tracks and the stall count are
     // world/task state, not path state. Only the path-index baseline changes.
     rebase_progress_ = true;
     return;
   }
-  // New goal => reset the per-task escape/tracking state.
+  // New goal or new task => reset the per-task escape/tracking state.
   rebase_progress_ = false;
   detector_.reset();
   tracker_.reset();
+  multi_.reset();
+  prev_entrapped_ = false;
   last_grid_.clear();
   last_tracked_.clear();
   furthest_progress_ = 0;
@@ -426,6 +434,14 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & robot_speed,
   nav2_core::GoalChecker * goal_checker)
 {
+  // Stamp the task boundary when this call returns or throws (every exit).
+  struct ReturnStamp
+  {
+    TaskBoundary & boundary;
+    rclcpp::Clock & clock;
+    ~ReturnStamp() {boundary.controlReturned(clock.now().seconds());}
+  } return_stamp{task_boundary_, steady_clock_};
+
   // Nominal command from the stock MPPI optimizer (incl. EscapeCritic if listed).
   geometry_msgs::msg::TwistStamped cmd =
     MPPIController::computeVelocityCommands(robot_pose, robot_speed, goal_checker);

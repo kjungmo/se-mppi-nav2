@@ -330,6 +330,32 @@ TEST_F(ControllerBehaviour, GoalMovedByOneCellIsTheSameGoal)
   EXPECT_EQ(controller_->trackCount(), 0u) << "a goal in another frame is a new goal";
 }
 
+// Review finding: Humble's controller_server never calls reset(), so with
+// "reset only on goal change" a retry to the same goal after the previous task
+// ended would inherit its stall count and tracks. A plan arriving after the
+// loop was idle longer than se_task_idle_threshold starts a new task.
+TEST_F(ControllerBehaviour, SameGoalAfterAnIdleLoopIsANewTask)
+{
+  Options opt;
+  opt.overrides = {
+    rclcpp::Parameter("FollowPath.se_progress_stall_window", 5),
+    rclcpp::Parameter("FollowPath.se_task_idle_threshold", 0.3)};
+  start(opt);
+  block(80, 60, 4);
+  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  for (int k = 0; k < 8; ++k) {
+    step(0.5, 0.0);
+  }
+  ASSERT_TRUE(controller_->entrapped());
+  ASSERT_EQ(controller_->trackCount(), 1u);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));  // the task ended
+  controller_->setPlan(straightPath("map", 0.5, 2.0, 0.0));     // retry, same goal
+  EXPECT_EQ(controller_->trackCount(), 0u);
+  step(0.5, 0.0);
+  EXPECT_FALSE(controller_->entrapped());
+}
+
 TEST_F(ControllerBehaviour, NewGoalResetsTheTaskState)
 {
   Options opt;

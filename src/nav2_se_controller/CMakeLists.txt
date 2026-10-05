@@ -175,6 +175,9 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_controller_behaviour
     nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
 
+  ament_add_gtest(test_task_boundary test/deployment/test_task_boundary.cpp)
+  target_include_directories(test_task_boundary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
   ament_add_gtest(test_failure_streak test/deployment/test_failure_streak.cpp)
   target_include_directories(test_failure_streak PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

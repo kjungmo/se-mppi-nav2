@@ -35,6 +35,7 @@
 #include "nav2_se_controller/escape_safety_coordinator.hpp"
 #include "nav2_se_controller/failure_streak.hpp"
 #include "nav2_se_controller/multi_robot_coordinator.hpp"
+#include "nav2_se_controller/task_boundary.hpp"
 
 namespace nav2_se_controller
 {
@@ -114,8 +115,8 @@ protected:
   TrackerConfig tc_;          // cost_threshold / predictor model derived on re-apply
   MultiRobotConfig mc_;
   int cost_threshold_{253};
-  double cbf_robot_radius_{0.0};
-  double speed_limit_ratio_{1.0};  // Nav2 speed limit applied to the CBF box  // se_cbf_robot_radius; <= 0: footprint circumscribed radius
+  double cbf_robot_radius_{0.0};  // se_cbf_robot_radius; <= 0: footprint circumscribed radius
+  double speed_limit_ratio_{1.0};  // Nav2 speed limit applied to the CBF box
   std::string predict_model_{"cv"};
   unsigned pending_reapply_{0};
   bool config_applied_once_{false};  // warn on calibration resets after configure
@@ -195,6 +196,13 @@ protected:
   double goal_x_{0.0};
   double goal_y_{0.0};
   bool rebase_progress_{false};
+  // A plan after the control loop was idle longer than se_task_idle_threshold
+  // (>= 3 control periods) starts a new task even for the same goal: Humble's
+  // controller_server never calls reset(), so a retry would otherwise inherit
+  // the previous task's state.
+  TaskBoundary task_boundary_;
+  double task_idle_threshold_{1.0};
+  double controller_frequency_{20.0};
 
   // The tracker advances only when the costmap content changed: the control
   // loop usually runs faster than the local costmap, and re-reading the same
