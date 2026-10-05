@@ -180,6 +180,14 @@ cycle. A tracker parameter change reinitializes the conformal bounds.
 `se_neighbor_odom_topics` is read at configure only; a runtime set is rejected
 with a reason.
 
+The CBF filter's velocity box follows MPPI's `vx_max`, `wz_max` and
+`min(vx_min, 0)`; its disc radius is the footprint's circumscribed radius unless
+`se_cbf_robot_radius` > 0. Path progress is measured in the plan's frame (the
+robot pose is transformed with the latest plan-to-costmap transform), a replan to
+the same goal keeps the stall count and obstacle tracks, and the tracker advances
+once per local-costmap update, so `se_static_min_frames`, `se_track_history` and
+`se_track_max_missed` count costmap updates.
+
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
 forced the forward velocity to zero in the last second (QP failure or barrier
