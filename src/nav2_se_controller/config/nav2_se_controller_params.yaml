@@ -53,6 +53,8 @@ controller_server:
       se_predict_dt: 0.1                # horizon spacing (s) -> 1.5 s total
       se_track_history: 10              # per-track history (frames) for the LS fit
       se_track_max_missed: 3            # frames a track survives unmatched
+      se_tracker_stale_grid_timeout: 0.0  # [s] feed an unchanged grid after this; <= 0: 2 costmap periods
+      se_task_idle_threshold: 1.0       # [s] idle loop before a plan counts as a new task (>= 3 periods)
       # Conformal calibration (SE-Predict N3): online per-step bounds q_k on
       # the prediction error. The CBF inflates each dynamic obstacle's radius
       # by q[0] (time-varying radius -> bounded prediction error keeps the true

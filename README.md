@@ -219,16 +219,17 @@ Runtime-settable (`ros2 param set /controller_server FollowPath.se_alpha_base 3.
 the new value reaches its consumer before the next control cycle:
 
 - controller: `se_enabled`, `se_goal_reached_tolerance`,
-  `se_dynamic_speed_threshold`, `se_max_obstacle_radius`;
+  `se_dynamic_speed_threshold`, `se_max_obstacle_radius`, `se_task_idle_threshold`;
 - entrapment detector: `se_progress_stall_window`;
 - coordinator: `se_alpha_base` (also the CBF filter's default gain),
   `se_alpha_escape`, `se_ttc_override_threshold`, `se_q_trust_threshold`;
-- CBF filter: `se_cbf_lookahead`, `se_cbf_safety_margin`, `se_cbf_slack_weight`;
+- CBF filter: `se_cbf_lookahead`, `se_cbf_safety_margin`, `se_cbf_slack_weight`,
+  `se_cbf_robot_radius`;
 - tracker: `se_obstacle_cost_threshold`, `se_obstacle_min_cells`,
   `se_obstacle_association_gate`, `se_obstacle_max_speed`, `se_classify_static`,
   `se_static_min_frames`, `se_static_fraction`, `se_predict_horizon`,
-  `se_track_history`, `se_track_max_missed`, `se_predict_model`, `se_conformal`
-  (the learned conformal bounds are kept);
+  `se_track_history`, `se_track_max_missed`, `se_predict_model`, `se_conformal`,
+  `se_tracker_stale_grid_timeout` (the learned conformal bounds are kept);
 - tracker, restarting the conformal calibration from `se_conformal_initial_q`
   (logged as a warning): `se_predict_steps`, `se_predict_dt`,
   `se_conformal_coverage`, `se_conformal_lr`, `se_conformal_initial_q`,
@@ -242,12 +243,19 @@ Configure-only (a runtime set is rejected with a reason; change them while the
 `se_neighbor_odom_topics`.
 
 The CBF filter's velocity box follows MPPI's `vx_max`, `wz_max` and
-`min(vx_min, 0)`; its disc radius is the footprint's circumscribed radius unless
+`min(vx_min, 0)`, scaled by Nav2's speed limit (`setSpeedLimit`, as MPPI scales its
+own limits); its disc radius is the footprint's circumscribed radius unless
 `se_cbf_robot_radius` > 0. Path progress is measured in the plan's frame (the
-robot pose is transformed with the latest plan-to-costmap transform), a replan to
-the same goal keeps the stall count and obstacle tracks, and the tracker advances
-once per local-costmap update, so `se_static_min_frames`, `se_track_history` and
-`se_track_max_missed` count costmap updates.
+robot pose is transformed with the latest plan-to-costmap transform). A replan to
+the same goal (same frame, endpoint within two costmap cells) keeps the stall count
+and obstacle tracks, unless the control loop was idle for longer than
+`se_task_idle_threshold` (at least three control periods): then it is a new task
+and the per-task state resets, on every distribution. The tracker advances once
+per local-costmap update, so `se_static_min_frames`, `se_track_history` and
+`se_track_max_missed` count costmap updates; a grid that stays identical for longer
+than `se_tracker_stale_grid_timeout` (default two costmap update periods) is fed
+to the tracker anyway, so a frozen costmap never keeps an old velocity in the
+CBF.
 
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
