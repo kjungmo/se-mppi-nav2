@@ -102,18 +102,25 @@ void SafeEscapeController::configure(
   // Default "cv": CVCA wins on accelerating/turning agents but loses on
   // oscillatory ones; flip after N3's conformal bound absorbs model misfit.
   bindConfig(predict_model_, "se_predict_model", std::string("cv"), kTracker);
-  bindConfig(tc_.predictor.horizon_steps, "se_predict_steps", 15, kTracker);
-  bindConfig(tc_.predictor.horizon_dt, "se_predict_dt", 0.1, kTracker);
+  // The conformal bounds are per horizon step: a new step count or spacing
+  // invalidates them (kConformal restarts the calibration).
+  bindConfig(tc_.predictor.horizon_steps, "se_predict_steps", 15, kTracker | kConformal);
+  bindConfig(tc_.predictor.horizon_dt, "se_predict_dt", 0.1, kTracker | kConformal);
   // SE-Predict N3: conformal calibration -> time-varying CBF radius + the
   // coordinator's prediction-trust gate.
   bindConfig(tc_.conformal, "se_conformal", true, kTracker);
-  bindConfig(tc_.conformal_cfg.coverage, "se_conformal_coverage", 0.9, kTracker);
-  bindConfig(tc_.conformal_cfg.learning_rate, "se_conformal_lr", 0.02, kTracker);
-  bindConfig(tc_.conformal_cfg.initial_q, "se_conformal_initial_q", 0.05, kTracker);
-  bindConfig(tc_.conformal_cfg.max_q, "se_conformal_max_q", 0.40, kTracker);
+  bindConfig(tc_.conformal_cfg.coverage, "se_conformal_coverage", 0.9, kTracker | kConformal);
+  bindConfig(tc_.conformal_cfg.learning_rate, "se_conformal_lr", 0.02, kTracker | kConformal);
+  bindConfig(
+    tc_.conformal_cfg.initial_q, "se_conformal_initial_q", 0.05, kTracker | kConformal);
+  bindConfig(tc_.conformal_cfg.max_q, "se_conformal_max_q", 0.40, kTracker | kConformal);
 
   // Multi-SE-MPPI N2: reciprocal coordination with neighbor robots.
-  getParam(multirobot_enabled_, "se_multirobot", false);
+  // se_multirobot and se_viz decide what configure() creates (neighbor
+  // subscriptions and parameters, the marker publisher), so they are
+  // configure-only: Static, and a runtime set is rejected below.
+  getParam(multirobot_enabled_, "se_multirobot", false, mppi::ParameterType::Static);
+  configure_only_params_.insert(name_ + ".se_multirobot");
   if (multirobot_enabled_) {
     bindConfig(mc_.match_radius, "se_neighbor_match_radius", 0.5, kMulti);
     bindConfig(mc_.reciprocal_lambda, "se_reciprocal_lambda", 0.5, kMulti);
@@ -214,7 +221,8 @@ void SafeEscapeController::configure(
   }
 
   // RViz introspection markers (CBF discs + q inflation, horizons, status).
-  getParam(viz_enabled_, "se_viz", true);
+  getParam(viz_enabled_, "se_viz", true, mppi::ParameterType::Static);
+  configure_only_params_.insert(name_ + ".se_viz");
   if (viz_enabled_) {
     if (auto node = parent_.lock()) {
       viz_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
@@ -270,11 +278,21 @@ void SafeEscapeController::reapplyConfig()
       PredictorConfig::Model::kConstantAcceleration :
       PredictorConfig::Model::kConstantVelocity;
     tc.predictor.max_speed = tc.max_speed;
-    tracker_.configure(tc);
+    const bool reset_calibration = (pending & kConformal) != 0;
+    tracker_.configure(tc, reset_calibration);
+    if (reset_calibration && config_applied_once_) {
+      RCLCPP_WARN(
+        logger_,
+        "SE conformal settings changed at runtime: the learned prediction-error "
+        "bounds were reset to se_conformal_initial_q=%.3f (the CBF inflation "
+        "restarts from there)", tc.conformal_cfg.initial_q);
+    }
   }
   if (pending & kMulti) {
     multi_.configure(mc_);
   }
+  se_enabled_mirror_.store(se_enabled_);
+  config_applied_once_ = true;
 }
 
 void SafeEscapeController::cleanup()
@@ -576,6 +594,7 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   // Visibility only: the command above is already decided.
   counters_.cbf_obstacles.store(static_cast<int>(obstacles.size()));
   counters_.alpha.store(alpha);
+  qp_failure_streak_.record(!safe.feasible, steady_clock_.now().nanoseconds());
   if (!safe.hard_safe) {
     counters_.forced_stops.fetch_add(1);
     if (!safe.feasible) {
@@ -615,11 +634,11 @@ void SafeEscapeController::publishDiagnostics()
   const std::uint64_t new_qp_failed = qp_failed - reported_qp_failures_;
   reported_forced_stops_ = forced;
   reported_qp_failures_ = qp_failed;
-  bool se_enabled = true;
-  {
-    std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
-    se_enabled = se_enabled_;
-  }
+  const bool se_enabled = se_enabled_mirror_.load();
+  const std::int64_t now_ns = steady_clock_.now().nanoseconds();
+  const bool qp_failing_long = qp_failure_streak_.longerThan(
+    now_ns, static_cast<std::int64_t>(kQpFailureErrorAfterSec * 1e9),
+    static_cast<std::int64_t>(0.5e9));
 
   diagnostic_msgs::msg::DiagnosticStatus st;
   st.name = diag_name_;
@@ -627,6 +646,11 @@ void SafeEscapeController::publishDiagnostics()
   if (!se_enabled) {
     st.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
     st.message = "SE layer disabled (se_enabled=false): stock MPPI output";
+  } else if (qp_failing_long) {
+    st.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+    st.message = "CBF QP failing continuously for more than " +
+      std::to_string(kQpFailureErrorAfterSec).substr(0, 3) +
+      " s; forward velocity held at 0";
   } else if (new_qp_failed > 0) {
     st.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
     st.message = "CBF QP failed in the last second; forward velocity forced to 0";

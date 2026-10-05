@@ -158,6 +158,8 @@ protected:
 
 // Audit finding 3: the CBF filter clamped every command to hard-coded limits
 // (v in [-0.35, 0.5], |w| <= 1.9) whatever MPPI was configured with.
+}  // namespace
+
 TEST_F(ControllerBehaviour, CbfVelocityLimitsFollowMppiLimits)
 {
   Options opt;
@@ -322,8 +324,6 @@ TEST_F(ControllerBehaviour, MovingObstacleStaysInTheCbfWhenTheCostmapIsSlower)
   }
   EXPECT_EQ(missing, 0) << "cycles on which the moving obstacle was not in the CBF";
 }
-
-}  // namespace
 
 int main(int argc, char ** argv)
 {

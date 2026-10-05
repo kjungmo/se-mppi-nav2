@@ -89,7 +89,10 @@ struct TrackerConfig
 class DynamicObstacleTracker
 {
 public:
-  void configure(const TrackerConfig & cfg)
+  /// @param reset_calibration false keeps the learned conformal bounds; only
+  ///        valid when conformal_cfg and predictor.horizon_steps/horizon_dt
+  ///        are unchanged (a runtime change of an unrelated tracker parameter).
+  void configure(const TrackerConfig & cfg, bool reset_calibration = true)
   {
     cfg_ = cfg;
     StaticFilterConfig sf;
@@ -97,7 +100,9 @@ public:
     sf.static_min_frames = cfg.static_min_frames;
     static_filter_.configure(sf);
     predictor_.configure(cfg.predictor);
-    calibrator_.configure(cfg.conformal_cfg, cfg.predictor.horizon_steps);
+    if (reset_calibration) {
+      calibrator_.configure(cfg.conformal_cfg, cfg.predictor.horizon_steps);
+    }
   }
   const TrackerConfig & config() const {return cfg_;}
 

@@ -46,6 +46,8 @@ public:
   }
 };
 
+}  // namespace
+
 TEST(EscapeCriticParams, StallWindowSetAtRuntimeReachesDetector)
 {
   auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("controller_server");
@@ -63,8 +65,6 @@ TEST(EscapeCriticParams, StallWindowSetAtRuntimeReachesDetector)
   EXPECT_TRUE(r.successful) << r.reason;
   EXPECT_EQ(critic.stallWindow(), 7);
 }
-
-}  // namespace
 
 int main(int argc, char ** argv)
 {
