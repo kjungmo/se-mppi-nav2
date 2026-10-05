@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <thread>
@@ -31,10 +32,12 @@
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "rcl/time.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 
+#include "nav2_se_controller/dynamic_obstacle_tracker.hpp"
 #include "nav2_se_controller/safe_escape_controller.hpp"
 
 namespace
@@ -374,26 +377,55 @@ TEST_F(ControllerBehaviour, NewGoalResetsTheTaskState)
   EXPECT_FALSE(controller_->entrapped());
 }
 
+// The costmap-rate tests below drive the controller's ROS clock directly
+// (rcl time override) instead of sleeping, so a loaded CI runner cannot
+// stretch a 50 ms control period past the 0.4 s stale-grid timeout.
+class ControllerCostmapRate : public ControllerBehaviour
+{
+protected:
+  void SetUp() override
+  {
+    start(Options{});  // local costmap update_frequency 5 Hz -> stale-grid timeout 0.4 s
+    rcl_clock_t * clock = node_->get_clock()->get_clock_handle();
+    ASSERT_EQ(rcl_enable_ros_time_override(clock), RCL_RET_OK);
+    setTime(100.0);
+    controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  }
+
+  void setTime(double t)
+  {
+    ASSERT_EQ(
+      rcl_set_ros_time_override(
+        node_->get_clock()->get_clock_handle(),
+        static_cast<rcl_time_point_value_t>(std::llround(t * 1e9))),
+      RCL_RET_OK);
+  }
+
+  // The obstacle as a 4x4 block whose left cell is `cell`, drawn into a fresh grid.
+  void drawObstacleAt(unsigned int cell)
+  {
+    clearCostmap();
+    block(cell, 60, 4);
+  }
+};
+
 // Audit finding 4: the tracker was advanced every control cycle with the
 // cycle's clock. When the controller runs faster than the costmap (typical:
 // 20 Hz controller, 5 Hz local costmap) the repeated grid gave every moving
 // obstacle zero velocity on the repeated cycles (and double velocity on the
 // others), so it dropped out of the CBF on those cycles.
-TEST_F(ControllerBehaviour, MovingObstacleStaysInTheCbfWhenTheCostmapIsSlower)
+TEST_F(ControllerCostmapRate, MovingObstacleStaysInTheCbfWhenTheCostmapIsSlower)
 {
-  start(Options{});
-  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
   int missing = 0;
   for (int k = 0; k < 24; ++k) {
+    setTime(100.0 + 0.05 * k);
     if (k % 2 == 0) {  // the costmap updates every second control cycle
-      clearCostmap();
-      block(20 + k / 2, 60, 4);  // one 0.05 m cell per update, ~0.5 m/s
+      drawObstacleAt(20 + k / 2);  // one 0.05 m cell per update, 0.5 m/s
     }
     step(0.0, 0.0);
     if (k >= 4 && controller_->cbfObstacles() == 0) {
       ++missing;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
   EXPECT_EQ(missing, 0) << "cycles on which the moving obstacle was not in the CBF";
 }
@@ -403,34 +435,73 @@ TEST_F(ControllerBehaviour, MovingObstacleStaysInTheCbfWhenTheCostmapIsSlower)
 // last tracked velocities must not be reused forever. An obstacle that moved
 // and then stopped must leave the CBF once the grid has been frozen longer
 // than the stale-grid timeout (default: two local-costmap update periods).
-TEST_F(ControllerBehaviour, StoppedObstacleLeavesTheCbfWhenTheGridFreezes)
+TEST_F(ControllerCostmapRate, StoppedObstacleLeavesTheCbfWhenTheGridFreezes)
 {
-  start(Options{});  // local costmap update_frequency 5 Hz -> timeout 0.4 s
-  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
-  for (int k = 0; k < 12; ++k) {  // moving, the costmap refreshing every 2nd cycle
+  double t = 100.0;
+  for (int k = 0; k < 12; ++k, t += 0.05) {  // moving, the costmap refreshing every 2nd cycle
+    setTime(t);
     if (k % 2 == 0) {
-      clearCostmap();
-      block(20 + k / 2, 60, 4);
+      drawObstacleAt(20 + k / 2);
     }
     step(0.0, 0.0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
   ASSERT_EQ(controller_->cbfObstacles(), 1) << "the moving obstacle must be in the CBF";
 
   // The obstacle stops and the grid freezes for 1.2 s (3x the timeout).
+  const double frozen_at = t;
   int still_in_cbf_after_timeout = 0;
-  const auto frozen_at = std::chrono::steady_clock::now();
-  for (int k = 0; k < 24; ++k) {
+  for (int k = 0; k < 24; ++k, t += 0.05) {
+    setTime(t);
     step(0.0, 0.0);
-    const double frozen_s = std::chrono::duration<double>(
-      std::chrono::steady_clock::now() - frozen_at).count();
-    if (frozen_s > 0.4 + 0.2 && controller_->cbfObstacles() != 0) {
+    if (t - frozen_at > 0.4 + 0.05 && controller_->cbfObstacles() != 0) {
       ++still_in_cbf_after_timeout;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
   EXPECT_EQ(still_in_cbf_after_timeout, 0)
     << "cycles on which the stopped obstacle kept its old velocity in the CBF";
+}
+
+// Known band of the stale-grid rule (review): a slow obstacle that changes
+// cells less often than the timeout. At 0.11 m/s with 0.05 m cells it crosses a
+// cell every ~0.45 s; after 0.4 s of an unchanged grid the tracker is fed the
+// repeated grid and reads zero velocity until the next cell change, so the
+// obstacle leaves the CBF for those cycles. This documents the band and checks
+// it is no worse than the b21b0a5 behaviour (tracker advanced every cycle),
+// emulated here with a second tracker fed the same grids.
+TEST_F(ControllerCostmapRate, SlowMoverIsInTheCbfMoreOftenThanBefore)
+{
+  nav2_se_controller::DynamicObstacleTracker before;
+  before.configure(nav2_se_controller::TrackerConfig{});
+  const double speed = 0.11;
+  int cycles = 0;
+  int out_now = 0;
+  int out_before = 0;
+  for (int k = 0; k < 200; ++k) {  // 10 s at 20 Hz
+    const double t = 100.0 + 0.05 * k;
+    setTime(t);
+    if (k % 4 == 0) {  // 5 Hz costmap: redraw at the current (cell-quantized) position
+      drawObstacleAt(20 + static_cast<unsigned int>(speed * 0.05 * k / 0.05));
+    }
+    step(0.0, 0.0);
+    // b21b0a5 behaviour: every cycle, same grid, same stamp; same CBF admission
+    // rule as the controller (dynamic, >= 0.1 m/s, radius <= 1 m).
+    bool in_before = false;
+    for (const auto & o : before.update(*costmap_ros_->getCostmap(), t)) {
+      in_before = in_before || (o.is_dynamic && o.velocity.norm() >= 0.1 && o.radius <= 1.0);
+    }
+    if (k >= 20) {  // after 1 s of warm-up
+      ++cycles;
+      out_now += controller_->cbfObstacles() == 0 ? 1 : 0;
+      out_before += in_before ? 0 : 1;
+    }
+  }
+  const double ratio_now = static_cast<double>(out_now) / cycles;
+  const double ratio_before = static_cast<double>(out_before) / cycles;
+  std::printf(
+    "slow mover 0.11 m/s: out of the CBF on %.0f %% of cycles now, %.0f %% with b21b0a5's rule\n",
+    100.0 * ratio_now, 100.0 * ratio_before);
+  EXPECT_LE(ratio_now, ratio_before);
+  EXPECT_LE(ratio_now, 0.25);
 }
 
 int main(int argc, char ** argv)
