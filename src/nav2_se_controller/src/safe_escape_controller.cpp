@@ -183,6 +183,14 @@ void SafeEscapeController::configure(
     }
   }
 
+  // Failure visibility on /diagnostics (the aggregator's conventional topic).
+  if (auto node = parent_.lock()) {
+    diag_name_ = std::string(node->get_name()) + ": se_mppi (" + name_ + ")";
+    diag_hardware_id_ = node->get_namespace();
+    diag_pub_ = node->create_publisher<diagnostic_msgs::msg::DiagnosticArray>(
+      "/diagnostics", rclcpp::QoS(10));
+  }
+
   // Register this controller as the single entrapment source of truth; the
   // EscapeCritic (loaded under this controller's name) follows it.
   shared_ = EntrapmentRegistry::get(name_);
@@ -230,6 +238,8 @@ void SafeEscapeController::reapplyConfig()
 
 void SafeEscapeController::cleanup()
 {
+  diag_timer_.reset();
+  diag_pub_.reset();
   if (reject_set_handle_) {
     if (auto node = parent_.lock()) {
       node->remove_on_set_parameters_callback(reject_set_handle_.get());
@@ -246,10 +256,22 @@ void SafeEscapeController::activate()
   if (viz_pub_) {
     viz_pub_->on_activate();
   }
+  if (diag_pub_) {
+    diag_pub_->on_activate();
+    if (auto node = parent_.lock()) {
+      // Wall timer: diagnostics keep flowing with use_sim_time and no /clock.
+      diag_timer_ = node->create_wall_timer(
+        std::chrono::seconds(1), [this]() {publishDiagnostics();});
+    }
+  }
 }
 
 void SafeEscapeController::deactivate()
 {
+  diag_timer_.reset();
+  if (diag_pub_) {
+    diag_pub_->on_deactivate();
+  }
   if (viz_pub_) {
     viz_pub_->on_deactivate();
   }
@@ -337,7 +359,12 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
       entrapped ? "ENTER" : "EXIT", state.x, state.y,
       furthest_progress_, detector_.stallCount());
     prev_entrapped_ = entrapped;
+    if (entrapped) {
+      counters_.escape_entries.fetch_add(1);
+    }
   }
+  counters_.entrapped.store(entrapped);
+  counters_.cycles.fetch_add(1);
 
   // 2. Dynamic obstacles from the local costmap. On a clock-lock failure reuse
   //    the previous stamp (dt ~ 0) rather than 0.0, which would make dt negative
@@ -355,6 +382,15 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
     nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
     tracked = tracker_.update(*costmap, stamp);
+  }
+  const std::size_t dropped = tracker_.droppedTrackCount();
+  const std::uint64_t dropped_before = counters_.tracks_dropped.exchange(dropped);
+  if (dropped > dropped_before) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, steady_clock_, 10000,
+      "SE tracker: %zu obstacle track(s) dropped after more than %d unmatched frames "
+      "(se_track_max_missed); %zu in total",
+      static_cast<std::size_t>(dropped - dropped_before), tc_.max_missed_frames, dropped);
   }
 
   // Keep only genuinely DYNAMIC obstacles for the CBF/coordinator: static walls
@@ -417,6 +453,27 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   if (!safe.hard_safe) {
     cmd.twist.linear.x = 0.0;
   }
+  // Visibility only: the command above is already decided.
+  counters_.cbf_obstacles.store(static_cast<int>(obstacles.size()));
+  counters_.alpha.store(alpha);
+  if (!safe.hard_safe) {
+    counters_.forced_stops.fetch_add(1);
+    if (!safe.feasible) {
+      counters_.qp_failures.fetch_add(1);
+      RCLCPP_WARN_THROTTLE(
+        logger_, steady_clock_, 2000,
+        "SE CBF filter: QP setup/solve failed (%zu dynamic obstacle(s), alpha=%.2f); "
+        "forward velocity forced to 0",
+        obstacles.size(), alpha);
+    } else {
+      counters_.slack_active.fetch_add(1);
+      RCLCPP_WARN_THROTTLE(
+        logger_, steady_clock_, 2000,
+        "SE CBF filter: barrier relaxed, slack=%.4f (%zu dynamic obstacle(s), alpha=%.2f); "
+        "forward velocity forced to 0",
+        safe.slack, obstacles.size(), alpha);
+    }
+  }
   // Yield primitive: hold back while the passer clears (Multi-SE-MPPI N2).
   if (role == MultiRobotCoordinator::Role::kYield) {
     cmd.twist.linear.x =
@@ -425,6 +482,65 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
 
   publishMarkers(state, obstacles, alpha, safe.slack, entrapped);
   return cmd;
+}
+
+void SafeEscapeController::publishDiagnostics()
+{
+  if (!diag_pub_ || !diag_pub_->is_activated()) {
+    return;
+  }
+  const std::uint64_t forced = counters_.forced_stops.load();
+  const std::uint64_t qp_failed = counters_.qp_failures.load();
+  const std::uint64_t new_forced = forced - reported_forced_stops_;
+  const std::uint64_t new_qp_failed = qp_failed - reported_qp_failures_;
+  reported_forced_stops_ = forced;
+  reported_qp_failures_ = qp_failed;
+  bool se_enabled = true;
+  {
+    std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+    se_enabled = se_enabled_;
+  }
+
+  diagnostic_msgs::msg::DiagnosticStatus st;
+  st.name = diag_name_;
+  st.hardware_id = diag_hardware_id_;
+  if (!se_enabled) {
+    st.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+    st.message = "SE layer disabled (se_enabled=false): stock MPPI output";
+  } else if (new_qp_failed > 0) {
+    st.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
+    st.message = "CBF QP failed in the last second; forward velocity forced to 0";
+  } else if (new_forced > 0) {
+    st.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
+    st.message = "CBF barrier relaxed in the last second; forward velocity forced to 0";
+  } else {
+    st.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
+    st.message = counters_.entrapped.load() ? "escape mode" : "ok";
+  }
+  auto kv = [&st](const std::string & key, const std::string & value) {
+    diagnostic_msgs::msg::KeyValue e;
+    e.key = key;
+    e.value = value;
+    st.values.push_back(e);
+  };
+  kv("se_enabled", se_enabled ? "true" : "false");
+  kv("cycles", std::to_string(counters_.cycles.load()));
+  kv("forced_stops", std::to_string(forced));
+  kv("forced_stops_last_period", std::to_string(new_forced));
+  kv("qp_failures", std::to_string(qp_failed));
+  kv("slack_active", std::to_string(counters_.slack_active.load()));
+  kv("tracks_dropped", std::to_string(counters_.tracks_dropped.load()));
+  kv("escape_entries", std::to_string(counters_.escape_entries.load()));
+  kv("entrapped", counters_.entrapped.load() ? "true" : "false");
+  kv("cbf_obstacles", std::to_string(counters_.cbf_obstacles.load()));
+  kv("alpha", std::to_string(counters_.alpha.load()));
+
+  diagnostic_msgs::msg::DiagnosticArray arr;
+  if (auto node = parent_.lock()) {
+    arr.header.stamp = node->now();
+  }
+  arr.status.push_back(st);
+  diag_pub_->publish(arr);
 }
 
 void SafeEscapeController::publishMarkers(

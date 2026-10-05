@@ -15,12 +15,15 @@
 #ifndef NAV2_SE_CONTROLLER__SAFE_ESCAPE_CONTROLLER_HPP_
 #define NAV2_SE_CONTROLLER__SAFE_ESCAPE_CONTROLLER_HPP_
 
+#include <atomic>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <set>
 #include <string>
 #include <vector>
 
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -139,6 +142,33 @@ protected:
   bool viz_enabled_{true};
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     viz_pub_;
+
+  // Failure visibility. The control loop counts events; a 1 Hz wall timer
+  // publishes them on /diagnostics (status "<node name>: se_mppi (<plugin>)"),
+  // and the loop logs throttled warnings on a steady clock. None of this feeds
+  // back into the command.
+  struct Counters
+  {
+    std::atomic<std::uint64_t> cycles{0};
+    std::atomic<std::uint64_t> forced_stops{0};    // filter forced v = 0
+    std::atomic<std::uint64_t> qp_failures{0};     // QP setup/solve failed
+    std::atomic<std::uint64_t> slack_active{0};    // barrier relaxed (slack > 0)
+    std::atomic<std::uint64_t> tracks_dropped{0};  // tracks aged out unmatched
+    std::atomic<std::uint64_t> escape_entries{0};
+    std::atomic<bool> entrapped{false};
+    std::atomic<int> cbf_obstacles{0};
+    std::atomic<double> alpha{0.0};
+  };
+  Counters counters_;
+  std::uint64_t reported_forced_stops_{0};  // diagnostics timer only
+  std::uint64_t reported_qp_failures_{0};   // diagnostics timer only
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr
+    diag_pub_;
+  rclcpp::TimerBase::SharedPtr diag_timer_;
+  std::string diag_name_;
+  std::string diag_hardware_id_;
+  void publishDiagnostics();
 
   // Single entrapment source of truth, shared with the EscapeCritic.
   std::shared_ptr<SharedEntrapment> shared_;

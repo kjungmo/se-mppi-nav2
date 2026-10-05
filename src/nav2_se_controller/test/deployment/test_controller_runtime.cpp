@@ -27,11 +27,14 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <cmath>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
@@ -73,6 +76,8 @@ public:
     } while (!d.update(0) && n < 100000);
     return n;
   }
+
+  void emitDiagnostics() {publishDiagnostics();}
 };
 
 class ControllerRuntime : public ::testing::Test
@@ -211,6 +216,34 @@ TEST_F(ControllerRuntime, ConfigParameterTakesEffectInItsConsumer)
 
   // The controller keeps running with the new values.
   EXPECT_NO_THROW(step());
+}
+
+TEST_F(ControllerRuntime, PublishesDiagnosticsStatus)
+{
+  auto listener = std::make_shared<rclcpp::Node>("diag_listener");
+  diagnostic_msgs::msg::DiagnosticArray::SharedPtr got;
+  auto sub = listener->create_subscription<diagnostic_msgs::msg::DiagnosticArray>(
+    "/diagnostics", rclcpp::QoS(10),
+    [&got](diagnostic_msgs::msg::DiagnosticArray::SharedPtr msg) {got = msg;});
+  step();
+  const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+  while (!got && std::chrono::steady_clock::now() < deadline) {
+    controller_->emitDiagnostics();
+    rclcpp::spin_some(listener);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  ASSERT_TRUE(got);
+  ASSERT_EQ(got->status.size(), 1u);
+  EXPECT_EQ(got->status[0].name, "controller_server: se_mppi (FollowPath)");
+  EXPECT_EQ(got->status[0].hardware_id, "/");
+  bool has_cycles = false;
+  for (const auto & kv : got->status[0].values) {
+    if (kv.key == "cycles") {
+      has_cycles = true;
+      EXPECT_NE(kv.value, "0");
+    }
+  }
+  EXPECT_TRUE(has_cycles);
 }
 
 TEST_F(ControllerRuntime, ParameterThatCannotBeReappliedIsRejected)
