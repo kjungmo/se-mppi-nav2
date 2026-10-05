@@ -128,7 +128,7 @@ jobs:
               "-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address" \
               "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address"
 
-      - name: Runtime parameter changes leave no dangling reference
+      - name: Deployment tests leave no dangling reference or memory error
         timeout-minutes: 5
         run: |
           cd ws
@@ -138,4 +138,5 @@ jobs:
           # uninstrumented ROS libraries.
           export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=0:new_delete_type_mismatch=0:alloc_dealloc_mismatch=0
           ./build/nav2_se_controller/test_controller_runtime
+          ./build/nav2_se_controller/test_controller_behaviour
           ./build/nav2_se_controller/test_escape_critic_params
