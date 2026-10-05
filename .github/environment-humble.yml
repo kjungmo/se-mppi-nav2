@@ -1,0 +1,32 @@
+# Minimal RoboStack ROS 2 Humble environment for CI (compile and test only;
+# SE-MPPI's control performance on Humble's MPPI 1.1.x is not evaluated).
+# xsimd is pinned to 7.x: xtensor 0.23 does not compile against newer xsimd,
+# and the solver would otherwise pick one (see CMakeLists.txt, boundary 1).
+name: ros2
+channels:
+  - robostack-staging
+  - conda-forge
+dependencies:
+  - python=3.12
+  - ros-humble-ros-base=0.10.0
+  - ros-humble-nav2-mppi-controller=1.1.20
+  - ros-humble-nav2-controller=1.1.20
+  - ros-humble-nav2-core=1.1.20
+  - ros-humble-nav2-costmap-2d=1.1.20
+  - ros-humble-diagnostic-msgs
+  - ros-humble-lifecycle-msgs
+  - ros-humble-ament-cmake-gtest
+  - ros-humble-ament-lint-auto
+  - ros-humble-ament-lint-common
+  - cppcheck=2.22.0       # pinned: ament_cppcheck skips its checks for some versions
+  - xtensor=0.23.9
+  - xsimd=7.6.0
+  - osqp-eigen
+  - eigen=3.4.0
+  - colcon-common-extensions
+  - cxx-compiler=1.11.0   # GCC 14: Humble's vendored gtest 1.10 does not build with GCC 15
+  - gxx=14.3
+  - cmake
+  - ninja
+  - pkg-config
+  - pyyaml

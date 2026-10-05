@@ -127,6 +127,17 @@ NVIDIA GPU). The setup script (`scripts/setup_ros2_env.sh`) provisions:
   `pkg-config`
 
 A GPU workstation is recommended: the live Gazebo stack needs hardware rendering.
+
+**ROS 2 Humble.** The controller also builds and passes its unit, deployment and
+lint tests on Humble (Nav2 1.1.x, `nav2_mppi_controller` 1.1.20), checked in CI
+with the RoboStack environment in
+[`.github/environment-humble.yml`](.github/environment-humble.yml). **SE-MPPI's
+control performance on Humble's MPPI has not been evaluated**: every reported
+result comes from the Jazzy stack or the 2D benchmark. Two Humble API differences
+are handled at compile time (`NAV2_SE_CONTROLLER_HUMBLE_API`): Humble's
+`controller_server` never calls the controller's `reset()` (the per-goal reset in
+`setPlan()` still applies), and the escape critic takes the goal bearing from the
+end of the pruned path because Humble's `CriticData` has no goal.
 See [`RUN.md`](RUN.md) for the full run guide and troubleshooting.
 
 ## Install and build
@@ -169,6 +180,8 @@ colcon test --packages-select nav2_se_controller && colcon test-result --verbose
   declared and hold the YAML value (a few keys in the experiment YAML are known to
   be unread and listed in the workflow; an injected unknown key must fail);
 - the deployment tests again under AddressSanitizer;
+- a Humble job (`.github/environment-humble.yml`): build, tests, the ABI check and
+  the parameter-binding check on the shipped YAML;
 - `scripts/check_paper_numbers.py` (default mode).
 
 ### Runtime parameters and diagnostics
