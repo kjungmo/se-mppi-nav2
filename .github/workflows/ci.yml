@@ -123,8 +123,11 @@ jobs:
         run: |
           mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/nav2_se_controller
           cd ws
+          # Eigen stops trusting glibc malloc alignment under ASan and switches to
+          # its own aligned allocator; pin it back so Eigen objects allocated by the
+          # uninstrumented OsqpEigen library are freed the same way.
           colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+ \
-            --cmake-args "-DCMAKE_CXX_FLAGS=-fsanitize=address -fno-omit-frame-pointer" \
+            --cmake-args "-DCMAKE_CXX_FLAGS=-fsanitize=address -fno-omit-frame-pointer -DEIGEN_MALLOC_ALREADY_ALIGNED=1" \
               "-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address" \
               "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address"
 
