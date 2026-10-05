@@ -73,6 +73,8 @@ void SafeEscapeController::configure(
 
   getParam(dynamic_speed_threshold_, "se_dynamic_speed_threshold", 0.1);
   getParam(max_dynamic_radius_, "se_max_obstacle_radius", 1.0);
+  bindConfig(
+    stale_grid_timeout_param_, "se_tracker_stale_grid_timeout", 0.0, kTracker);
 
   bindConfig(ec_.progress_stall_window, "se_progress_stall_window", 30, kDetector);
 
@@ -269,6 +271,13 @@ void SafeEscapeController::reapplyConfig()
     filter_.configure(fc);
   }
   if (pending & kTracker) {
+    // Default stale-grid timeout: two local-costmap update periods. A live
+    // costmap re-renders every period, so a grid identical across two periods
+    // is a still scene or stale data; either way the tracker must advance.
+    double update_frequency = 0.0;
+    costmap_ros_->get_parameter("update_frequency", update_frequency);
+    stale_grid_timeout_ = stale_grid_timeout_param_ > 0.0 ? stale_grid_timeout_param_ :
+      (update_frequency > 0.0 ? 2.0 / update_frequency : 0.5);
     TrackerConfig tc = tc_;
     // Costmap occupied values are 0..254 (LETHAL); clamp to that range so a
     // threshold can never be set so high (255 == NO_INFORMATION) that no real
@@ -515,10 +524,12 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
     const bool unchanged = !last_grid_.empty() && w == last_grid_w_ && h == last_grid_h_ &&
       costmap->getOriginX() == last_grid_ox_ && costmap->getOriginY() == last_grid_oy_ &&
       std::equal(last_grid_.begin(), last_grid_.end(), grid);
-    if (unchanged) {
+    if (unchanged && stamp - last_tracker_stamp_ < stale_grid_timeout_) {
       tracked = last_tracked_;  // same frame as last cycle: keep its estimates
     } else {
+      // New data, or a grid frozen past the timeout: advance the tracker.
       tracked = tracker_.update(*costmap, stamp);
+      last_tracker_stamp_ = stamp;
       last_grid_.assign(grid, grid + static_cast<std::size_t>(w) * h);
       last_grid_w_ = w;
       last_grid_h_ = h;

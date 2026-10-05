@@ -201,6 +201,13 @@ protected:
   double last_grid_ox_{0.0};
   double last_grid_oy_{0.0};
   std::vector<TrackedObstacle> last_tracked_;
+  // A grid that stays identical for longer than this is fed to the tracker
+  // anyway (velocities decay to zero, tracks age, static evidence builds), so
+  // a frozen costmap never keeps a stale velocity in the CBF.
+  // se_tracker_stale_grid_timeout; <= 0: two local-costmap update periods.
+  double stale_grid_timeout_param_{0.0};
+  double stale_grid_timeout_{0.4};
+  double last_tracker_stamp_{0.0};
   double prev_stamp_{0.0};
   bool has_stamp_{false};
   bool prev_entrapped_{false};  // for ENTER/EXIT escape-mode transition logs

@@ -325,6 +325,41 @@ TEST_F(ControllerBehaviour, MovingObstacleStaysInTheCbfWhenTheCostmapIsSlower)
   EXPECT_EQ(missing, 0) << "cycles on which the moving obstacle was not in the CBF";
 }
 
+// Review finding on the costmap-rate fix: while the grid stays byte-identical
+// (a sensor dropout with the costmap still "current", or a still scene) the
+// last tracked velocities must not be reused forever. An obstacle that moved
+// and then stopped must leave the CBF once the grid has been frozen longer
+// than the stale-grid timeout (default: two local-costmap update periods).
+TEST_F(ControllerBehaviour, StoppedObstacleLeavesTheCbfWhenTheGridFreezes)
+{
+  start(Options{});  // local costmap update_frequency 5 Hz -> timeout 0.4 s
+  controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  for (int k = 0; k < 12; ++k) {  // moving, the costmap refreshing every 2nd cycle
+    if (k % 2 == 0) {
+      clearCostmap();
+      block(20 + k / 2, 60, 4);
+    }
+    step(0.0, 0.0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  ASSERT_EQ(controller_->cbfObstacles(), 1) << "the moving obstacle must be in the CBF";
+
+  // The obstacle stops and the grid freezes for 1.2 s (3x the timeout).
+  int still_in_cbf_after_timeout = 0;
+  const auto frozen_at = std::chrono::steady_clock::now();
+  for (int k = 0; k < 24; ++k) {
+    step(0.0, 0.0);
+    const double frozen_s = std::chrono::duration<double>(
+      std::chrono::steady_clock::now() - frozen_at).count();
+    if (frozen_s > 0.4 + 0.2 && controller_->cbfObstacles() != 0) {
+      ++still_in_cbf_after_timeout;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  EXPECT_EQ(still_in_cbf_after_timeout, 0)
+    << "cycles on which the stopped obstacle kept its old velocity in the CBF";
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
