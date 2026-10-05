@@ -124,8 +124,9 @@ def main():
 
     allowed = [k for k in undeclared if k in args.allow_unread]
     failing = [k for k in undeclared if k not in args.allow_unread]
-    print(f'{args.yaml}: {len(expected)} {args.plugin}.* YAML keys, '
-          f'{len(keys)} declared, {len(keys) - len(mismatched)} hold the YAML value')
+    applied = len(keys) - len(mismatched)
+    print(f'{args.yaml}: applied {applied}/{len(expected)} {args.plugin}.* keys '
+          f'({len(allowed)} allow-listed)')
     for k in allowed:
         print(f'  known unread (allowed): {k} = {expected[k]!r}')
     for k in failing:
