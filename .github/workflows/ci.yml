@@ -8,6 +8,9 @@ on:
 env:
   ROS_DOMAIN_ID: 42
   ROS_AUTOMATIC_DISCOVERY_RANGE: LOCALHOST
+  # ament_cppcheck skips cppcheck 2.x ("performance issues") unless this is set;
+  # with it the cppcheck test really runs (< 1 s on this package).
+  AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS: "1"
 
 jobs:
   paper-numbers:
@@ -67,7 +70,7 @@ jobs:
             for _ in $(seq 15); do kill -0 "$1" 2>/dev/null || return 0; sleep 1; done
             kill -KILL -- "-$1" 2>/dev/null || true
           }
-          # check <yaml> <expected exit: pass|fail> [script args...]
+          # check <yaml> <expected: pass|fail> [script args...]
           check() {
             yaml=$1; expect=$2; shift 2
             echo "::group::$yaml (expect $expect)"
@@ -75,12 +78,17 @@ jobs:
               > server.log 2>&1 &
             pid=$!
             status=0
-            timeout 90 python3 scripts/check_param_binding.py "$yaml" --configure "$@" || status=$?
+            timeout 90 python3 scripts/check_param_binding.py "$yaml" --configure "$@" \
+              > binding.log 2>&1 || status=$?
             stop "$pid"
+            cat binding.log
             echo "::endgroup::"
             if [ "$expect" = pass ] && [ "$status" -ne 0 ]; then cat server.log; exit 1; fi
-            if [ "$expect" = fail ] && [ "$status" -eq 0 ]; then
-              echo "the check passed a YAML with an undeclared key"; exit 1
+            if [ "$expect" = fail ]; then
+              # Must fail for the right reason: the injected key reported as undeclared.
+              [ "$status" -ne 0 ] || { echo "the check passed a YAML with an undeclared key"; exit 1; }
+              grep -q "NOT DECLARED by /controller_server: FollowPath.se_not_a_parameter" binding.log \
+                || { echo "the check failed, but not on the injected key"; exit 1; }
             fi
           }
           check src/nav2_se_controller/config/nav2_se_controller_params.yaml pass
