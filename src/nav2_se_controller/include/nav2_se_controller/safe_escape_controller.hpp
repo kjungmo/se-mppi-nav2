@@ -170,6 +170,8 @@ protected:
   // longer a transient, and well inside the default progress-checker
   // allowance (10 s), so the operator sees the cause before the goal aborts.
   static constexpr double kQpFailureErrorAfterSec = 2.0;
+  // A streak stays alive only while cycles keep coming at least this often.
+  static constexpr double kQpFailureStaleSec = 0.5;
   FailureStreak qp_failure_streak_;
   std::atomic<bool> se_enabled_mirror_{true};  // se_enabled_ for the timer, lock-free
   rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
