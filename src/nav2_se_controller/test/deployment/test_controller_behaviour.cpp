@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -51,6 +52,20 @@ public:
   bool entrapped() const {return prev_entrapped_;}
   std::size_t trackCount() const {return tracker_.trackCount();}
   int cbfObstacles() const {return counters_.cbf_obstacles.load();}
+  double trackedSpeed() const
+  {
+    return last_tracked_.empty() ? 0.0 : last_tracked_.front().velocity.norm();
+  }
+  // Stand-in for a cycle whose CBF QP failed (forcing a real QP failure needs
+  // a degenerate problem), and the rule behind the ERROR status.
+  void recordQpFailure() {qp_failure_streak_.record(true, steady_clock_.now().nanoseconds());}
+  bool qpErrorWouldFire()
+  {
+    return qp_failure_streak_.longerThan(
+      steady_clock_.now().nanoseconds(),
+      static_cast<std::int64_t>(kQpFailureErrorAfterSec * 1e9),
+      static_cast<std::int64_t>(kQpFailureStaleSec * 1e9));
+  }
 };
 
 struct Options
@@ -359,6 +374,29 @@ TEST_F(ControllerBehaviour, SameGoalAfterAnIdleLoopIsANewTask)
   EXPECT_FALSE(controller_->entrapped());
 }
 
+// Review finding: clearing the QP-failure streak on every new goal hid a
+// persistent failure when the goal moves at replanning rate (follow /
+// moving-goal trees). Only a task boundary (idle loop) ends the streak.
+TEST_F(ControllerBehaviour, GoalUpdatesDuringATaskKeepTheQpFailureStreak)
+{
+  Options opt;
+  opt.overrides = {rclcpp::Parameter("FollowPath.se_task_idle_threshold", 10.0)};
+  start(opt);
+  bool error = false;
+  const auto t0 = std::chrono::steady_clock::now();
+  for (int k = 0; std::chrono::steady_clock::now() - t0 < std::chrono::milliseconds(2600);
+    ++k)
+  {
+    if (k % 10 == 0) {  // a new goal every 0.5 s, 0.2 m apart
+      controller_->setPlan(straightPath("map", 0.0, 2.0 + 0.2 * (k / 10), 0.0));
+    }
+    controller_->recordQpFailure();
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  }
+  error = controller_->qpErrorWouldFire();
+  EXPECT_TRUE(error) << "the 2 s ERROR must survive goal updates within a task";
+}
+
 TEST_F(ControllerBehaviour, NewGoalResetsTheTaskState)
 {
   Options opt;
@@ -476,6 +514,9 @@ TEST_F(ControllerCostmapRate, SlowMoverIsInTheCbfMoreOftenThanBefore)
   int cycles = 0;
   int out_now = 0;
   int out_before = 0;
+  double speed_sum = 0.0;
+  double speed_max = 0.0;
+  int speed_n = 0;
   for (int k = 0; k < 200; ++k) {  // 10 s at 20 Hz
     const double t = 100.0 + 0.05 * k;
     setTime(t);
@@ -492,6 +533,11 @@ TEST_F(ControllerCostmapRate, SlowMoverIsInTheCbfMoreOftenThanBefore)
     if (k >= 20) {  // after 1 s of warm-up
       ++cycles;
       out_now += controller_->cbfObstacles() == 0 ? 1 : 0;
+      if (controller_->cbfObstacles() != 0) {
+        speed_sum += controller_->trackedSpeed();
+        speed_max = std::max(speed_max, controller_->trackedSpeed());
+        ++speed_n;
+      }
       out_before += in_before ? 0 : 1;
     }
   }
@@ -500,6 +546,11 @@ TEST_F(ControllerCostmapRate, SlowMoverIsInTheCbfMoreOftenThanBefore)
   std::printf(
     "slow mover 0.11 m/s: out of the CBF on %.0f %% of cycles now, %.0f %% with b21b0a5's rule\n",
     100.0 * ratio_now, 100.0 * ratio_before);
+  // While in the CBF its speed is over-estimated (conservative: extra braking).
+  std::printf(
+    "slow mover tracked speed while in the CBF: mean %.2f m/s, max %.2f m/s (true %.2f)\n",
+    speed_n > 0 ? speed_sum / speed_n : 0.0, speed_max, speed);
+  EXPECT_GE(speed_sum / std::max(speed_n, 1), speed * 0.9);
   EXPECT_LE(ratio_now, ratio_before);
   EXPECT_LE(ratio_now, 0.25);
 }

@@ -266,7 +266,13 @@ per local-costmap update, so `se_static_min_frames`, `se_track_history` and
 `se_track_max_missed` count costmap updates; a grid that stays identical for longer
 than `se_tracker_stale_grid_timeout` (default two costmap update periods) is fed
 to the tracker anyway, so a frozen costmap never keeps an old velocity in the
-CBF.
+CBF. Known limit of that rule: an obstacle that changes cells less often than
+`se_tracker_stale_grid_timeout` (about 0.11 m/s at 0.05 m cells and a 5 Hz
+costmap) drops out of the CBF on about 9 % of cycles (the repeated grid reads
+zero velocity until the next cell change), and in between its speed is
+over-estimated (measured mean 0.17 m/s, max 0.33 m/s against a true 0.11 m/s;
+`ControllerCostmapRate.SlowMoverIsInTheCbfMoreOftenThanBefore`). That is
+conservative but can cause extra braking.
 
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
