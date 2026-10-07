@@ -88,3 +88,13 @@ TEST(FailureStreak, ClearEndsTheStreak)
   s.clear();
   EXPECT_FALSE(s.longerThan(2501 * kMs, kDuration, kStale));
 }
+
+TEST(FailureStreak, OverrunningLoopStillEscalates)
+{
+  FailureStreak s;
+  s.configure(20.0, 0.5);  // gap floor = the 0.5 s stale bound
+  for (std::int64_t t = 1; t <= 2601; t += 200) {  // a 5 Hz loop, failing every cycle
+    s.record(true, t * kMs);
+  }
+  EXPECT_TRUE(s.longerThan(2602 * kMs, kDuration, kStale));
+}

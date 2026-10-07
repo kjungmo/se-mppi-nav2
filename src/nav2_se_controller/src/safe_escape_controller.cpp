@@ -197,7 +197,9 @@ void SafeEscapeController::configure(
     diag_hardware_id_ = node->get_namespace();
     double controller_frequency = 20.0;
     node->get_parameter("controller_frequency", controller_frequency);
-    qp_failure_streak_.configure(controller_frequency);
+    // Gap floor = the diagnostics' 0.5 s stale bound: an overrunning loop
+    // (< ~6.7 Hz) must not start a new streak on every failing cycle.
+    qp_failure_streak_.configure(controller_frequency, kQpFailureStaleSec);
     diag_pub_ = node->create_publisher<diagnostic_msgs::msg::DiagnosticArray>(
       "/diagnostics", rclcpp::QoS(10));
   }
@@ -522,7 +524,7 @@ void SafeEscapeController::publishDiagnostics()
   const std::int64_t now_ns = steady_clock_.now().nanoseconds();
   const bool qp_failing_long = qp_failure_streak_.longerThan(
     now_ns, static_cast<std::int64_t>(kQpFailureErrorAfterSec * 1e9),
-    static_cast<std::int64_t>(0.5e9));
+    static_cast<std::int64_t>(kQpFailureStaleSec * 1e9));
 
   diagnostic_msgs::msg::DiagnosticStatus st;
   st.name = diag_name_;
