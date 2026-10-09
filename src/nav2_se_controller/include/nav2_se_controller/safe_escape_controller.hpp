@@ -74,7 +74,11 @@ public:
   void cleanup() override;
   void activate() override;
   void deactivate() override;
+#ifdef NAV2_SE_CONTROLLER_HUMBLE_API
+  void reset();  // Humble: not virtual in nav2_core::Controller
+#else
   void reset() override;
+#endif
 
   geometry_msgs::msg::TwistStamped computeVelocityCommands(
     const geometry_msgs::msg::PoseStamped & robot_pose,

@@ -105,8 +105,16 @@ void EscapeCritic::score(mppi::CriticData & data)
   if (use_gap_search_ && data.trajectories.x.shape(1) > 0) {
     const double rx = static_cast<double>(data.trajectories.x(0, 0));
     const double ry = static_cast<double>(data.trajectories.y(0, 0));
-    const double goal_bearing =
-      std::atan2(data.goal.position.y - ry, data.goal.position.x - rx);
+#ifdef NAV2_SE_CONTROLLER_HUMBLE_API
+    // Humble's CriticData has no goal: use the last point of the pruned path.
+    const std::size_t last = data.path.x.shape(0) - 1;
+    const double goal_x = static_cast<double>(data.path.x(last));
+    const double goal_y = static_cast<double>(data.path.y(last));
+#else
+    const double goal_x = data.goal.position.x;
+    const double goal_y = data.goal.position.y;
+#endif
+    const double goal_bearing = std::atan2(goal_y - ry, goal_x - rx);
     const nav2_se_controller::EscapeGap gap = nav2_se_controller::findEscapeGap(
       *costmap_, rx, ry, goal_bearing,
       gap_num_rays_, gap_max_range_, gap_min_clearance_);

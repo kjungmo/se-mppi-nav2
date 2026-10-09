@@ -151,3 +151,74 @@ jobs:
           ./build/nav2_se_controller/test_controller_runtime
           ./build/nav2_se_controller/test_controller_behaviour
           ./build/nav2_se_controller/test_escape_critic_params
+
+  humble:
+    name: ROS 2 Humble (RoboStack) build, test and parameter binding
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pinned RoboStack Humble environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: .github/environment-humble.yml
+          environment-name: ros2
+          cache-environment: true
+          init-shell: bash
+
+      - name: Build
+        timeout-minutes: 15
+        run: |
+          mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/nav2_se_controller
+          cd ws
+          colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+
+
+      - name: Unit, deployment and lint tests
+        timeout-minutes: 10
+        run: |
+          cd ws
+          source install/setup.bash
+          colcon test --packages-select nav2_se_controller --event-handlers console_cohesion+
+          colcon test-result --verbose --test-result-base build/nav2_se_controller
+
+      - name: escape_critic matches libmppi's xtensor storage (SIMD/ABI guard)
+        run: |
+          python3 scripts/check_simd_abi.py \
+            --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
+            --critic ws/install/nav2_se_controller/lib/libescape_critic.so
+
+      - name: controller_server applies every plugin key in the shipped YAML
+        timeout-minutes: 5
+        run: |
+          source ws/install/setup.bash
+          stop() {
+            kill -TERM -- "-$1" 2>/dev/null || true
+            for _ in $(seq 15); do kill -0 "$1" 2>/dev/null || return 0; sleep 1; done
+            kill -KILL -- "-$1" 2>/dev/null || true
+          }
+          check() {  # check <yaml> <pass|fail>
+            setsid ros2 run nav2_controller controller_server --ros-args --params-file "$1" \
+              > server.log 2>&1 &
+            pid=$!
+            status=0
+            timeout 90 python3 scripts/check_param_binding.py "$1" --configure \
+              > binding.log 2>&1 || status=$?
+            stop "$pid"
+            cat binding.log
+            if [ "$2" = pass ] && [ "$status" -ne 0 ]; then cat server.log; exit 1; fi
+            if [ "$2" = fail ]; then
+              [ "$status" -ne 0 ] || { echo "the check passed a YAML with an undeclared key"; exit 1; }
+              grep -q "NOT DECLARED by /controller_server: FollowPath.se_not_a_parameter" binding.log \
+                || { echo "the check failed, but not on the injected key"; exit 1; }
+            fi
+          }
+          # The experiment YAMLs target Jazzy's stack and are checked in the Jazzy job.
+          check src/nav2_se_controller/config/nav2_se_controller_params.yaml pass
+          sed 's/^      se_enabled: true$/      se_enabled: true\n      se_not_a_parameter: 1.0/' \
+            src/nav2_se_controller/config/nav2_se_controller_params.yaml > bogus.yaml
+          grep -q se_not_a_parameter bogus.yaml
+          check bogus.yaml fail
