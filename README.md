@@ -104,9 +104,10 @@ coordinated gain.
    Deployment tests live separately in `src/nav2_se_controller/test/deployment/`
    (the controller on a lifecycle node inside the stock MPPI optimizer, runtime
    parameter changes, `/diagnostics`).
-   The paper's results and its "82 TEST cases in 13 files" refer to commit
-   b21b0a5; deployment tests under `test/deployment/` and later fixes are not part
-   of the evaluated code.
+   The paper's results and its "82 TEST cases in 13 files" (the algorithm tests
+   in `test/test_*.cpp`) refer to tag `paper-v1` (commit b21b0a5); deployment
+   tests under `test/deployment/` and later fixes are not part of the evaluated
+   code.
 6. **Committed benchmark artifacts.** The 1,200-trial randomized 2D benchmark
    ships its raw per-trial CSV, summary, statistics, tables, and figures; a
    number guard (`scripts/check_paper_numbers.py`) asserts that every headline
@@ -137,9 +138,11 @@ with the RoboStack environment in
 [`.github/environment-humble.yml`](.github/environment-humble.yml). What differs
 on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
 
-- Humble's `controller_server` never calls the controller's `reset()`. On this
-  branch every `setPlan()` resets the per-goal state, so a new task still starts
-  clean; `reset()`'s own clearing (on goal end or cancel) does not happen.
+- Humble's `controller_server` never calls the controller's `reset()`. A plan to
+  a new goal, or to the same goal after the control loop was idle longer than
+  `se_task_idle_threshold`, starts a new task and resets the per-task state, so
+  a new task still starts clean; `reset()`'s own clearing (on goal end or
+  cancel) does not happen.
 - The escape critic's gap search needs a goal bearing. Humble's `CriticData` has
   no goal, so it uses the end of the pruned local path (MPPI's path window), not
   the navigation goal. On a curved or long path the two can point in different directions, so
