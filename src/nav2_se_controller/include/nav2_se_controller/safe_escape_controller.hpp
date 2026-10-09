@@ -35,6 +35,7 @@
 #include "nav2_se_controller/escape_safety_coordinator.hpp"
 #include "nav2_se_controller/failure_streak.hpp"
 #include "nav2_se_controller/multi_robot_coordinator.hpp"
+#include "nav2_se_controller/task_boundary.hpp"
 
 namespace nav2_se_controller
 {
@@ -66,6 +67,9 @@ public:
     const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros) override;
 
   void setPlan(const nav_msgs::msg::Path & path) override;
+
+  /// Nav2's speed filter: MPPI scales its limits, and the CBF box follows.
+  void setSpeedLimit(const double & speed_limit, const bool & percentage) override;
 
   void cleanup() override;
   void activate() override;
@@ -115,6 +119,8 @@ protected:
   TrackerConfig tc_;          // cost_threshold / predictor model derived on re-apply
   MultiRobotConfig mc_;
   int cost_threshold_{253};
+  double cbf_robot_radius_{0.0};  // se_cbf_robot_radius; <= 0: footprint circumscribed radius
+  double speed_limit_ratio_{1.0};  // Nav2 speed limit applied to the CBF box
   std::string predict_model_{"cv"};
   unsigned pending_reapply_{0};
   bool config_applied_once_{false};  // warn on calibration resets after configure
@@ -189,6 +195,37 @@ protected:
   // Single entrapment source of truth, shared with the EscapeCritic.
   std::shared_ptr<SharedEntrapment> shared_;
   std::size_t furthest_progress_{0};  // monotonic furthest reached path index
+  // Same-goal replanning (Nav2's default tree replans at 1 Hz) keeps the task
+  // state; only the progress index is re-anchored on the new path.
+  bool has_goal_{false};
+  std::string goal_frame_;
+  double goal_x_{0.0};
+  double goal_y_{0.0};
+  bool rebase_progress_{false};
+  // A plan after the control loop was idle longer than se_task_idle_threshold
+  // (>= 3 control periods) starts a new task even for the same goal: Humble's
+  // controller_server never calls reset(), so a retry would otherwise inherit
+  // the previous task's state.
+  TaskBoundary task_boundary_;
+  double task_idle_threshold_{1.0};
+  double controller_frequency_{20.0};
+
+  // The tracker advances only when the costmap content changed: the control
+  // loop usually runs faster than the local costmap, and re-reading the same
+  // grid with a new stamp gave moving obstacles zero velocity.
+  std::vector<unsigned char> last_grid_;
+  unsigned int last_grid_w_{0};
+  unsigned int last_grid_h_{0};
+  double last_grid_ox_{0.0};
+  double last_grid_oy_{0.0};
+  std::vector<TrackedObstacle> last_tracked_;
+  // A grid that stays identical for longer than this is fed to the tracker
+  // anyway (velocities decay to zero, tracks age, static evidence builds), so
+  // a frozen costmap never keeps a stale velocity in the CBF.
+  // se_tracker_stale_grid_timeout; <= 0: two local-costmap update periods.
+  double stale_grid_timeout_param_{0.0};
+  double stale_grid_timeout_{0.4};
+  double last_tracker_stamp_{0.0};
   double prev_stamp_{0.0};
   bool has_stamp_{false};
   bool prev_entrapped_{false};  // for ENTER/EXIT escape-mode transition logs

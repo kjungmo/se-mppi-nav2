@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2/LinearMath/Transform.h"
 #include "tf2/utils.hpp"
 
 #include "nav2_se_controller/path_progress.hpp"
@@ -35,7 +37,11 @@ void SafeEscapeController::configure(
   // Reuse the full MPPI setup (optimizer, path handler, parameters handler).
   MPPIController::configure(parent, name, tf, costmap_ros);
 
-  robot_radius_ = costmap_ros_->getLayeredCostmap()->getInscribedRadius();
+  // CBF disc radius: the footprint's CIRCUMSCRIBED radius, so the certified
+  // disc covers the whole (padded) footprint; the inscribed radius left the
+  // corners of a rectangular robot outside it. se_cbf_robot_radius > 0
+  // overrides it (see reapplyConfig()).
+  robot_radius_ = costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
 
   // Parameters bound directly to members (se_enabled_, ...) stay Dynamic: MPPI's
   // ParametersHandler writes the member on a runtime set and the control loop
@@ -67,6 +73,12 @@ void SafeEscapeController::configure(
 
   getParam(dynamic_speed_threshold_, "se_dynamic_speed_threshold", 0.1);
   getParam(max_dynamic_radius_, "se_max_obstacle_radius", 1.0);
+  bindConfig(
+    stale_grid_timeout_param_, "se_tracker_stale_grid_timeout", 0.0, kTracker);
+  getParam(task_idle_threshold_, "se_task_idle_threshold", 1.0);
+  if (auto node = parent_.lock()) {
+    node->get_parameter("controller_frequency", controller_frequency_);
+  }
 
   bindConfig(ec_.progress_stall_window, "se_progress_stall_window", 30, kDetector);
 
@@ -78,6 +90,7 @@ void SafeEscapeController::configure(
   bindConfig(fc_.lookahead, "se_cbf_lookahead", 0.2, kFilter);
   bindConfig(fc_.safety_margin, "se_cbf_safety_margin", 0.05, kFilter);
   bindConfig(fc_.slack_weight, "se_cbf_slack_weight", 1.0e3, kFilter);
+  bindConfig(cbf_robot_radius_, "se_cbf_robot_radius", 0.0, kFilter);
 
   bindConfig(cost_threshold_, "se_obstacle_cost_threshold", 253, kTracker);
   bindConfig(tc_.min_cells, "se_obstacle_min_cells", 2, kTracker);
@@ -153,6 +166,17 @@ void SafeEscapeController::configure(
     }
   }
 
+  // The CBF filter's velocity box is MPPI's own limits (declared by the MPPI
+  // optimizer above), not separate hard-coded values: a robot configured with
+  // vx_max = 1.0 must not be clamped to 0.5 by the safety layer.
+  if (auto node = parent_.lock()) {
+    node->get_parameter(name_ + ".vx_max", fc_.v_max);
+    node->get_parameter(name_ + ".vx_min", fc_.v_min);
+    node->get_parameter(name_ + ".wz_max", fc_.w_max);
+    // Braking to a stop must stay feasible even when MPPI's vx_min > 0.
+    fc_.v_min = std::min(fc_.v_min, 0.0);
+  }
+
   pending_reapply_ = kAllConsumers;
   reapplyConfig();
   // MPPI runs post-set callbacks under its parameter lock, which the SE part
@@ -174,9 +198,30 @@ void SafeEscapeController::configure(
             result.reason = p.get_name() +
             " is read only at configure; set it while the controller_server is "
             "unconfigured (lifecycle cleanup), then configure";
-            break;
+            return result;
           }
         }
+        // MPPI's own velocity limits: follow them into the CBF box. The node
+        // value is not committed yet here, so take the incoming value.
+        std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+        for (const auto & p : params) {
+          if (p.get_type() != rclcpp::ParameterType::PARAMETER_DOUBLE) {
+            continue;
+          }
+          if (p.get_name() == name_ + ".vx_max") {
+            fc_.v_max = p.as_double();
+          } else if (p.get_name() == name_ + ".vx_min") {
+            fc_.v_min = std::min(p.as_double(), 0.0);  // stopping stays feasible
+          } else if (p.get_name() == name_ + ".wz_max") {
+            fc_.w_max = p.as_double();
+          } else {
+            continue;
+          }
+          pending_reapply_ |= kFilter;
+        }
+        // Apply here: rclcpp does not guarantee this callback runs before
+        // MPPI's handler (and its post-set re-apply).
+        reapplyConfig();
         return result;
       });
   }
@@ -227,12 +272,25 @@ void SafeEscapeController::reapplyConfig()
     coordinator_.configure(cc_);
   }
   if (pending & kFilter) {
+    robot_radius_ = cbf_robot_radius_ > 0.0 ? cbf_robot_radius_ :
+      costmap_ros_->getLayeredCostmap()->getCircumscribedRadius();
     CbfConfig fc = fc_;
+    // Same scaling MPPI's Optimizer::setSpeedLimit applies to its limits.
+    fc.v_max = fc_.v_max * speed_limit_ratio_;
+    fc.v_min = fc_.v_min * speed_limit_ratio_;
+    fc.w_max = fc_.w_max * speed_limit_ratio_;
     fc.alpha = cc_.alpha_base;
     fc.robot_radius = robot_radius_;
     filter_.configure(fc);
   }
   if (pending & kTracker) {
+    // Default stale-grid timeout: two local-costmap update periods. A live
+    // costmap re-renders every period, so a grid identical across two periods
+    // is a still scene or stale data; either way the tracker must advance.
+    double update_frequency = 0.0;
+    costmap_ros_->get_parameter("update_frequency", update_frequency);
+    stale_grid_timeout_ = stale_grid_timeout_param_ > 0.0 ? stale_grid_timeout_param_ :
+      (update_frequency > 0.0 ? 2.0 / update_frequency : 0.5);
     TrackerConfig tc = tc_;
     // Costmap occupied values are 0..254 (LETHAL); clamp to that range so a
     // threshold can never be set so high (255 == NO_INFORMATION) that no real
@@ -256,7 +314,23 @@ void SafeEscapeController::reapplyConfig()
     multi_.configure(mc_);
   }
   se_enabled_mirror_.store(se_enabled_);
+  task_boundary_.configure(task_idle_threshold_, controller_frequency_);
   config_applied_once_ = true;
+}
+
+void SafeEscapeController::setSpeedLimit(const double & speed_limit, const bool & percentage)
+{
+  MPPIController::setSpeedLimit(speed_limit, percentage);
+  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+  if (speed_limit == 0.0) {  // nav2_costmap_2d::NO_SPEED_LIMIT
+    speed_limit_ratio_ = 1.0;
+  } else if (percentage) {
+    speed_limit_ratio_ = speed_limit / 100.0;
+  } else {
+    speed_limit_ratio_ = fc_.v_max > 0.0 ? speed_limit / fc_.v_max : 1.0;
+  }
+  pending_reapply_ |= kFilter;
+  reapplyConfig();
 }
 
 void SafeEscapeController::cleanup()
@@ -306,9 +380,41 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
   MPPIController::setPlan(path);
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   global_plan_ = path;
-  // New reference path => reset the per-task escape/tracking state.
+  if (path.poses.empty()) {
+    return;
+  }
+  const auto & g = path.poses.back().pose.position;
+  // Same goal: same frame, endpoint within two costmap cells. Planners with a
+  // goal tolerance, or replanning around a blocked goal, move the endpoint
+  // slightly between replans; that is still the same task.
+  const double same_goal_tolerance = 2.0 * costmap_ros_->getCostmap()->getResolution();
+  const bool same_goal = has_goal_ && path.header.frame_id == goal_frame_ &&
+    std::hypot(g.x - goal_x_, g.y - goal_y_) <= same_goal_tolerance;
+  has_goal_ = true;
+  goal_frame_ = path.header.frame_id;
+  goal_x_ = g.x;
+  goal_y_ = g.y;
+  const bool new_task = task_boundary_.newPlanStartsTask(steady_clock_.now().seconds());
+  if (same_goal && !new_task) {
+    // Replanned path to the same goal: obstacle tracks and the stall count are
+    // world/task state, not path state. Only the path-index baseline changes.
+    rebase_progress_ = true;
+    return;
+  }
+  // New goal or new task => reset the per-task escape/tracking state.
+  rebase_progress_ = false;
   detector_.reset();
   tracker_.reset();
+  multi_.reset();
+  if (new_task) {
+    // Only a task boundary ends the QP-failure streak: goal updates while the
+    // loop is active (follow / moving-goal trees) must not hide a persistent
+    // failure from /diagnostics.
+    qp_failure_streak_.clear();
+  }
+  prev_entrapped_ = false;
+  last_grid_.clear();
+  last_tracked_.clear();
   furthest_progress_ = 0;
   has_stamp_ = false;
   if (shared_) {
@@ -323,9 +429,13 @@ void SafeEscapeController::reset()
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   detector_.reset();
   tracker_.reset();
+  last_grid_.clear();
+  last_tracked_.clear();
   multi_.reset();
   furthest_progress_ = 0;
   has_stamp_ = false;
+  has_goal_ = false;
+  rebase_progress_ = false;
   if (shared_) {
     shared_->entrapped.store(false, std::memory_order_relaxed);
   }
@@ -336,6 +446,14 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   const geometry_msgs::msg::Twist & robot_speed,
   nav2_core::GoalChecker * goal_checker)
 {
+  // Stamp the task boundary when this call returns or throws (every exit).
+  struct ReturnStamp
+  {
+    TaskBoundary & boundary;
+    rclcpp::Clock & clock;
+    ~ReturnStamp() {boundary.controlReturned(clock.now().seconds());}
+  } return_stamp{task_boundary_, steady_clock_};
+
   // Nominal command from the stock MPPI optimizer (incl. EscapeCritic if listed).
   geometry_msgs::msg::TwistStamped cmd =
     MPPIController::computeVelocityCommands(robot_pose, robot_speed, goal_checker);
@@ -353,21 +471,67 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   state.y = robot_pose.pose.position.y;
   state.yaw = tf2::getYaw(robot_pose.pose.orientation);
 
+  // 0. Frames: the global plan is in the planner's frame (e.g. map), the pose
+  //    in the local costmap's frame (e.g. odom). Express the robot in the plan
+  //    frame for progress and goal distance, and the goal in the robot frame
+  //    for the multi-robot coordinator.
+  double plan_x = state.x;
+  double plan_y = state.y;
+  Eigen::Vector2d goal_xy(state.x, state.y);
+  bool plan_frame_ok = true;
+  if (!global_plan_.poses.empty()) {
+    const auto & g = global_plan_.poses.back().pose.position;
+    goal_xy = Eigen::Vector2d(g.x, g.y);
+    const std::string & plan_frame = global_plan_.header.frame_id;
+    if (!plan_frame.empty() && plan_frame != robot_pose.header.frame_id) {
+      try {
+        const auto t = tf_buffer_->lookupTransform(
+          plan_frame, robot_pose.header.frame_id, tf2::TimePointZero);
+        const tf2::Transform plan_from_robot(
+          tf2::Quaternion(
+            t.transform.rotation.x, t.transform.rotation.y,
+            t.transform.rotation.z, t.transform.rotation.w),
+          tf2::Vector3(
+            t.transform.translation.x, t.transform.translation.y,
+            t.transform.translation.z));
+        const tf2::Vector3 r = plan_from_robot * tf2::Vector3(state.x, state.y, 0.0);
+        plan_x = r.x();
+        plan_y = r.y();
+        const tf2::Vector3 gr = plan_from_robot.inverse() * tf2::Vector3(g.x, g.y, 0.0);
+        goal_xy = Eigen::Vector2d(gr.x(), gr.y());
+      } catch (const tf2::TransformException & e) {
+        plan_frame_ok = false;
+        RCLCPP_WARN_THROTTLE(
+          logger_, steady_clock_, 2000,
+          "SE: no transform %s -> %s (%s); entrapment detection holds its state",
+          robot_pose.header.frame_id.c_str(), plan_frame.c_str(), e.what());
+      }
+    }
+  }
+
   // 1. Entrapment from MONOTONIC global-path progress (single source of truth).
   //    nearestPathIndex is non-monotonic, so track the furthest reached index.
-  const std::size_t nearest = nearestPathIndex(global_plan_, state.x, state.y);
-  furthest_progress_ = std::max(furthest_progress_, nearest);
-  bool entrapped = detector_.update(furthest_progress_);
+  bool entrapped = prev_entrapped_;
+  if (plan_frame_ok) {
+    const std::size_t nearest = nearestPathIndex(global_plan_, plan_x, plan_y);
+    if (rebase_progress_) {
+      furthest_progress_ = nearest;
+      detector_.rebase(nearest);
+      rebase_progress_ = false;
+    }
+    furthest_progress_ = std::max(furthest_progress_, nearest);
+    entrapped = detector_.update(furthest_progress_);
 
-  // Suppress entrapment near the goal: a robot finishing at the path end would
-  // otherwise stall the progress signal and trigger a false escape.
-  if (!global_plan_.poses.empty()) {
-    const auto & goal = global_plan_.poses.back().pose.position;
-    const double dist_to_goal = std::hypot(goal.x - state.x, goal.y - state.y);
-    if (dist_to_goal <= goal_reached_tolerance_) {
-      entrapped = false;
-      detector_.reset();
-      furthest_progress_ = 0;
+    // Suppress entrapment near the goal: a robot finishing at the path end would
+    // otherwise stall the progress signal and trigger a false escape.
+    if (!global_plan_.poses.empty()) {
+      const auto & goal = global_plan_.poses.back().pose.position;
+      const double dist_to_goal = std::hypot(goal.x - plan_x, goal.y - plan_y);
+      if (dist_to_goal <= goal_reached_tolerance_) {
+        entrapped = false;
+        detector_.reset();
+        furthest_progress_ = 0;
+      }
     }
   }
   if (shared_) {
@@ -405,7 +569,25 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   {
     nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
     std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(*(costmap->getMutex()));
-    tracked = tracker_.update(*costmap, stamp);
+    const unsigned int w = costmap->getSizeInCellsX();
+    const unsigned int h = costmap->getSizeInCellsY();
+    const unsigned char * grid = costmap->getCharMap();
+    const bool unchanged = !last_grid_.empty() && w == last_grid_w_ && h == last_grid_h_ &&
+      costmap->getOriginX() == last_grid_ox_ && costmap->getOriginY() == last_grid_oy_ &&
+      std::equal(last_grid_.begin(), last_grid_.end(), grid);
+    if (unchanged && stamp - last_tracker_stamp_ < stale_grid_timeout_) {
+      tracked = last_tracked_;  // same frame as last cycle: keep its estimates
+    } else {
+      // New data, or a grid frozen past the timeout: advance the tracker.
+      tracked = tracker_.update(*costmap, stamp);
+      last_tracker_stamp_ = stamp;
+      last_grid_.assign(grid, grid + static_cast<std::size_t>(w) * h);
+      last_grid_w_ = w;
+      last_grid_h_ = h;
+      last_grid_ox_ = costmap->getOriginX();
+      last_grid_oy_ = costmap->getOriginY();
+      last_tracked_ = tracked;
+    }
   }
   const std::size_t dropped = tracker_.droppedTrackCount();
   const std::uint64_t dropped_before = counters_.tracks_dropped.exchange(dropped);
@@ -437,12 +619,6 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   //     the reciprocal budget share and run the deadlock/priority machine.
   MultiRobotCoordinator::Role role = MultiRobotCoordinator::Role::kNone;
   if (multirobot_enabled_) {
-    Eigen::Vector2d goal_xy(state.x, state.y);
-    if (!global_plan_.poses.empty()) {
-      goal_xy = Eigen::Vector2d(
-        global_plan_.poses.back().pose.position.x,
-        global_plan_.poses.back().pose.position.y);
-    }
     // Snapshot under the lock: the odom callbacks run on the executor thread.
     std::vector<NeighborRobot> neighbors;
     {

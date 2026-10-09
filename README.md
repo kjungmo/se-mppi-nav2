@@ -104,9 +104,10 @@ coordinated gain.
    Deployment tests live separately in `src/nav2_se_controller/test/deployment/`
    (the controller on a lifecycle node inside the stock MPPI optimizer, runtime
    parameter changes, `/diagnostics`).
-   The paper's results and its "82 TEST cases in 13 files" refer to commit
-   b21b0a5; deployment tests under `test/deployment/` and later fixes are not part
-   of the evaluated code.
+   The paper's results and its "82 TEST cases in 13 files" (the algorithm tests
+   in `test/test_*.cpp`) refer to tag `paper-v1` (commit b21b0a5); deployment
+   tests under `test/deployment/` and later fixes are not part of the evaluated
+   code.
 6. **Committed benchmark artifacts.** The 1,200-trial randomized 2D benchmark
    ships its raw per-trial CSV, summary, statistics, tables, and figures; a
    number guard (`scripts/check_paper_numbers.py`) asserts that every headline
@@ -137,9 +138,11 @@ with the RoboStack environment in
 [`.github/environment-humble.yml`](.github/environment-humble.yml). What differs
 on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
 
-- Humble's `controller_server` never calls the controller's `reset()`. On this
-  branch every `setPlan()` resets the per-goal state, so a new task still starts
-  clean; `reset()`'s own clearing (on goal end or cancel) does not happen.
+- Humble's `controller_server` never calls the controller's `reset()`. A plan to
+  a new goal, or to the same goal after the control loop was idle longer than
+  `se_task_idle_threshold`, starts a new task and resets the per-task state, so
+  a new task still starts clean; `reset()`'s own clearing (on goal end or
+  cancel) does not happen.
 - The escape critic's gap search needs a goal bearing. Humble's `CriticData` has
   no goal, so it uses the end of the pruned local path (MPPI's path window), not
   the navigation goal. On a curved or long path the two can point in different directions, so
@@ -241,7 +244,7 @@ mkdir -p ws_asan/src && ln -s "$PWD/src/nav2_se_controller" ws_asan/src/
   "-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address" "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address" \
   && source install/setup.bash \
   && export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=0:new_delete_type_mismatch=0:alloc_dealloc_mismatch=0 \
-  && for t in test_controller_runtime test_escape_critic_params; do ./build/nav2_se_controller/$t || exit 1; done)
+  && for t in test_controller_runtime test_controller_behaviour test_escape_critic_params; do ./build/nav2_se_controller/$t || exit 1; done)
 
 python3 scripts/check_paper_numbers.py
 ```
@@ -252,16 +255,17 @@ Runtime-settable (`ros2 param set /controller_server FollowPath.se_alpha_base 3.
 the new value reaches its consumer before the next control cycle:
 
 - controller: `se_enabled`, `se_goal_reached_tolerance`,
-  `se_dynamic_speed_threshold`, `se_max_obstacle_radius`;
+  `se_dynamic_speed_threshold`, `se_max_obstacle_radius`, `se_task_idle_threshold`;
 - entrapment detector: `se_progress_stall_window`;
 - coordinator: `se_alpha_base` (also the CBF filter's default gain),
   `se_alpha_escape`, `se_ttc_override_threshold`, `se_q_trust_threshold`;
-- CBF filter: `se_cbf_lookahead`, `se_cbf_safety_margin`, `se_cbf_slack_weight`;
+- CBF filter: `se_cbf_lookahead`, `se_cbf_safety_margin`, `se_cbf_slack_weight`,
+  `se_cbf_robot_radius`;
 - tracker: `se_obstacle_cost_threshold`, `se_obstacle_min_cells`,
   `se_obstacle_association_gate`, `se_obstacle_max_speed`, `se_classify_static`,
   `se_static_min_frames`, `se_static_fraction`, `se_predict_horizon`,
-  `se_track_history`, `se_track_max_missed`, `se_predict_model`, `se_conformal`
-  (the learned conformal bounds are kept);
+  `se_track_history`, `se_track_max_missed`, `se_predict_model`, `se_conformal`,
+  `se_tracker_stale_grid_timeout` (the learned conformal bounds are kept);
 - tracker, restarting the conformal calibration from `se_conformal_initial_q`
   (logged as a warning): `se_predict_steps`, `se_predict_dt`,
   `se_conformal_coverage`, `se_conformal_lr`, `se_conformal_initial_q`,
@@ -273,6 +277,27 @@ the new value reaches its consumer before the next control cycle:
 Configure-only (a runtime set is rejected with a reason; change them while the
 `controller_server` is unconfigured, then configure): `se_multirobot`, `se_viz`,
 `se_neighbor_odom_topics`.
+
+The CBF filter's velocity box follows MPPI's `vx_max`, `wz_max` and
+`min(vx_min, 0)`, scaled by Nav2's speed limit (`setSpeedLimit`, as MPPI scales its
+own limits); its disc radius is the footprint's circumscribed radius unless
+`se_cbf_robot_radius` > 0. Path progress is measured in the plan's frame (the
+robot pose is transformed with the latest plan-to-costmap transform). A replan to
+the same goal (same frame, endpoint within two costmap cells) keeps the stall count
+and obstacle tracks, unless the control loop was idle for longer than
+`se_task_idle_threshold` (at least three control periods): then it is a new task
+and the per-task state resets, on every distribution. The tracker advances once
+per local-costmap update, so `se_static_min_frames`, `se_track_history` and
+`se_track_max_missed` count costmap updates; a grid that stays identical for longer
+than `se_tracker_stale_grid_timeout` (default two costmap update periods) is fed
+to the tracker anyway, so a frozen costmap never keeps an old velocity in the
+CBF. Known limit of that rule: an obstacle that changes cells less often than
+`se_tracker_stale_grid_timeout` (about 0.11 m/s at 0.05 m cells and a 5 Hz
+costmap) drops out of the CBF on about 9 % of cycles (the repeated grid reads
+zero velocity until the next cell change), and in between its speed is
+over-estimated (measured mean 0.17 m/s, max 0.33 m/s against a true 0.11 m/s;
+`ControllerCostmapRate.SlowMoverIsInTheCbfMoreOftenThanBefore`). That is
+conservative but can cause extra braking.
 
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter

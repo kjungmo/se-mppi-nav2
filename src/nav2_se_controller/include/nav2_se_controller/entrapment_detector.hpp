@@ -74,6 +74,14 @@ public:
     return entrapped_;
   }
 
+  /// Re-anchor progress on a replacement path to the SAME goal: the path index
+  /// space changes, while the stall count and the entrapment state carry over.
+  void rebase(std::size_t furthest_path_point)
+  {
+    seen_ = true;
+    last_furthest_ = furthest_path_point;
+  }
+
   void reset()
   {
     seen_ = false;
