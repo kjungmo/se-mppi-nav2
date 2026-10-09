@@ -130,6 +130,24 @@ NVIDIA GPU). The setup script (`scripts/setup_ros2_env.sh`) provisions:
   `pkg-config`
 
 A GPU workstation is recommended: the live Gazebo stack needs hardware rendering.
+
+**ROS 2 Humble.** The controller also builds and passes its unit, deployment and
+lint tests on Humble (Nav2 1.1.x, `nav2_mppi_controller` 1.1.20), checked in CI
+with the RoboStack environment in
+[`.github/environment-humble.yml`](.github/environment-humble.yml). What differs
+on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
+
+- Humble's `controller_server` never calls the controller's `reset()`. On this
+  branch every `setPlan()` resets the per-goal state, so a new task still starts
+  clean; `reset()`'s own clearing (on goal end or cancel) does not happen.
+- The escape critic's gap search needs a goal bearing. Humble's `CriticData` has
+  no goal, so it uses the end of the pruned local path (MPPI's path window), not
+  the navigation goal. On a curved or long path the two can point in different directions, so
+  the gap choice is not equivalent to Jazzy's.
+- **SE-MPPI's control performance on Humble's MPPI 1.1.x has not been
+  evaluated**: every reported result comes from the Jazzy stack or the 2D
+  benchmark.
+
 See [`RUN.md`](RUN.md) for the full run guide and troubleshooting.
 
 ## Install and build
@@ -172,6 +190,8 @@ colcon test --packages-select nav2_se_controller && colcon test-result --verbose
   declared and hold the YAML value (a few keys in the experiment YAML are known to
   be unread and listed in the workflow; an injected unknown key must fail);
 - the deployment tests again under AddressSanitizer;
+- a Humble job (`.github/environment-humble.yml`): build, tests, the ABI check and
+  the parameter-binding check on the shipped YAML;
 - `scripts/check_paper_numbers.py` (default mode).
 
 The lint tests include cppcheck: CI sets `AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1`,
@@ -181,6 +201,7 @@ To reproduce the CI jobs locally (from the repository root):
 
 ```bash
 micromamba create -y -n se_ci -f .github/environment-jazzy.yml
+# For the Humble job, use .github/environment-humble.yml instead.
 micromamba activate se_ci
 export AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1
 mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/
@@ -193,7 +214,8 @@ python3 scripts/check_simd_abi.py \
   --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
   --critic ws/install/nav2_se_controller/lib/libescape_critic.so
 
-# Parameter binding (headless controller_server, lifecycle configure), as in CI
+# Parameter binding (headless controller_server, lifecycle configure), as in CI.
+# The Humble job runs only the shipped YAML and the negative fixture.
 source ws/install/setup.bash
 check() {  # check <yaml> [script args...]
   ros2 run nav2_controller controller_server --ros-args --params-file "$1" &

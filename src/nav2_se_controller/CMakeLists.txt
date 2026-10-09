@@ -57,6 +57,16 @@ find_package(diagnostic_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OsqpEigen REQUIRED)
 
+# Humble (Nav2 1.1.x) API differences, guarded at compile time:
+#  - nav2_core::Controller has no virtual reset() (added in 1.2), so
+#    SafeEscapeController::reset() cannot be marked override and
+#    controller_server never calls it (setPlan() still resets per goal);
+#  - mppi::CriticData has no `goal`; EscapeCritic uses the path's last point.
+set(SE_MPPI_API_DEFINITIONS "")
+if(nav2_core_VERSION VERSION_LESS 1.2.0)
+  set(SE_MPPI_API_DEFINITIONS NAV2_SE_CONTROLLER_HUMBLE_API)
+endif()
+
 # =============================================================================
 # se_mppi_core: plugin-free shared algorithm library (CBF filter, coordinator,
 # obstacle tracker/clustering, path progress). Linked by BOTH plugin libraries.
@@ -92,6 +102,7 @@ target_include_directories(escape_critic PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(escape_critic ${critic_dependencies})
+target_compile_definitions(escape_critic PUBLIC ${SE_MPPI_API_DEFINITIONS})
 target_link_libraries(escape_critic se_mppi_core)
 # MPPI xtensor-ABI flags (see the boundary note at the top). PUBLIC so that any
 # target linking escape_critic's xt-typed API (the gtest binary) compiles with
@@ -113,6 +124,7 @@ target_include_directories(safe_escape_controller PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(safe_escape_controller ${controller_dependencies})
+target_compile_definitions(safe_escape_controller PUBLIC ${SE_MPPI_API_DEFINITIONS})
 target_link_libraries(safe_escape_controller se_mppi_core)
 
 install(TARGETS se_mppi_core escape_critic safe_escape_controller
