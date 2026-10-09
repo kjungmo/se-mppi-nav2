@@ -53,6 +53,7 @@ find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(diagnostic_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OsqpEigen REQUIRED)
 
@@ -105,7 +106,7 @@ target_compile_options(escape_critic PUBLIC ${MPPI_ABI_OPTIONS})
 # =============================================================================
 set(controller_dependencies
   nav2_mppi_controller nav2_core nav2_costmap_2d pluginlib rclcpp
-  rclcpp_lifecycle geometry_msgs nav_msgs tf2 tf2_ros visualization_msgs)
+  rclcpp_lifecycle geometry_msgs nav_msgs tf2 tf2_ros visualization_msgs diagnostic_msgs)
 add_library(safe_escape_controller SHARED
   src/safe_escape_controller.cpp)
 target_include_directories(safe_escape_controller PUBLIC
@@ -158,6 +159,23 @@ if(BUILD_TESTING)
   # Runtime smoke test: load the plugins via pluginlib (needs them installed).
   ament_add_gtest(test_plugin_load test/test_plugin_load.cpp)
   ament_target_dependencies(test_plugin_load pluginlib nav2_core nav2_mppi_controller)
+
+  # Deployment tests (test/deployment/): the controller on a lifecycle node with
+  # the stock MPPI optimizer, runtime parameter changes. Kept apart from the
+  # algorithm unit tests in test/test_*.cpp, which the paper counts.
+  ament_add_gtest(test_controller_runtime test/deployment/test_controller_runtime.cpp
+    TIMEOUT 120)
+  target_link_libraries(test_controller_runtime safe_escape_controller)
+  ament_target_dependencies(test_controller_runtime
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros diagnostic_msgs)
+
+  ament_add_gtest(test_failure_streak test/deployment/test_failure_streak.cpp)
+  target_include_directories(test_failure_streak PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+  ament_add_gtest(test_escape_critic_params test/deployment/test_escape_critic_params.cpp)
+  target_link_libraries(test_escape_critic_params escape_critic)
+  ament_target_dependencies(test_escape_critic_params
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle)
 endif()
 
 ament_export_include_directories(include)

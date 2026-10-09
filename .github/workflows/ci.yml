@@ -1,0 +1,152 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+env:
+  ROS_DOMAIN_ID: 42
+  ROS_AUTOMATIC_DISCOVERY_RANGE: LOCALHOST
+  # ament_cppcheck skips cppcheck 2.x ("performance issues") unless this is set;
+  # with it the cppcheck test really runs (< 1 s on this package).
+  AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS: "1"
+
+jobs:
+  paper-numbers:
+    name: paper number guard
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every headline figure traces to a committed artifact
+        run: python3 scripts/check_paper_numbers.py
+
+  jazzy:
+    name: ROS 2 Jazzy (RoboStack) build, test and parameter binding
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pinned RoboStack Jazzy environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: .github/environment-jazzy.yml
+          environment-name: ros2
+          cache-environment: true
+          init-shell: bash
+
+      - name: Build
+        timeout-minutes: 15
+        run: |
+          mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/nav2_se_controller
+          cd ws
+          colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+
+
+      - name: Unit, deployment and lint tests
+        timeout-minutes: 10
+        run: |
+          cd ws
+          source install/setup.bash
+          colcon test --packages-select nav2_se_controller --event-handlers console_cohesion+
+          colcon test-result --verbose --test-result-base build/nav2_se_controller
+
+      - name: escape_critic matches libmppi's xtensor storage (SIMD/ABI guard)
+        run: |
+          python3 scripts/check_simd_abi.py \
+            --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
+            --critic ws/install/nav2_se_controller/lib/libescape_critic.so
+
+      - name: controller_server applies every plugin key in the YAMLs
+        timeout-minutes: 8
+        run: |
+          source ws/install/setup.bash
+          stop() {  # stop the server's process group; SIGKILL if it lingers
+            kill -TERM -- "-$1" 2>/dev/null || true
+            for _ in $(seq 15); do kill -0 "$1" 2>/dev/null || return 0; sleep 1; done
+            kill -KILL -- "-$1" 2>/dev/null || true
+          }
+          # check <yaml> <expected: pass|fail> [script args...]
+          check() {
+            yaml=$1; expect=$2; shift 2
+            echo "::group::$yaml (expect $expect)"
+            setsid ros2 run nav2_controller controller_server --ros-args --params-file "$yaml" \
+              > server.log 2>&1 &
+            pid=$!
+            status=0
+            timeout 90 python3 scripts/check_param_binding.py "$yaml" --configure "$@" \
+              > binding.log 2>&1 || status=$?
+            stop "$pid"
+            cat binding.log
+            echo "::endgroup::"
+            if [ "$expect" = pass ] && [ "$status" -ne 0 ]; then cat server.log; exit 1; fi
+            if [ "$expect" = fail ]; then
+              # Must fail for the right reason: the injected key reported as undeclared.
+              [ "$status" -ne 0 ] || { echo "the check passed a YAML with an undeclared key"; exit 1; }
+              grep -q "NOT DECLARED by /controller_server: FollowPath.se_not_a_parameter" binding.log \
+                || { echo "the check failed, but not on the injected key"; exit 1; }
+            fi
+          }
+          check src/nav2_se_controller/config/nav2_se_controller_params.yaml pass
+          # Experiment config. Known-unread keys: TwirlingCritic is not in its
+          # critics list, AckermannConstraints only applies to the Ackermann
+          # model (it uses DiffDrive), and Jazzy's MPPI reads `verbose` as
+          # <node name>.verbose, not <plugin>.verbose.
+          check experiments/sim/nav2_se_loopback.yaml pass \
+            --allow-unread FollowPath.TwirlingCritic.enabled \
+            --allow-unread FollowPath.TwirlingCritic.twirling_cost_power \
+            --allow-unread FollowPath.TwirlingCritic.twirling_cost_weight \
+            --allow-unread FollowPath.AckermannConstraints.min_turning_r \
+            --allow-unread FollowPath.verbose
+          # Negative fixture: an undeclared key must fail the check.
+          sed 's/^      se_enabled: true$/      se_enabled: true\n      se_not_a_parameter: 1.0/' \
+            src/nav2_se_controller/config/nav2_se_controller_params.yaml > bogus.yaml
+          grep -q se_not_a_parameter bogus.yaml
+          check bogus.yaml fail
+
+  jazzy-asan:
+    name: ROS 2 Jazzy deployment tests under AddressSanitizer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pinned RoboStack Jazzy environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: .github/environment-jazzy.yml
+          environment-name: ros2
+          cache-environment: true
+          init-shell: bash
+
+      - name: Build with -fsanitize=address
+        timeout-minutes: 15
+        run: |
+          mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/nav2_se_controller
+          cd ws
+          # Eigen stops trusting glibc malloc alignment under ASan and switches to
+          # its own aligned allocator; pin it back so Eigen objects allocated by the
+          # uninstrumented OsqpEigen library are freed the same way.
+          colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+ \
+            --cmake-args "-DCMAKE_CXX_FLAGS=-fsanitize=address -fno-omit-frame-pointer -DEIGEN_MALLOC_ALREADY_ALIGNED=1" \
+              "-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address" \
+              "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address"
+
+      - name: Runtime parameter changes leave no dangling reference
+        timeout-minutes: 5
+        run: |
+          cd ws
+          source install/setup.bash
+          # detect_stack_use_after_return catches a write into a dead configure() frame.
+          # The two mismatch checks are off for allocations made inside the
+          # uninstrumented ROS libraries.
+          export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=0:new_delete_type_mismatch=0:alloc_dealloc_mismatch=0
+          ./build/nav2_se_controller/test_controller_runtime
+          ./build/nav2_se_controller/test_escape_critic_params

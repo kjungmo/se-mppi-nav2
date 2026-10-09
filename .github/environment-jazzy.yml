@@ -1,0 +1,38 @@
+# Minimal RoboStack ROS 2 Jazzy environment for CI: what building and testing
+# nav2_se_controller and the parameter-binding check need, nothing for
+# simulation (scripts/setup_ros2_env.sh installs the full desktop/Gazebo set).
+# Versions are pinned to the environment the code was verified with
+# (2026-10-05). xtensor 0.23 / xsimd 7.6 must match what the RoboStack
+# nav2_mppi_controller binary was built against (CMakeLists.txt, boundary 1);
+# cppcheck is pinned because ament_cppcheck skips its checks for some versions,
+# so a floating version would change the test outcome between runs.
+name: ros2
+channels:
+  - robostack-jazzy
+  - conda-forge
+dependencies:
+  - ros2-distro-mutex=0.14.0=jazzy_16
+  - python=3.12
+  - ros-jazzy-ros-base=0.11.0
+  - ros-jazzy-nav2-mppi-controller=1.3.11
+  - ros-jazzy-nav2-controller=1.3.11
+  - ros-jazzy-nav2-core=1.3.11
+  - ros-jazzy-nav2-costmap-2d=1.3.11
+  - ros-jazzy-diagnostic-msgs=5.3.6
+  - ros-jazzy-lifecycle-msgs=2.0.3
+  - ros-jazzy-ament-cmake-gtest=2.5.5
+  - ros-jazzy-ament-lint-auto=0.17.4
+  - ros-jazzy-ament-lint-common=0.17.4
+  - xtensor=0.23.9
+  - xsimd=7.6.0
+  - osqp-eigen=0.11.0
+  - libosqp=1.0.0
+  - eigen=3.4.0
+  - cppcheck=2.21.0
+  - uncrustify=0.83.0
+  - colcon-common-extensions=0.3.0
+  - cxx-compiler=1.11.0
+  - cmake=4.3.4
+  - ninja
+  - pkg-config
+  - pyyaml

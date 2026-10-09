@@ -89,7 +89,10 @@ struct TrackerConfig
 class DynamicObstacleTracker
 {
 public:
-  void configure(const TrackerConfig & cfg)
+  /// @param reset_calibration false keeps the learned conformal bounds; only
+  ///        valid when conformal_cfg and predictor.horizon_steps/horizon_dt
+  ///        are unchanged (a runtime change of an unrelated tracker parameter).
+  void configure(const TrackerConfig & cfg, bool reset_calibration = true)
   {
     cfg_ = cfg;
     StaticFilterConfig sf;
@@ -97,7 +100,9 @@ public:
     sf.static_min_frames = cfg.static_min_frames;
     static_filter_.configure(sf);
     predictor_.configure(cfg.predictor);
-    calibrator_.configure(cfg.conformal_cfg, cfg.predictor.horizon_steps);
+    if (reset_calibration) {
+      calibrator_.configure(cfg.conformal_cfg, cfg.predictor.horizon_steps);
+    }
   }
   const TrackerConfig & config() const {return cfg_;}
 
@@ -121,6 +126,8 @@ public:
   const StaticOccupancyFilter & staticFilter() const {return static_filter_;}
   const ConformalCalibrator & calibrator() const {return calibrator_;}
   std::size_t trackCount() const {return tracks_.size();}
+  /// Tracks aged out after max_missed_frames unmatched (cumulative; diagnostics).
+  std::size_t droppedTrackCount() const {return dropped_tracks_;}
 
 private:
   /// One horizon a track predicted earlier, kept until its steps are scored.
@@ -146,6 +153,7 @@ private:
   TrackerConfig cfg_{};
   std::vector<Track> tracks_;
   int next_track_id_{0};
+  std::size_t dropped_tracks_{0};
   StaticOccupancyFilter static_filter_;
   TrajectoryPredictor predictor_;
   ConformalCalibrator calibrator_;

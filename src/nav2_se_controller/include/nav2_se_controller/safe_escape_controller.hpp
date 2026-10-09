@@ -15,10 +15,15 @@
 #ifndef NAV2_SE_CONTROLLER__SAFE_ESCAPE_CONTROLLER_HPP_
 #define NAV2_SE_CONTROLLER__SAFE_ESCAPE_CONTROLLER_HPP_
 
+#include <atomic>
+#include <cstdint>
 #include <memory>
+#include <mutex>
+#include <set>
 #include <string>
 #include <vector>
 
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
@@ -28,6 +33,7 @@
 #include "nav2_se_controller/entrapment_detector.hpp"
 #include "nav2_se_controller/entrapment_state.hpp"
 #include "nav2_se_controller/escape_safety_coordinator.hpp"
+#include "nav2_se_controller/failure_streak.hpp"
 #include "nav2_se_controller/multi_robot_coordinator.hpp"
 
 namespace nav2_se_controller
@@ -61,6 +67,7 @@ public:
 
   void setPlan(const nav_msgs::msg::Path & path) override;
 
+  void cleanup() override;
   void activate() override;
   void deactivate() override;
   void reset() override;
@@ -88,6 +95,32 @@ protected:
   EscapeSafetyCoordinator coordinator_;
   CbfSafetyFilter filter_;
 
+  // Parameter-bound algorithm configs. They are members (not configure()
+  // locals) because a runtime parameter set writes into them; reapplyConfig()
+  // then pushes the marked ones into their consumers. Guarded by MPPI's
+  // parameter lock (parameters_handler_->getLock()).
+  enum Consumer : unsigned
+  {
+    kDetector = 1u, kCoordinator = 2u, kFilter = 4u, kTracker = 8u, kMulti = 16u,
+    kConformal = 32u,  // the tracker's conformal calibration must restart
+    kAllConsumers = 63u
+  };
+  EntrapmentConfig ec_;
+  CoordinationConfig cc_;
+  CbfConfig fc_;              // alpha and robot_radius are filled in on re-apply
+  TrackerConfig tc_;          // cost_threshold / predictor model derived on re-apply
+  MultiRobotConfig mc_;
+  int cost_threshold_{253};
+  std::string predict_model_{"cv"};
+  unsigned pending_reapply_{0};
+  bool config_applied_once_{false};  // warn on calibration resets after configure
+  void reapplyConfig();
+
+  // Static parameters that cannot be re-applied at runtime; the set callback
+  // rejects them (MPPI's handler would otherwise report success, no effect).
+  std::set<std::string> configure_only_params_;
+  rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr reject_set_handle_;
+
   /// RViz introspection (se_viz param): per-obstacle CBF discs inflated by the
   /// conformal bound q, predicted horizons, and a status text (alpha / slack /
   /// entrapped / max q). What the live-run debugging always had to infer from
@@ -105,12 +138,49 @@ protected:
   int my_priority_id_{0};
   MultiRobotCoordinator multi_;
   std::vector<NeighborRobot> neighbors_;
+  std::mutex neighbors_mutex_;  // odom callbacks (executor thread) vs the control loop
   std::vector<rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr>
   neighbor_subs_;
 
   bool viz_enabled_{true};
   rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr
     viz_pub_;
+
+  // Failure visibility. The control loop counts events; a 1 Hz wall timer
+  // publishes them on /diagnostics (status "<node name>: se_mppi (<plugin>)"),
+  // and the loop logs throttled warnings on a steady clock. None of this feeds
+  // back into the command.
+  struct Counters
+  {
+    std::atomic<std::uint64_t> cycles{0};
+    std::atomic<std::uint64_t> forced_stops{0};    // filter forced v = 0
+    std::atomic<std::uint64_t> qp_failures{0};     // QP setup/solve failed
+    std::atomic<std::uint64_t> slack_active{0};    // barrier relaxed (slack > 0)
+    std::atomic<std::uint64_t> tracks_dropped{0};  // tracks aged out unmatched
+    std::atomic<std::uint64_t> escape_entries{0};
+    std::atomic<bool> entrapped{false};
+    std::atomic<int> cbf_obstacles{0};
+    std::atomic<double> alpha{0.0};
+  };
+  Counters counters_;
+  std::uint64_t reported_forced_stops_{0};  // diagnostics timer only
+  std::uint64_t reported_qp_failures_{0};   // diagnostics timer only
+  // Continuous CBF QP failure (forced v = 0 every cycle) for longer than this
+  // turns the status ERROR. 2 s is 40 cycles at Nav2's default 20 Hz: no
+  // longer a transient, and well inside the default progress-checker
+  // allowance (10 s), so the operator sees the cause before the goal aborts.
+  static constexpr double kQpFailureErrorAfterSec = 2.0;
+  // A streak stays alive only while cycles keep coming at least this often.
+  static constexpr double kQpFailureStaleSec = 0.5;
+  FailureStreak qp_failure_streak_;
+  std::atomic<bool> se_enabled_mirror_{true};  // se_enabled_ for the timer, lock-free
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr
+    diag_pub_;
+  rclcpp::TimerBase::SharedPtr diag_timer_;
+  std::string diag_name_;
+  std::string diag_hardware_id_;
+  void publishDiagnostics();
 
   // Single entrapment source of truth, shared with the EscapeCritic.
   std::shared_ptr<SharedEntrapment> shared_;

@@ -153,6 +153,7 @@ std::vector<TrackedObstacle> DynamicObstacleTracker::update(
       if (++tracks_[j].missed > cfg_.max_missed_frames) {
         tracks_.erase(tracks_.begin() + static_cast<std::ptrdiff_t>(j));
         consumed.erase(consumed.begin() + static_cast<std::ptrdiff_t>(j));
+        ++dropped_tracks_;
         continue;
       }
     }
