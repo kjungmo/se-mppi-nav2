@@ -61,30 +61,52 @@ find_package(diagnostic_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OsqpEigen REQUIRED)
 
-# Load the libmppi_controller.so this package was built against. The plugin
-# shares xtensor layouts with it (boundary 1), and a source build of
-# nav2_mppi_controller in an overlay workspace is the remedy for binaries with
-# negated rollout trigonometry (scripts/build_mppi_overlay.sh). Without a run
-# path the overlay is found at build time but not at run time: RoboStack's
-# executables carry an RPATH to the environment's lib directory, which the
-# loader searches before LD_LIBRARY_PATH, so controller_server and the tests
-# would load the environment's library again. A run path on this package's
-# own binaries is searched first. It has to be the FIRST run path entry: the
-# conda toolchain's LDFLAGS already carry -Wl,-rpath,<environment>/lib, and
-# CMake's own BUILD_RPATH / INSTALL_RPATH entries come after the linker flags,
-# so the entry is prepended to the linker flags themselves (it then stays in
-# the installed binaries as well).
+# Optional RPATH to the nav2_mppi_controller library this package is built
+# against. OFF by default: nothing is added to what the toolchain itself puts
+# on the run path, and the installed binaries carry no extra absolute path.
+#
+# Turn it ON when nav2_mppi_controller comes from an overlay workspace
+# (scripts/build_mppi_overlay.sh, the remedy for binaries with negated rollout
+# trigonometry). Without it the overlay is found at build time but not at run
+# time: the conda toolchain's LDFLAGS give every binary of THIS package a
+# DT_RPATH to <environment>/lib, and the loader searches a DT_RPATH before
+# LD_LIBRARY_PATH, so the plugin loads the environment's libmppi_controller.so
+# even with the overlay sourced. ON prepends the overlay's lib directory to
+# that RPATH (to the linker flags themselves: CMake's BUILD_RPATH and
+# INSTALL_RPATH entries would come after the toolchain's). Consequences: the
+# entry also takes precedence over LD_LIBRARY_PATH; the install is tied to the
+# overlay's absolute path (not relocatable, not for binary packages); and if
+# the overlay is moved or deleted the loader falls back to the next entry, the
+# environment's library, without a message (the rollout check then refuses it
+# and names the library that was loaded).
+option(NAV2_SE_CONTROLLER_MPPI_RPATH
+  "Prepend the directory of the nav2_mppi_controller library found at configure time to the RPATH"
+  OFF)
 get_filename_component(MPPI_LIBRARY_DIR "${nav2_mppi_controller_DIR}/../../../lib" ABSOLUTE)
-if(NOT EXISTS "${MPPI_LIBRARY_DIR}/libmppi_controller.so")
-  message(FATAL_ERROR
-    "libmppi_controller.so not found in ${MPPI_LIBRARY_DIR} "
-    "(derived from nav2_mppi_controller_DIR=${nav2_mppi_controller_DIR})")
+string(FIND "${CMAKE_SHARED_LINKER_FLAGS}" "-rpath,${MPPI_LIBRARY_DIR}" MPPI_DIR_ON_RPATH)
+if(NAV2_SE_CONTROLLER_MPPI_RPATH)
+  if(NOT EXISTS "${MPPI_LIBRARY_DIR}/libmppi_controller.so")
+    message(FATAL_ERROR
+      "NAV2_SE_CONTROLLER_MPPI_RPATH: libmppi_controller.so not found in ${MPPI_LIBRARY_DIR} "
+      "(derived from nav2_mppi_controller_DIR=${nav2_mppi_controller_DIR})")
+  endif()
+  if(MPPI_DIR_ON_RPATH EQUAL -1)
+    message(STATUS "NAV2_SE_CONTROLLER_MPPI_RPATH: RPATH entry ${MPPI_LIBRARY_DIR}")
+    foreach(kind SHARED MODULE EXE)
+      set(CMAKE_${kind}_LINKER_FLAGS
+        "-Wl,-rpath,\"${MPPI_LIBRARY_DIR}\" ${CMAKE_${kind}_LINKER_FLAGS}")
+    endforeach()
+  else()
+    message(STATUS
+      "NAV2_SE_CONTROLLER_MPPI_RPATH: ${MPPI_LIBRARY_DIR} is already on the RPATH; nothing added")
+  endif()
+elseif(NOT "$ENV{CONDA_PREFIX}" STREQUAL "" AND MPPI_DIR_ON_RPATH EQUAL -1)
+  message(WARNING
+    "nav2_mppi_controller was found in ${MPPI_LIBRARY_DIR}, which is not on this build's RPATH. "
+    "At run time the binaries of this package will load libmppi_controller.so from "
+    "$ENV{CONDA_PREFIX}/lib instead. If that directory is an overlay you mean to use, configure "
+    "with -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON.")
 endif()
-message(STATUS "nav2_mppi_controller library directory: ${MPPI_LIBRARY_DIR}")
-foreach(kind SHARED MODULE EXE)
-  set(CMAKE_${kind}_LINKER_FLAGS
-    "-Wl,-rpath,\"${MPPI_LIBRARY_DIR}\" ${CMAKE_${kind}_LINKER_FLAGS}")
-endforeach()
 
 # Humble (Nav2 1.1.x) API differences, guarded at compile time:
 #  - nav2_core::Controller has no virtual reset() (added in 1.2), so

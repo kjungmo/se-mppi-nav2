@@ -290,7 +290,10 @@ jobs:
         run: |
           ln -s "$PWD/src/nav2_se_controller" ws/src/nav2_se_controller
           cd ws
-          colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+
+          # The RPATH option: without it the plugin's toolchain RPATH (<env>/lib,
+          # searched before LD_LIBRARY_PATH) loads the environment's library.
+          colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+ \
+            --cmake-args -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON
           # The plugin must load the overlay's library, not the environment's.
           ldd install/nav2_se_controller/lib/libsafe_escape_controller.so | grep mppi_controller
           ldd install/nav2_se_controller/lib/libsafe_escape_controller.so \

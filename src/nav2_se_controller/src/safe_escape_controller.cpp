@@ -58,13 +58,15 @@ void SafeEscapeController::configure(
     if (enforce_rollout_check_) {
       RCLCPP_ERROR(
         early_logger,
-        "SafeEscapeController[%s] refuses to configure: %s. To run on this library anyway "
-        "(not on a robot that moves), set %s: false.",
+        "SafeEscapeController[%s] refuses to configure: %s. Fix the library and restart this "
+        "process; do not configure it again (Nav2's controller_server aborts on a second "
+        "configure after a failed one). To run on this library anyway (not on a robot that "
+        "moves), set %s: false in the parameter file and restart.",
         name.c_str(), rollout_failure_.c_str(), enforce_key.c_str());
       throw std::runtime_error(
               "nav2_se_controller: the loaded nav2_mppi_controller library failed the rollout "
-              "direction check (details in the ERROR logged just before); " + enforce_key +
-              ": false overrides");
+              "direction check (details in the ERROR logged just before); restart the "
+              "process after fixing the library, or with " + enforce_key + ": false");
     }
     RCLCPP_ERROR(
       early_logger,

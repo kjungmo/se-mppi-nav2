@@ -705,6 +705,7 @@ TEST(RolloutGuard, RefusesToConfigureByDefaultAndLeavesNothingBehind)
     } catch (const std::runtime_error & e) {
       EXPECT_TRUE(contains(e.what(), "rollout direction check")) << e.what();
       EXPECT_TRUE(contains(e.what(), "FollowPath.se_enforce_rollout_check: false")) << e.what();
+      EXPECT_TRUE(contains(e.what(), "restart the process")) << e.what();
     }
     // One ERROR, and it carries the cause, the builds, the remedy and the override.
     ASSERT_EQ(errors.log().count, 1);
@@ -713,7 +714,8 @@ TEST(RolloutGuard, RefusesToConfigureByDefaultAndLeavesNothingBehind)
       "/stub/libmppi_controller.so", "ends at x = -0.720 m (expected +0.960 m)",
       "-ffast-math", "1.1.20 (builds _18 and _20)", "1.3.11 (build _16)",
       "1.3.13 build _25", "scripts/build_mppi_overlay.sh",
-      "set FollowPath.se_enforce_rollout_check: false"};
+      "restart this process; do not configure it again",
+      "set FollowPath.se_enforce_rollout_check: false in the parameter file and restart"};
     for (const std::string & part : parts) {
       EXPECT_TRUE(contains(errors.log().last, part)) << "missing: " << part;
     }

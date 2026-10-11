@@ -49,6 +49,11 @@
       데모를 그대로 실행해도 로봇 미주행(dist 3.63m 고정), `/odom` 미발행.
       stock `/cmd_vel_nav`=0.13 m/s 출력되나 로봇 위치 불변. → **완주 실패는
       RoboStack loopback 시뮬 env 문제로 확정, 우리 컨트롤러와 완전 무관.**
+      - *추가 메모 (2026-10-11, PR #6):* RoboStack의 일부 `nav2_mppi_controller`
+        바이너리는 롤아웃 방향이 뒤집혀 있습니다(README "Affected
+        nav2_mppi_controller builds"). 당시 env의 빌드는 기록이 없습니다. 위의
+        "목표 반대로 표류, stock MPPI도 동일"은 그 결함의 증상과 같습니다. loopback
+        env가 원인이라는 위 결론은 고친 빌드에서 다시 확인하지 않았습니다.
 - [ ] 후속(완주가 꼭 필요할 때): **(b) Gazebo 물리 시뮬(headless+xvfb)** 시도함(아래) —
       현재 컨테이너로는 미완. 정상 ROS2 워크스테이션 또는 GPU 머신 필요.
 

@@ -28,6 +28,11 @@ tectonic 클린 컴파일). 2026-07-03 저널식 다회전 검수(paper-repo-aud
   그린). 라이브 정량 A/B는 이 WSL2 호스트의 아티팩트(RTF 0.34, TF 스미어→팬텀
   코스트맵)로 보류 — **GPU 워크스테이션에서 재시도가 다음 관문** (커스텀 BT·타임아웃
   준비됨: `experiments/se_mppi_utrap/behavior_trees/`, 진단 로그 `experiments/results_pilot/`).
+  - *추가 메모 (2026-10-11, PR #6):* 이 라이브 런은 롤아웃 방향이 뒤집힌
+    `nav2_mppi_controller` 바이너리(RoboStack Jazzy 1.3.11 `_16`) 위에서 돌았습니다.
+    위의 원인 설명(호스트 아티팩트)은 그 결함을 모르고 쓴 것입니다. 결함이
+    STUCK/TIMEOUT의 원인인지는 아직 확인하지 못했습니다. 고친 빌드(1.3.13 `_25`)에서
+    다시 돌려야 가릴 수 있습니다. README "Affected nav2_mppi_controller builds" 참고.
 - **적대적 리뷰 반영**: 5렌즈 리뷰 18건(major 9) 전부 수정 (`00f17c3`).
 
 **남은 것 (GPU 워크스테이션)**: ① S1 U-trap 라이브 A/B (팬텀 코스트맵이 RTF≈1에서

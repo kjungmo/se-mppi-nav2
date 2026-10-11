@@ -250,6 +250,12 @@ local_costmap:
         # cost band is razor thin and samples cut corners — the U-trap pilot
         # physically clipped a wall, rode up it (gz pitch 13.6 deg) and wheel
         # slip corrupted odom beyond AMCL recovery. Config-symmetric.
+        # Note, 2026-10-11 (PR #6): that pilot (July 2026) ran on a
+        # nav2_mppi_controller build with flipped rollouts (README, "Affected
+        # nav2_mppi_controller builds"); for the earlier live tuning recorded
+        # in this file's comments (MPPI budget, vx_min, timeouts) the build is
+        # not recorded. Whether the defect caused the wall contact is not
+        # established; the values have not been re-derived on a corrected build.
         inflation_radius: 0.45
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"

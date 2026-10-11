@@ -116,6 +116,11 @@ coordinated gain.
 7. **Gazebo U-trap testbed + live Nav2 integration.** A committed testbed
    (`experiments/se_mppi_utrap/`) and a one-command sim launcher run the
    controller inside a live ROS 2 Jazzy + Nav2 + Gazebo Harmonic stack.
+   *Note, 2026-10-11:* the live runs committed so far (`experiments/results_pilot/`,
+   July 2026) were made on a `nav2_mppi_controller` build with flipped rollouts
+   (see [Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds),
+   PR #6). Whether that caused their outcome is not established; they have not
+   been repeated on a corrected build.
 
 ## Requirements
 
@@ -155,6 +160,12 @@ on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
   below, and no corrected Humble binary exists.** The controller refuses to
   configure on it. CI builds `nav2_mppi_controller` 1.1.20 from source without
   `-ffast-math` and tests on that.
+- Humble's MPPI 1.1.20 is not reproducible run to run with the stock critic
+  stack: the same binary, inputs and noise seed gave 2 distinct command
+  sequences in 8 runs (7 in 8 in an independent repetition), and one sequence in
+  8 of 8 runs once `PathAlignCritic` alone is removed. This is upstream
+  behaviour that predates the guard; its root cause is unknown. Jazzy 1.3.13
+  gave one sequence in every run.
 
 See [`RUN.md`](RUN.md) for the full run guide and troubleshooting.
 
@@ -217,14 +228,25 @@ the third column).
 | Library | `se_enforce_rollout_check` | `configure` | Log | `/diagnostics` |
 |---|---|---|---|---|
 | passes the check | `true` or `false` | proceeds, unchanged | nothing | key `mppi_rollout_check: ok`; level as before |
-| fails the check | `true` (default) | throws: `controller_server` stays unconfigured | one ERROR: loaded library, measurement, known cause and builds, remedy, the override | none (the node never activates) |
+| fails the check | `true` (default) | throws: the configure transition fails. **Restart the process** after the fix; a second configure aborts it (below) | one ERROR: loaded library, measurement, known cause and builds, remedy, the override | none (the node never activates) |
 | fails the check | `false` | proceeds | one ERROR at each configure | ERROR every second while active; keys `mppi_rollout_check: failed`, `mppi_rollout_detail` |
+
+**After a refusal, restart `controller_server`.** The lifecycle state reads
+`unconfigured` after the failed transition, but Nav2's `controller_server` cannot
+configure a second time: it has already added its costmap node to an executor, and
+the second attempt ends with `terminate called after throwing an instance of
+'std::runtime_error'  what(): Node '/local_costmap/local_costmap' has already been
+added to an executor.` and `[ros2run]: Aborted` (reproduced on Humble 1.1.20 and
+Jazzy 1.3.11). That is how the server treats any controller plugin that throws
+from `configure`; the plugin cannot repair it from inside. So fix the library, or
+put `se_enforce_rollout_check: false` in the parameter file, and start the
+process again.
 
 The check uses its own throwaway optimizer object, so on a library that passes
 it changes no command (compared bit for bit with the previous commit over 120
-closed-loop cycles). `se_enforce_rollout_check` is read at configure only; a
-runtime set is rejected. It is an override for someone who has to look at an
-affected stack, not a setting for a robot that moves. Limits: the check covers
+closed-loop cycles on Jazzy 1.3.13). `se_enforce_rollout_check` is read at
+configure only; a runtime set is rejected. It is an override for someone who has
+to look at an affected stack, not a setting for a robot that moves. Limits: the check covers
 the batch rollout integration, the known defect, not every function of the
 library; and it lives in `SafeEscapeController`, so an `EscapeCritic` loaded
 into a stock `nav2_mppi_controller::MPPIController` is not guarded.
@@ -245,19 +267,42 @@ into a stock `nav2_mppi_controller::MPPIController` is not guarded.
   ```bash
   scripts/build_mppi_overlay.sh ws          # upstream 1.1.20, -ffast-math removed
   ln -s "$PWD/src/nav2_se_controller" ws/src/
-  (cd ws && colcon build --packages-select nav2_se_controller)
+  (cd ws && colcon build --packages-select nav2_se_controller \
+     --cmake-args -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON)
   source ws/install/setup.bash
   ros2 run nav2_se_controller check_mppi_rollout   # must print OK and the path under ws/
   ```
 
-  The libraries of this package carry a run path to the `nav2_mppi_controller`
-  they were built against, so `controller_server` loads the overlay's library
-  when it loads the plugin. Without it the environment's library would win:
-  RoboStack executables have an RPATH to the environment, which the loader
-  searches before `LD_LIBRARY_PATH`. For the same reason an executable of your
-  own that links `libmppi_controller.so` directly resolves it with its own run
-  path; the check's output and the controller's ERROR name the library that was
-  actually loaded.
+  `-DNAV2_SE_CONTROLLER_MPPI_RPATH=ON` (default `OFF`) is needed here. The conda
+  toolchain gives every binary it links, this package's included, a `DT_RPATH` to
+  `<environment>/lib`, and the loader searches a `DT_RPATH` before
+  `LD_LIBRARY_PATH`. So without the option the plugin is compiled against the
+  overlay but loads the environment's (affected) `libmppi_controller.so` at run
+  time, sourced overlay or not. The option puts the overlay's `lib` directory
+  first on that RPATH. What that means:
+
+  - the entry takes precedence over `LD_LIBRARY_PATH` for this package's binaries;
+  - the install is tied to the overlay's absolute path: it is not relocatable and
+    not fit for a binary package, which is why the option is off by default (a
+    default build adds nothing to the RPATH the toolchain writes);
+  - if the overlay is moved or deleted, the loader falls back to the next entry,
+    the environment's library, without a message. The rollout check then refuses
+    that library and names it;
+  - an executable of your own that links `libmppi_controller.so` directly
+    resolves it with its own RPATH, not with this one.
+
+  Measured on the Humble environment (`readelf -d`, `LD_DEBUG=libs`,
+  `check_mppi_rollout`), package built against the overlay:
+
+  | Option | Overlay | RPATH of the package's binaries | Library loaded | Check |
+  |---|---|---|---|---|
+  | `ON` | present | `<ws>/install/nav2_mppi_controller/lib:<env>/lib` | overlay | OK |
+  | `ON` | moved away | same | `<env>/lib` (stock) | FAILED, exit 1 |
+  | `OFF` | present, sourced | `<env>/lib` | `<env>/lib` (stock) | FAILED, exit 1 |
+  | `OFF` | moved away | `<env>/lib` | `<env>/lib` (stock) | FAILED, exit 1 |
+
+  With `OFF` and an overlay CMake prints a warning that the library it found is
+  not on the RPATH.
 
 ## Install and build
 
@@ -320,9 +365,10 @@ To reproduce the CI jobs locally (from the repository root):
 
 ```bash
 micromamba create -y -n se_ci -f .github/environment-jazzy.yml
-# For the Humble job, use .github/environment-humble.yml instead, and build the
+# For the Humble job, use .github/environment-humble.yml instead, build the
 # MPPI overlay first (the stock Humble binary is refused; see "Affected
 # nav2_mppi_controller builds"):  scripts/build_mppi_overlay.sh ws
+# and add  --cmake-args -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON  to the colcon build.
 # In the ABI guard below, --mppi is then ws/install/nav2_mppi_controller/lib/libmppi_*.so
 micromamba activate se_ci
 export AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1
@@ -401,7 +447,10 @@ the new value reaches its consumer before the next control cycle:
 Configure-only (a runtime set is rejected with a reason; change them while the
 `controller_server` is unconfigured, then configure): `se_multirobot`, `se_viz`,
 `se_neighbor_odom_topics`, `se_enforce_rollout_check` (default `true`; see
-[Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds)).
+[Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds):
+after a refusal it has to be changed in the parameter file and the process
+restarted, because `controller_server` cannot configure again after a failed
+configure).
 
 The CBF filter's velocity box follows MPPI's `vx_max`, `wz_max` and
 `min(vx_min, 0)`, scaled by Nav2's speed limit (`setSpeedLimit`, as MPPI scales its
