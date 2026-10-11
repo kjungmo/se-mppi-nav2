@@ -34,6 +34,7 @@
 #include "nav2_se_controller/entrapment_state.hpp"
 #include "nav2_se_controller/escape_safety_coordinator.hpp"
 #include "nav2_se_controller/failure_streak.hpp"
+#include "nav2_se_controller/mppi_rollout_check.hpp"
 #include "nav2_se_controller/multi_robot_coordinator.hpp"
 #include "nav2_se_controller/task_boundary.hpp"
 
@@ -86,6 +87,17 @@ public:
     nav2_core::GoalChecker * goal_checker) override;
 
 protected:
+  /// Self-check of the loaded nav2_mppi_controller library's batch rollout,
+  /// run once per configure() before anything is created. Virtual so that a
+  /// test can stand in for a library with the defect.
+  virtual RolloutCheckResult runRolloutCheck() const;
+  // Written in configure() only (the diagnostics timer does not exist yet),
+  // read by the diagnostics timer. se_enforce_rollout_check: true refuses to
+  // configure on a library that fails the check; false runs and reports ERROR.
+  bool enforce_rollout_check_{true};
+  bool rollout_check_failed_{false};
+  std::string rollout_failure_;  // describeRolloutFailure(); empty when the check passed
+
   bool se_enabled_{true};
   double robot_radius_{0.22};
   double goal_reached_tolerance_{0.5};  // suppress entrapment within this of the goal (m)
