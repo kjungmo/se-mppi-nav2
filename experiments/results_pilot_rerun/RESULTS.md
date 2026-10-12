@@ -29,6 +29,8 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 
 | Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| correct__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.36 | 0.65, 0.10 | 0.001 | 0.0 | 300.0 / 289.4 | 0.96 (0.96) | 2 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.67 / 3.66 | ok | 1.4 / 6.5; 0.76 / 1.90 / 4.07 |
+| correct__s1_utrap__F_se_full__P__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.94 cores mean, 3.23 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.33 | 0.68, -0.18 | 0.000 | 0.0 | 300.1 / 286.8 | 0.96 (0.92) | 1 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.73 / 3.70 | ok | 1.5 / 6.7; 1.94 / 3.23 / 4.04 |
 
 ## Shakedown runs (not registered trials)
 

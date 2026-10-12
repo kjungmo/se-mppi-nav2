@@ -288,3 +288,22 @@ calibration run is listed with the results and counts for nothing.
 **Reporting.** The paper and the submission notes state the measured load
 conditions of the live runs (load average, foreign CPU, real-time factor) as
 facts, and keep "single WSL2 host" among the limitations.
+
+## Amendment 6: calibration result and block order
+
+Committed on 2026-10-12 before the first registered trial.
+
+**Calibration.** Two calibration attempts ran (`trials_calibration/`). The first
+was invalid by the rule of amendment 5 (foreign CPU 1.94 cores on average, 3.23
+in the worst 30 s window; another job was compiling). The second was valid
+(0.76 and 1.90) although the host was not fully idle, so a quiet host passes the
+rule and the thresholds stay as written. One trial's own stack used 4.1 cores
+and the real-time factor was 0.96. Both attempts ended inside the pocket after
+300 s with no escape transition logged; this outcome was seen before the
+registered trials and changes nothing above.
+
+**Order.** The quiet window on the host is limited, so the blocks run in this
+order: the `P` part of the main block (20 trials), the affected block (4), then
+the `V` and `O` parts (24). Within each part the order is the one registered.
+Counts, sets, definitions and wording rules are unchanged. If the window closes
+before the `V` and `O` parts finish, the trials not run are reported as not run.

@@ -1,0 +1,101 @@
+{
+  "trial_id": "correct__s1_utrap__F_se_full__P__rep0",
+  "env_label": "correct",
+  "scenario": "s1_utrap",
+  "config": "F_se_full",
+  "param_set": "P",
+  "rep": 0,
+  "override_guard": false,
+  "launch_argv": [
+    "ros2",
+    "launch",
+    "se_mppi_utrap",
+    "utrap_bench.launch.py",
+    "headless:=True",
+    "use_rviz:=False",
+    "params_file:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/results_pilot_rerun/trials_calibration/correct__s1_utrap__F_se_full__P__rep0/params.yaml",
+    "use_sim_time:=True",
+    "map:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/se_mppi_utrap/maps/utrap_loc.yaml",
+    "x_pose:=-3.0",
+    "y_pose:=0.0",
+    "yaw:=0.0"
+  ],
+  "start": [
+    -3.0,
+    0.0,
+    0.0
+  ],
+  "goal": [
+    3.0,
+    0.0,
+    0.0
+  ],
+  "watchdog_s": 300.0,
+  "setup_timeout_s": 120.0,
+  "ros_domain_id": "87",
+  "env": {
+    "conda_env": "semppi_rerun",
+    "package_builds": [
+      "gz-sim8-8.10.0-hfc2019e_3",
+      "gz-sim8-python-8.10.0-py312hce064e6_3",
+      "libgz-sim8-8.10.0-py312h50b3465_3",
+      "libgz-sim8-8.10.0-py312h50b3465_3",
+      "ros-jazzy-nav2-mppi-controller-1.3.13-hb0f4dca_25",
+      "ros2-distro-mutex-0.19.0-jazzy_25",
+      "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+      "ros2-ros-gz-sim-1.0.24-np2py312h7224bc2_25",
+      "xsimd-11.2.0-h00ab1b0_0",
+      "xtensor-0.25.0-h00ab1b0_0"
+    ],
+    "check_mppi_rollout": "OK: /home/cona/micromamba/envs/semppi_rerun/lib/libmppi_controller.so rolls trajectories out correctly (24576 rollout points within 1e-03 m of the closed form, worst 8.3e-07 m).",
+    "check_mppi_rollout_exit": 0,
+    "repo_commit": "1ead8186e5b066f8c48fb1b41e883da0b864cc08",
+    "tracked_inputs_modified": "",
+    "kernel": "6.18.40.1-microsoft-standard-WSL2",
+    "cpu": "AMD Ryzen 5 5500GT with Radeon Graphics",
+    "cpus": 12
+  },
+  "wall_start": 1791780039.2927167,
+  "complete": true,
+  "setup_attempts": 1,
+  "ncpu": 12,
+  "active": true,
+  "load1_at_start": 1.52,
+  "load5_at_start": 5.9,
+  "load_gate_waited_s": 1125.0,
+  "top_before": [
+    "100 cc1plus",
+    "21.0 2.1.296",
+    "7.6 python3",
+    "4.5 strata_node_mai",
+    "1.2 python",
+    "1.1 colcon",
+    "1.0 Xvfb",
+    "1.0 as"
+  ],
+  "launch_log": "launch.log",
+  "drive_wall_start": 1791780048.2976704,
+  "drive_returncode": 1,
+  "drive_wall_end": 1791780354.7724931,
+  "swept_pids": [],
+  "wall_end": 1791780371.282309,
+  "top_after": [
+    "99.0 cc1plus",
+    "20.3 2.1.296",
+    "2.1 colcon",
+    "1.0 Xvfb",
+    "0.6 x-terminal-emul",
+    "0.6 claude",
+    "0.3 claude",
+    "0.3 python"
+  ],
+  "host_load": {
+    "foreign_cores_mean": 1.935,
+    "foreign_cores_worst_window": 3.229,
+    "own_cores_mean": 4.042,
+    "load1_min": 1.79,
+    "load1_max": 9.35,
+    "valid": false,
+    "reason": "foreign CPU 1.94 cores mean, 3.23 worst 30 s window (limits 1.0, 3.0)"
+  }
+}

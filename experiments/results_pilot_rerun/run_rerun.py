@@ -94,8 +94,10 @@ def plan(block: str) -> list:
     """The registered trial list of a block, in run order (PREREG.md)."""
     cells = [(s, c) for s in SCENARIOS for c in CONFIGS]
     out = []
-    if block == 'main':
-        for pset, reps in (('P', 5), ('V', 3), ('O', 3)):
+    if block in ('main', 'main_P', 'main_VO'):
+        sets = {'main': (('P', 5), ('V', 3), ('O', 3)), 'main_P': (('P', 5),),
+                'main_VO': (('V', 3), ('O', 3))}[block]
+        for pset, reps in sets:
             for rep in range(reps):
                 # Rotate the cell order with the repetition so that no cell
                 # always runs first after a pause.
@@ -357,7 +359,7 @@ def environment_info() -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--block', required=True, choices=('main', 'affected', 'shakedown', 'calibration'))
+    ap.add_argument('--block', required=True, choices=('main', 'main_P', 'main_VO', 'affected', 'shakedown', 'calibration'))
     ap.add_argument('--env-label', required=True, choices=('correct', 'affected'))
     ap.add_argument('--out', default=os.path.join(HERE, 'trials'))
     ap.add_argument('--override-guard', action='store_true',
@@ -386,7 +388,8 @@ def main():
                                                    'ablations.yaml'))
     scenarios = {s.name: s for s in scenario_mod.discover(
         os.path.join(REPO, 'experiments'), tier='barn')}
-    out_root = args.out if args.block in ('main', 'affected') else args.out + '_' + args.block
+    out_root = (args.out if args.block in ('main', 'main_P', 'main_VO', 'affected')
+                else args.out + '_' + args.block)
     os.makedirs(out_root, exist_ok=True)
     for s, c, p, r in trials:
         for attempt in range(1, MAX_ATTEMPTS + 1):
