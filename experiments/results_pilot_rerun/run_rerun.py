@@ -48,13 +48,15 @@ from experiments.runner import config as config_mod  # noqa: E402
 from experiments.runner import ros_launcher as rl  # noqa: E402
 from experiments.runner import scenario as scenario_mod  # noqa: E402
 
+sys.path.insert(0, HERE)
+import hostload  # noqa: E402
+
 SETUP_TIMEOUT_S = 120.0      # experiments/configs/suite.yaml
 WATCHDOG_S = 300.0           # experiments/configs/suite.yaml
 SETUP_RETRIES = 1            # experiments/configs/suite.yaml
 ROS_DOMAIN_ID = '87'
 TAG_VAR = 'SE_RERUN_TAG'
-LOAD_GATE = 6.0              # 1-minute load average (12 logical CPUs)
-LOAD_GATE_WAIT_S = 1200.0
+MAX_ATTEMPTS = 3             # a trial invalidated by host load is repeated twice at most
 GT_GZ_TOPIC = '/world/testbed/dynamic_pose/info'
 FP = 'controller_server.ros__parameters.FollowPath'
 
@@ -101,7 +103,7 @@ def plan(block: str) -> list:
                 out += [(s, c, pset, rep) for s, c in order]
     elif block == 'affected':
         out = [(s, c, 'P', 0) for s, c in cells]
-    elif block == 'shakedown':
+    elif block in ('shakedown', 'calibration'):
         out = [('s1_utrap', 'F_se_full', 'P', 0)]
     else:
         raise ValueError(block)
@@ -117,20 +119,6 @@ def stack_is_active(log_text: str) -> bool:
     """
     return any('lifecycle_manager_navigation]' in ln and 'Managed nodes are active' in ln
                for ln in log_text.splitlines())
-
-
-def wait_for_load(limit: float = LOAD_GATE, max_wait_s: float = LOAD_GATE_WAIT_S) -> dict:
-    """Wait until the 1-minute load average is below ``limit`` (PREREG.md,
-    amendment 3). Starts anyway after ``max_wait_s`` and says so."""
-    t0 = time.time()
-    while True:
-        with open('/proc/loadavg') as f:
-            load1 = float(f.read().split()[0])
-        waited = time.time() - t0
-        if load1 < limit or waited >= max_wait_s:
-            return {'load1_at_start': load1, 'load_gate_waited_s': round(waited, 1),
-                    'load_gate_passed': load1 < limit}
-        time.sleep(15.0)
 
 
 def trial_id(env_label, scenario, cfg, pset, rep):
@@ -214,14 +202,15 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
     meta_path = os.path.join(out, 'meta.json')
     if os.path.exists(meta_path):
         with open(meta_path) as f:
-            if json.load(f).get('complete'):
-                print(f'[rerun] skip (complete): {tid}', flush=True)
-                return
+            old = json.load(f)
+        if old.get('complete'):
+            print(f'[rerun] skip (complete): {tid}', flush=True)
+            return old
         k = 1
         while os.path.exists(f'{out}.aborted{k}'):
             k += 1
         os.rename(out, f'{out}.aborted{k}')    # kept and reported, never deleted
-    os.makedirs(out)
+    os.makedirs(out, exist_ok=True)
 
     params = build_params(suite, scenario, cfg, pset, override_guard)
     params_file = os.path.join(out, 'params.yaml')
@@ -229,6 +218,9 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
         yaml.safe_dump(params, f, default_flow_style=False, sort_keys=False)
 
     tag = uuid.uuid4().hex
+    gate = hostload.wait_for_quiet(log=lambda m: print(m, flush=True))
+    sampler = hostload.Sampler(os.path.join(out, 'host_cpu.csv'), TAG_VAR, tag)
+    sampler.start()
     env = rl.launch_env()
     env.update({
         'ROS_DOMAIN_ID': ROS_DOMAIN_ID,
@@ -247,15 +239,14 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
         'watchdog_s': WATCHDOG_S, 'setup_timeout_s': SETUP_TIMEOUT_S,
         'ros_domain_id': ROS_DOMAIN_ID, 'env': env_info,
         'wall_start': time.time(), 'complete': False, 'setup_attempts': 0,
+        'ncpu': os.cpu_count(),
         'active': False,
     }
 
     def save():
         with open(meta_path, 'w') as f:
             json.dump(meta, f, indent=2)
-    save()
-    meta.update(wait_for_load())
-    meta['wall_start'] = time.time()
+    meta.update(gate)
     save()
 
     launch = None
@@ -289,7 +280,7 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
             launch = None
         save()
         if not meta['active']:
-            return
+            return meta
 
         bridge = subprocess.Popen(
             ['ros2', 'run', 'ros_gz_bridge', 'parameter_bridge',
@@ -324,10 +315,18 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
         stop_group(launch)
         meta['swept_pids'] = sweep_tag(tag)
         meta['wall_end'] = time.time()
+        sampler.stop()
+        meta['top_after'] = hostload.top_consumers()
+        if 'drive_wall_end' in meta:
+            meta['host_load'] = hostload.verdict(
+                hostload.read_rows(os.path.join(out, 'host_cpu.csv')),
+                meta['drive_wall_start'], meta['drive_wall_end'])
         meta['complete'] = True
         save()
     print(f'[rerun] done: {tid} active={meta["active"]} '
-          f'drive_rc={meta.get("drive_returncode")}', flush=True)
+          f'drive_rc={meta.get("drive_returncode")} '
+          f'host_load={meta.get("host_load")}', flush=True)
+    return meta
 
 
 def environment_info() -> dict:
@@ -358,7 +357,7 @@ def environment_info() -> dict:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--block', required=True, choices=('main', 'affected', 'shakedown'))
+    ap.add_argument('--block', required=True, choices=('main', 'affected', 'shakedown', 'calibration'))
     ap.add_argument('--env-label', required=True, choices=('correct', 'affected'))
     ap.add_argument('--out', default=os.path.join(HERE, 'trials'))
     ap.add_argument('--override-guard', action='store_true',
@@ -387,12 +386,21 @@ def main():
                                                    'ablations.yaml'))
     scenarios = {s.name: s for s in scenario_mod.discover(
         os.path.join(REPO, 'experiments'), tier='barn')}
-    out_root = args.out if args.block != 'shakedown' else args.out + '_shakedown'
+    out_root = args.out if args.block in ('main', 'affected') else args.out + '_' + args.block
     os.makedirs(out_root, exist_ok=True)
     for s, c, p, r in trials:
-        run_trial(suite, scenarios[s], c, p, r, args.env_label, out_root,
-                  args.override_guard, info)
-        time.sleep(5.0)
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            meta = run_trial(suite, scenarios[s], c, p, r, args.env_label, out_root,
+                             args.override_guard, info)
+            time.sleep(5.0)
+            load = (meta or {}).get('host_load')
+            if load is None or load['valid'] or attempt == MAX_ATTEMPTS:
+                break
+            # Invalidated by foreign load: keep the attempt, report it, repeat it.
+            tdir = os.path.join(out_root, meta['trial_id'])
+            os.rename(tdir, f'{tdir}.invalid{attempt}')
+            print(f'[rerun] invalid by host load, repeating: {meta["trial_id"]} '
+                  f'({load.get("reason")})', flush=True)
     return 0
 
 

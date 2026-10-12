@@ -1,0 +1,339 @@
+{
+ "calibration": [],
+ "cells": [],
+ "definitions": {
+  "chassis_m": [
+   0.28,
+   0.3
+  ],
+  "contact_tol_m": 0.01,
+  "first_window_s": 5.0,
+  "goal_tol_m": 0.5,
+  "rtf_window_s": 10.0,
+  "vx_min_band": 0.01,
+  "walls": [
+   "perimeter_north",
+   "perimeter_south",
+   "perimeter_west",
+   "perimeter_east",
+   "u_back",
+   "u_top",
+   "u_bot"
+  ]
+ },
+ "exploratory_loaded": [
+  {
+   "check_mppi_rollout_exit": 0,
+   "config": "A_stock",
+   "contact": true,
+   "diagnostics_last": {
+    "cycles": "0",
+    "escape_entries": "0",
+    "forced_stops": "0",
+    "qp_failures": "0",
+    "slack_active": "0"
+   },
+   "drive_sim_s": 212.12599999999998,
+   "drive_wall_s": 300.0842978954315,
+   "env_label": "correct",
+   "escape_enter": 0,
+   "escape_injection_begin": 0,
+   "final_goal_distance_m": 2.3400352347774596,
+   "final_gt_xy": [
+    0.662,
+    0.09
+   ],
+   "first5s": {
+    "n": 25,
+    "share_at_vx_min": 0.0,
+    "vx_max_seen": 0.515,
+    "vx_mean": 0.48560000000000003,
+    "vx_min_param": 0.1,
+    "vx_min_seen": 0.199
+   },
+   "first_escape_enter_odom_xy": null,
+   "first_escape_enter_s": null,
+   "gt_path_m": 3.6794407888159584,
+   "guard_state": "ok",
+   "host_load": {
+    "reason": "no host-load samples over the drive",
+    "valid": false
+   },
+   "invalid_reason": "no host-load samples over the drive",
+   "load1_at_start": 5.35,
+   "load1_mean": 19.75783549783574,
+   "load_gate_waited_s": 60.0,
+   "max_abs_pitch_deg": 0.011459155902616465,
+   "max_abs_roll_deg": 0.0,
+   "max_gt_x": 0.6617,
+   "min_wall_distance_m": 0.0,
+   "missed_control_cycles": 0,
+   "mppi_build": "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+   "n_telemetry_lines": 1459,
+   "nav2_false_success": false,
+   "nav2_result": "UNKNOWN",
+   "nearest_wall": "u_back",
+   "odom_path_m": 3.723399366588715,
+   "outcome": "INVALID_HOST_LOAD",
+   "outcome_measured": "NOT_REACHED_TIMEOUT",
+   "override_guard": false,
+   "param_set": "P",
+   "reached": false,
+   "rep": 0,
+   "repo_commit": "766541902a68e80cde8ecbe5d5389148d0d9dd15",
+   "rtf": 0.7066148835139887,
+   "rtf_min_10s": 0.47915696962238047,
+   "scenario": "s1_utrap",
+   "setup_attempts": 1,
+   "trial_id": "correct__s1_utrap__A_stock__P__rep0",
+   "watchdog_fired": true
+  },
+  {
+   "check_mppi_rollout_exit": 0,
+   "config": "F_se_full",
+   "contact": false,
+   "diagnostics_last": {
+    "cycles": "134",
+    "escape_entries": "0",
+    "forced_stops": "0",
+    "qp_failures": "0",
+    "slack_active": "0"
+   },
+   "drive_sim_s": 283.829,
+   "drive_wall_s": 300.0898768901825,
+   "env_label": "correct",
+   "escape_enter": 0,
+   "escape_injection_begin": 0,
+   "final_goal_distance_m": 2.4001939005005406,
+   "final_gt_xy": [
+    0.602,
+    0.103
+   ],
+   "first5s": {
+    "n": 24,
+    "share_at_vx_min": 0.0,
+    "vx_max_seen": 0.5,
+    "vx_mean": 0.48420833333333335,
+    "vx_min_param": 0.1,
+    "vx_min_seen": 0.199
+   },
+   "first_escape_enter_odom_xy": null,
+   "first_escape_enter_s": null,
+   "gt_path_m": 3.615616649146351,
+   "guard_state": "ok",
+   "host_load": {
+    "reason": "no host-load samples over the drive",
+    "valid": false
+   },
+   "invalid_reason": "no host-load samples over the drive",
+   "load1_at_start": 5.37,
+   "load1_mean": 8.823143523143425,
+   "load_gate_waited_s": 30.0,
+   "max_abs_pitch_deg": 0.005729577951308232,
+   "max_abs_roll_deg": 0.0,
+   "max_gt_x": 0.602,
+   "min_wall_distance_m": 0.06685762094149784,
+   "missed_control_cycles": 0,
+   "mppi_build": "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+   "n_telemetry_lines": 1484,
+   "nav2_false_success": false,
+   "nav2_result": "UNKNOWN",
+   "nearest_wall": "u_back",
+   "odom_path_m": 3.6167094341043113,
+   "outcome": "INVALID_HOST_LOAD",
+   "outcome_measured": "NOT_REACHED_TIMEOUT",
+   "override_guard": false,
+   "param_set": "P",
+   "reached": false,
+   "rep": 0,
+   "repo_commit": "766541902a68e80cde8ecbe5d5389148d0d9dd15",
+   "rtf": 0.9454666709859466,
+   "rtf_min_10s": 0.9154274229144829,
+   "scenario": "s1_utrap",
+   "setup_attempts": 1,
+   "trial_id": "correct__s1_utrap__F_se_full__P__rep0",
+   "watchdog_fired": true
+  }
+ ],
+ "headline": {
+  "n_affected": 0,
+  "n_correct": 0,
+  "n_registered_trials": 0,
+  "outcomes_affected": {},
+  "outcomes_correct": {}
+ },
+ "host_load_rule": {
+  "admit_load1_below": 2.0,
+  "admit_spacing_s": 30.0,
+  "valid_mean_foreign_cores": 1.0,
+  "valid_window_foreign_cores": 3.0,
+  "window_s": 30.0
+ },
+ "pilot_2026_07_03": {
+  "s1_utrap": {
+   "first5s": {
+    "n": 24,
+    "share_at_vx_min": 1.0,
+    "vx_max_seen": 0.109,
+    "vx_mean": 0.10375000000000001,
+    "vx_min_param": 0.1,
+    "vx_min_seen": 0.1
+   },
+   "nav2_result": "FAILED",
+   "watchdog_fired": false
+  },
+  "s1_utrap_evidence": {
+   "first5s": {
+    "n": 24,
+    "share_at_vx_min": 1.0,
+    "vx_max_seen": 0.109,
+    "vx_mean": 0.10370833333333335,
+    "vx_min_param": 0.1,
+    "vx_min_seen": 0.1
+   },
+   "nav2_result": "UNKNOWN",
+   "watchdog_fired": true
+  }
+ },
+ "shakedown": [
+  {
+   "check_mppi_rollout_exit": 0,
+   "config": "F_se_full",
+   "diagnostics_last": null,
+   "env_label": "correct",
+   "escape_enter": 0,
+   "escape_injection_begin": 0,
+   "first5s": null,
+   "first_escape_enter_odom_xy": null,
+   "first_escape_enter_s": null,
+   "guard_state": null,
+   "load1_at_start": null,
+   "load_gate_waited_s": null,
+   "missed_control_cycles": 0,
+   "mppi_build": "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+   "n_telemetry_lines": 0,
+   "nav2_result": null,
+   "outcome": "NO_GOAL_SENT",
+   "override_guard": false,
+   "param_set": "P",
+   "rep": 0,
+   "repo_commit": "92209c75d5ff39f9b5e6431db2899e2cfcef8769",
+   "scenario": "s1_utrap",
+   "setup_attempts": 1,
+   "trial_id": "shake1",
+   "watchdog_fired": false
+  },
+  {
+   "check_mppi_rollout_exit": 0,
+   "config": "F_se_full",
+   "diagnostics_last": {
+    "cycles": "183",
+    "escape_entries": "1",
+    "forced_stops": "0",
+    "qp_failures": "0",
+    "slack_active": "0"
+   },
+   "env_label": "correct",
+   "escape_enter": 1,
+   "escape_injection_begin": 1,
+   "first5s": {
+    "n": 24,
+    "share_at_vx_min": 0.0,
+    "vx_max_seen": 0.5,
+    "vx_mean": 0.483875,
+    "vx_min_param": 0.1,
+    "vx_min_seen": 0.199
+   },
+   "first_escape_enter_odom_xy": [
+    3.53,
+    0.44
+   ],
+   "first_escape_enter_s": 16.133666276931763,
+   "guard_state": "ok",
+   "invalid_reason": "no ground truth in telemetry.csv",
+   "load1_at_start": 5.43,
+   "load_gate_waited_s": 30.0,
+   "missed_control_cycles": 0,
+   "mppi_build": "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+   "n_telemetry_lines": 1457,
+   "nav2_result": "UNKNOWN",
+   "outcome": "INVALID",
+   "override_guard": false,
+   "param_set": "P",
+   "rep": 0,
+   "repo_commit": "92209c75d5ff39f9b5e6431db2899e2cfcef8769",
+   "scenario": "s1_utrap",
+   "setup_attempts": 1,
+   "trial_id": "shake2",
+   "watchdog_fired": true
+  },
+  {
+   "check_mppi_rollout_exit": 0,
+   "config": "F_se_full",
+   "contact": true,
+   "diagnostics_last": {
+    "cycles": "238",
+    "escape_entries": "0",
+    "forced_stops": "5",
+    "qp_failures": "0",
+    "slack_active": "5"
+   },
+   "drive_sim_s": 15.871000000000002,
+   "drive_wall_s": 26.215455293655396,
+   "env_label": "correct",
+   "escape_enter": 0,
+   "escape_injection_begin": 0,
+   "final_goal_distance_m": 2.290054505901552,
+   "final_gt_xy": [
+    0.71,
+    0.016
+   ],
+   "first5s": {
+    "n": 24,
+    "share_at_vx_min": 0.0,
+    "vx_max_seen": 0.5,
+    "vx_mean": 0.48004166666666664,
+    "vx_min_param": 0.1,
+    "vx_min_seen": 0.194
+   },
+   "first_escape_enter_odom_xy": null,
+   "first_escape_enter_s": null,
+   "gt_path_m": 3.7112131560275454,
+   "guard_state": "ok",
+   "host_load": {
+    "reason": "no host-load samples over the drive",
+    "valid": false
+   },
+   "invalid_reason": "no host-load samples over the drive",
+   "load1_at_start": 5.56,
+   "load1_mean": 11.153863636363628,
+   "load_gate_waited_s": 495.0,
+   "max_abs_pitch_deg": 0.005729577951308232,
+   "max_abs_roll_deg": 0.0,
+   "max_gt_x": 0.71,
+   "min_wall_distance_m": 0.0,
+   "missed_control_cycles": 0,
+   "mppi_build": "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+   "n_telemetry_lines": 126,
+   "nav2_false_success": true,
+   "nav2_result": "SUCCEEDED",
+   "nearest_wall": "u_back",
+   "odom_path_m": 5.892179582098414,
+   "outcome": "INVALID_HOST_LOAD",
+   "outcome_measured": "NOT_REACHED_ABORTED",
+   "override_guard": false,
+   "param_set": "P",
+   "reached": false,
+   "rep": 0,
+   "repo_commit": "92209c75d5ff39f9b5e6431db2899e2cfcef8769",
+   "rtf": 0.6034944999543671,
+   "rtf_min_10s": 0.5848972606336461,
+   "scenario": "s1_utrap",
+   "setup_attempts": 1,
+   "trial_id": "shake3",
+   "watchdog_fired": false
+  }
+ ],
+ "superseded_attempts": [],
+ "trials": []
+}

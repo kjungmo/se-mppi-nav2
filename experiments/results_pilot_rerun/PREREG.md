@@ -229,3 +229,62 @@ trials; kept and listed with the results):
 
 These three outcomes were seen before the registered trials. No definition,
 parameter set, count or wording rule above was changed because of them.
+
+## Amendment 5: host load is the confound, so it is gated (replaces item 3)
+
+Committed on 2026-10-12 before any trial that counts.
+
+**What happened.** The main block was started under the load gate of item 3
+(1-minute load average below 6.0). Two trials ran
+(`correct__s1_utrap__F_se_full__P__rep0`, `correct__s1_utrap__A_stock__P__rep0`)
+while other jobs of the same work session were compiling and running benchmarks
+on the host: the load average during them was 5.1 to 10.8 and 5.7 to 32.9. The
+block was then stopped (the third trial was still waiting at the gate and never
+launched). The paper blamed the host for the pilot, so a trial on a loaded host
+cannot answer the question. **These two trials are exploratory only.** They are
+kept in `trials_exploratory_loaded/`, listed in the results with their load, and
+used for no statement. Their outcomes were seen (both ended inside the pocket
+after 300 s). The registered blocks start again from the first trial under the
+rules below; the design, sets, counts, order, definitions and wording rules are
+unchanged.
+
+**Admission (before every trial).** The driver waits, without a time limit,
+until the 1-minute load average is below 2.0 at two checks 30 s apart. One
+trial's own stack (Gazebo, the Nav2 container, bridge, recorder) uses about 4
+cores of the 12 while it runs, so the gate also spaces the trials. Recorded per
+trial: `/proc/loadavg` at the start, the number of CPUs, and the eight busiest
+processes immediately before and after (`meta.json`: `load1_at_start`,
+`load5_at_start`, `ncpu`, `top_before`, `top_after`).
+
+**Validity (during every trial).** A sampler writes, every 5 s, the host's busy
+CPU time (`/proc/stat`), the CPU time of the trial's own processes (those that
+carry the trial's environment tag) and the load average (`host_cpu.csv`).
+Foreign CPU is the difference, in cores. A trial is **valid** if, over the
+drive, foreign CPU is at most 1.0 core on average and at most 3.0 cores in every
+30 s window. The thresholds are set now, without data: one core of twelve
+leaves the trial's stack eleven, and a 30 s burst of three cores still leaves
+nine against a need of about four. The rule deliberately uses only load that
+comes from outside the trial. The real-time factor and the missed-control-cycle
+warnings are **not** part of it: they are outcomes (the `O` set exists to see
+whether the controller misses its rate), and a rule that discarded trials with
+a low real-time factor would hide exactly what is to be measured. They are
+reported for every trial, valid or not.
+
+**Invalid trials.** A trial that fails the rule is kept as
+`<trial_id>.invalidN`, reported with its measured outcome and load, not counted,
+and repeated after the gate, at most twice. If the third attempt is invalid too,
+the cell is reported as incomplete. The same gate and rule apply to the
+`affected` block, so the affected-versus-correct contrast is on equal load.
+
+**Idle calibration (one run, before the registered trials).** When the host is
+quiet, one unregistered run (`trials_calibration/`, `correct`, `s1_utrap`,
+`F_se_full`, `P`) is made under the gate to check that an otherwise idle host
+passes the validity rule and to record the own-stack CPU use and the real-time
+factor of an unloaded trial. If the idle host does not pass (background services
+of the machine), the thresholds are raised to the measured idle level plus the
+margins above, and that is stated here before the first registered trial. The
+calibration run is listed with the results and counts for nothing.
+
+**Reporting.** The paper and the submission notes state the measured load
+conditions of the live runs (load average, foreign CPU, real-time factor) as
+facts, and keep "single WSL2 host" among the limitations.
