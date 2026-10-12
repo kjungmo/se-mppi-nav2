@@ -53,6 +53,8 @@ WATCHDOG_S = 300.0           # experiments/configs/suite.yaml
 SETUP_RETRIES = 1            # experiments/configs/suite.yaml
 ROS_DOMAIN_ID = '87'
 TAG_VAR = 'SE_RERUN_TAG'
+LOAD_GATE = 6.0              # 1-minute load average (12 logical CPUs)
+LOAD_GATE_WAIT_S = 1200.0
 GT_GZ_TOPIC = '/world/testbed/dynamic_pose/info'
 FP = 'controller_server.ros__parameters.FollowPath'
 
@@ -104,6 +106,31 @@ def plan(block: str) -> list:
     else:
         raise ValueError(block)
     return out
+
+
+def stack_is_active(log_text: str) -> bool:
+    """True when the NAVIGATION lifecycle manager reports its nodes active.
+
+    The harness's ``log_is_active`` accepts the localization manager's line as
+    well, so it reports a stack as active whose controller_server failed to
+    configure (seen in the first shakedown run).
+    """
+    return any('lifecycle_manager_navigation]' in ln and 'Managed nodes are active' in ln
+               for ln in log_text.splitlines())
+
+
+def wait_for_load(limit: float = LOAD_GATE, max_wait_s: float = LOAD_GATE_WAIT_S) -> dict:
+    """Wait until the 1-minute load average is below ``limit`` (PREREG.md,
+    amendment 3). Starts anyway after ``max_wait_s`` and says so."""
+    t0 = time.time()
+    while True:
+        with open('/proc/loadavg') as f:
+            load1 = float(f.read().split()[0])
+        waited = time.time() - t0
+        if load1 < limit or waited >= max_wait_s:
+            return {'load1_at_start': load1, 'load_gate_waited_s': round(waited, 1),
+                    'load_gate_passed': load1 < limit}
+        time.sleep(15.0)
 
 
 def trial_id(env_label, scenario, cfg, pset, rep):
@@ -227,6 +254,9 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
         with open(meta_path, 'w') as f:
             json.dump(meta, f, indent=2)
     save()
+    meta.update(wait_for_load())
+    meta['wall_start'] = time.time()
+    save()
 
     launch = None
     extras = []
@@ -242,9 +272,12 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
             active = False
             while time.time() < deadline and launch.poll() is None:
                 with open(log_path, errors='replace') as f:
-                    if rl.log_is_active(f.read()):
-                        active = True
-                        break
+                    text = f.read()
+                if 'Aborting bringup' in text:
+                    break
+                if stack_is_active(text):
+                    active = True
+                    break
                 time.sleep(1.0)
             if active:
                 meta['active'] = True
@@ -260,8 +293,7 @@ def run_trial(suite, scenario, cfg, pset, rep, env_label, out_root,
 
         bridge = subprocess.Popen(
             ['ros2', 'run', 'ros_gz_bridge', 'parameter_bridge',
-             f'{GT_GZ_TOPIC}@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
-             '--ros-args', '-r', f'{GT_GZ_TOPIC}:=/gt_pose'],
+             f'{GT_GZ_TOPIC}@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V'],
             stdout=open(os.path.join(out, 'gt_bridge.log'), 'wb'),
             stderr=subprocess.STDOUT, env=env, start_new_session=True)
         recorder = subprocess.Popen(

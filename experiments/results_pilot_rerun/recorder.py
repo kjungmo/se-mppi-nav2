@@ -9,9 +9,9 @@ Runs next to the Nav2 stack of one trial and writes, at 10 Hz of WALL time:
 
 * ``sim_s`` is the last ``/clock`` value; the real-time factor of an interval is
   (difference of sim_s) / (difference of wall_s).
-* ``gt_*`` is the simulator's own pose of the model ``amr`` (ground truth, world
-  frame = map frame of the U-trap testbed), bridged from the Gazebo topic
-  ``/world/testbed/dynamic_pose/info`` to ``/gt_pose``.
+* ``gt_*`` is the simulator's own pose of the robot model (ground truth, world
+  frame = map frame of the U-trap testbed): the first entry of the Gazebo topic
+  ``/world/testbed/dynamic_pose/info``, bridged to a ROS topic of the same name.
 * ``nav_*`` is ``/cmd_vel_nav`` (controller output), ``cmd_*`` is ``/cmd_vel``
   (after the velocity smoother and the collision monitor).
 * ``load1`` is the host's 1-minute load average.
@@ -34,8 +34,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy
 from rosgraph_msgs.msg import Clock
 from tf2_msgs.msg import TFMessage
-
-GT_MODEL = 'amr'
 
 
 def rpy(q):
@@ -65,7 +63,8 @@ class Recorder(Node):
         self.diag_file = open(diag_path, 'w')
         best_effort = QoSProfile(depth=10, reliability=ReliabilityPolicy.BEST_EFFORT)
         self.create_subscription(Clock, '/clock', self.on_clock, best_effort)
-        self.create_subscription(TFMessage, '/gt_pose', self.on_gt, 10)
+        self.create_subscription(
+            TFMessage, '/world/testbed/dynamic_pose/info', self.on_gt, 10)
         self.create_subscription(Odometry, '/odom', self.on_odom, 10)
         self.create_subscription(Twist, '/cmd_vel_nav', self.on_nav, 10)
         self.create_subscription(Twist, '/cmd_vel', self.on_cmd, 10)
@@ -76,11 +75,14 @@ class Recorder(Node):
         self.sim = msg.clock.sec + msg.clock.nanosec * 1e-9
 
     def on_gt(self, msg):
-        for t in msg.transforms:
-            if t.child_frame_id == GT_MODEL:
-                p = t.transform.translation
-                self.gt = [p.x, p.y, p.z, *rpy(t.transform.rotation)]
-                return
+        # The bridge's Pose_V -> TFMessage conversion drops the entity names
+        # (child_frame_id stays empty). The first pose of dynamic_pose/info is
+        # the model itself, followed by its links; analyze.py checks that the
+        # first sample of a trial lies on the scenario's start pose.
+        if msg.transforms:
+            t = msg.transforms[0]
+            p = t.transform.translation
+            self.gt = [p.x, p.y, p.z, *rpy(t.transform.rotation)]
 
     def on_odom(self, msg):
         p = msg.pose.pose.position

@@ -61,6 +61,19 @@ find_package(diagnostic_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OsqpEigen REQUIRED)
 
+# Link only the libraries a target really uses. ament_target_dependencies(...
+# nav2_mppi_controller ...) puts libmppi_critics.so and Nav2's behaviour-tree
+# node libraries on every link line. If that leaves a DT_NEEDED entry for
+# libmppi_critics.so in a plugin library, loading the controller through
+# pluginlib pulls libmppi_critics.so in as a dependency, the stock critics
+# register with the controller's class loader, and MPPI's CriticManager can no
+# longer create them: configure fails with "Could not create class of type
+# mppi::critics::ConstraintCritic". An activated conda toolchain passes
+# --as-needed through LDFLAGS; an environment without that activation (for
+# example one whose cxx-compiler package no longer brings the activation
+# scripts) does not, so the package asks for it itself.
+add_link_options("LINKER:--as-needed")
+
 # Optional RPATH to the nav2_mppi_controller library this package is built
 # against. OFF by default: nothing is added to what the toolchain itself puts
 # on the run path, and the installed binaries carry no extra absolute path.

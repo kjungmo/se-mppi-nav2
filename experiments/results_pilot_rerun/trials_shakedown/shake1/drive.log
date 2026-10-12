@@ -1,0 +1,11 @@
+[INFO] [1791775732.772884048] [basic_navigator]: AMCL localizer: keeping current pose belief.
+Traceback (most recent call last):
+  File "/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/sim/smoke_drive.py", line 167, in <module>
+    main()
+  File "/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/sim/smoke_drive.py", line 99, in main
+    nav.waitUntilNav2Active(localizer=LOCALIZER)
+  File "/home/cona/micromamba/envs/semppi_rerun/lib/python3.12/site-packages/nav2_simple_commander/robot_navigator.py", line 501, in waitUntilNav2Active
+    self._waitForNodeToActivate(navigator)
+  File "/home/cona/micromamba/envs/semppi_rerun/lib/python3.12/site-packages/nav2_simple_commander/robot_navigator.py", line 792, in _waitForNodeToActivate
+    time.sleep(2)
+KeyboardInterrupt

@@ -185,3 +185,47 @@ average), `diagnostics.jsonl` (the controller's `/diagnostics`).
   documented and the paper takes the "no re-run" wording: the pilot ran on a
   defective binary, the host attribution is withdrawn, and every sentence that
   leaned on the pilot is narrowed.
+
+## Amendments made after the shakedown, before the first registered trial
+
+Committed on 2026-10-12 together with the three shakedown runs
+(`trials_shakedown/shake1` to `shake3`), before the first registered trial was
+started.
+
+1. **Build fix** (`src/nav2_se_controller/CMakeLists.txt`, one line and a
+   comment: `add_link_options("LINKER:--as-needed")`). In the new environment
+   the controller did not configure: `Could not create class of type
+   mppi::critics::ConstraintCritic` (`shake1/launch.log.gz`). Today's
+   `cxx-compiler 2.0.0` no longer brings the conda toolchain activation, so
+   `LDFLAGS` is empty, the plugin libraries keep a `DT_NEEDED` entry for
+   `libmppi_critics.so`, and the stock critics register with the wrong class
+   loader. With the option the package asks for `--as-needed` itself. No C++
+   source changed. So `src/` is `main` at 55fb78c plus this build-system line,
+   in both environments; the sentence "`src/` is identical to `main`" above is
+   corrected by this item.
+2. **Active check.** The harness's `log_is_active` also accepts the
+   localization manager's line and reported the failed stack of `shake1` as
+   active. The driver now requires the navigation lifecycle manager's
+   `Managed nodes are active` line and stops waiting on `Aborting bringup`.
+3. **Load gate.** Other jobs on the host pushed the 1-minute load average above
+   20 during `shake1`. Before each trial the driver now waits until the load
+   average is below 6.0 (12 logical CPUs), for at most 20 minutes, then starts
+   anyway; the load at the start, the wait and whether the gate passed are in
+   `meta.json`, and the load is in every telemetry row. This schedules trials;
+   it excludes none.
+4. **Ground truth.** The bridge drops entity names, so the recorder takes the
+   first pose of `/world/testbed/dynamic_pose/info` (the model; its links
+   follow). `analyze.py` marks a trial `INVALID` unless its first ground-truth
+   sample lies within 0.05 m of the scenario's start.
+
+**Shakedown runs** (all `correct`, `s1_utrap`, `F_se_full`, `P`; not registered
+trials; kept and listed with the results):
+
+| Run | What happened | Used for |
+|---|---|---|
+| `shake1` | the controller did not configure (item 1); the driver wrongly saw the stack as active; no ground truth (topic remap ignored) | items 1 and 2 |
+| `shake2` | ran the full 300 s; no ground truth recorded (names dropped, item 4); by AMCL the robot ended inside the pocket | item 4 |
+| `shake3` | Nav2 reported `SUCCEEDED` after 26 s while the ground truth has the robot at x = 0.71 m, against the back wall of the U and 2.3 m from the goal: the wheels slipped, odometry kept counting and AMCL followed it | shows why "reached" is defined on ground truth; nothing changed |
+
+These three outcomes were seen before the registered trials. No definition,
+parameter set, count or wording rule above was changed because of them.
