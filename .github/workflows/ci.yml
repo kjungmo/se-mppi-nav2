@@ -40,6 +40,11 @@ jobs:
           cache-environment: true
           init-shell: bash
 
+      - name: The environment holds the unaffected nav2_mppi_controller build (1.3.13 _25)
+        run: |
+          micromamba list | grep -E "nav2-mppi-controller|ros2-distro-mutex|xtensor|xsimd"
+          micromamba list | grep -q -E "ros2-nav2-mppi-controller +1\.3\.13 +np2py312h405a742_25 "
+
       - name: Build
         timeout-minutes: 15
         run: |
@@ -47,6 +52,8 @@ jobs:
           cd ws
           colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+
 
+      # Includes test_rollout_direction: the rollout of the installed libmppi
+      # against the closed form, and the sign of the controller's command.
       - name: Unit, deployment and lint tests
         timeout-minutes: 10
         run: |
@@ -55,11 +62,17 @@ jobs:
           colcon test --packages-select nav2_se_controller --event-handlers console_cohesion+
           colcon test-result --verbose --test-result-base build/nav2_se_controller
 
-      - name: escape_critic matches libmppi's xtensor storage (SIMD/ABI guard)
+      - name: The documented one-command check passes (ros2 run nav2_se_controller check_mppi_rollout)
+        run: |
+          source ws/install/setup.bash
+          ros2 run nav2_se_controller check_mppi_rollout
+
+      - name: escape_critic and mppi_rollout_check match libmppi's xtensor storage (SIMD/ABI guard)
         run: |
           python3 scripts/check_simd_abi.py \
             --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
-            --critic ws/install/nav2_se_controller/lib/libescape_critic.so
+            --critic ws/install/nav2_se_controller/lib/libescape_critic.so \
+                     ws/install/nav2_se_controller/lib/libmppi_rollout_check.so
 
       - name: controller_server applies every plugin key in the YAMLs
         timeout-minutes: 8
@@ -151,11 +164,17 @@ jobs:
           ./build/nav2_se_controller/test_controller_runtime
           ./build/nav2_se_controller/test_controller_behaviour
           ./build/nav2_se_controller/test_escape_critic_params
+          ./build/nav2_se_controller/test_rollout_direction
 
+  # RoboStack has no Humble nav2_mppi_controller binary without the negated
+  # rollout trigonometry (README, "Affected nav2_mppi_controller builds"). This
+  # job first shows that the stock binary is affected and that the controller
+  # refuses it, then builds nav2_mppi_controller 1.1.20 from source without
+  # -ffast-math as an overlay and runs everything on that.
   humble:
     name: ROS 2 Humble (RoboStack) build, test and parameter binding
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash -el {0}
@@ -170,14 +189,120 @@ jobs:
           cache-environment: true
           init-shell: bash
 
-      - name: Build
+      - name: Build against the stock RoboStack binary (1.1.20 _18, affected)
         timeout-minutes: 15
         run: |
-          mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/nav2_se_controller
-          cd ws
+          micromamba list | grep -E "nav2-mppi-controller|ros2-distro-mutex|xtensor|xsimd"
+          micromamba list | grep -q -E "ros-humble-nav2-mppi-controller +1\.1\.20 +np2py312h2ed9cc7_18 "
+          mkdir -p ws_stock/src && ln -s "$PWD/src/nav2_se_controller" ws_stock/src/nav2_se_controller
+          cd ws_stock
           colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+
 
-      - name: Unit, deployment and lint tests
+      - name: "Negative: the direction test fails on the stock binary, for the right reason"
+        timeout-minutes: 5
+        run: |
+          cd ws_stock
+          source install/setup.bash
+          status=0
+          ./build/nav2_se_controller/test_rollout_direction > direction.log 2>&1 || status=$?
+          grep -E "^\[  (FAILED|PASSED)  \]" direction.log || true
+          grep -m 1 "integrates sampled trajectories wrongly" direction.log || true
+          [ "$status" -ne 0 ] || { echo "the direction test passed on an affected binary"; exit 1; }
+          must_fail() {
+            grep -q -F "[  FAILED  ] $1" direction.log || { echo "expected to FAIL here: $1"; exit 1; }
+          }
+          must_pass() {
+            grep -q -F "[       OK ] $1 (" direction.log || { echo "expected to pass here: $1"; exit 1; }
+          }
+          # What the library does: rollouts off the closed form, commands away from the goal.
+          must_fail "InstalledMppi.BatchRolloutMatchesTheClosedFormAtEveryHeading ("
+          must_fail "InstalledMppi.StraightRolloutEndsAheadOfTheRobot ("
+          must_fail "InstalledMppi.SelfCheckPasses ("
+          must_fail "InstalledMppi.ControllerConfiguresWithTheDefaultParameters ("
+          must_fail "Headings/CommandDirection.GoalAheadIsApproachedForwards/0, "
+          must_fail "Headings/CommandDirection.GoalBehindIsApproachedBackwards/0, "
+          grep -q "goal 1 m straight ahead: commanded vx = -0\." direction.log \
+            || { echo "no command away from the goal in the log"; exit 1; }
+          # The guard's own logic does not depend on the library.
+          must_pass "RolloutGuard.RefusesToConfigureByDefaultAndLeavesNothingBehind"
+          must_pass "RolloutGuard.OverrideRunsAndReportsErrorOnDiagnostics"
+          must_pass "RolloutGuard.EveryConfigureChecksAgainAndNoVerdictSurvivesCleanup"
+          must_pass "RolloutGuard.PassingLibraryIsUntouchedByTheOverride"
+          must_pass "RolloutGuard.AWronglyTypedOverrideIsNotReadAsFalse"
+          # The documented one-command check: exit status 1, with the reason.
+          status=0
+          ros2 run nav2_se_controller check_mppi_rollout > tool.log 2>&1 || status=$?
+          cat tool.log
+          [ "$status" -eq 1 ] || { echo "check_mppi_rollout exited $status, expected 1"; exit 1; }
+          grep -q "^FAILED: the loaded nav2_mppi_controller library (.*/lib/libmppi_controller.so) integrates sampled trajectories wrongly" tool.log \
+            || { echo "check_mppi_rollout failed without the expected reason"; exit 1; }
+
+      - name: "Negative: controller_server refuses the stock binary; the override runs with an ERROR"
+        timeout-minutes: 5
+        run: |
+          source ws_stock/install/setup.bash
+          stop() {
+            kill -TERM -- "-$1" 2>/dev/null || true
+            for _ in $(seq 15); do kill -0 "$1" 2>/dev/null || return 0; sleep 1; done
+            kill -KILL -- "-$1" 2>/dev/null || true
+          }
+          configure() {  # configure <yaml> <server log>; sets $status
+            setsid ros2 run nav2_controller controller_server --ros-args --params-file "$1" \
+              > "$2" 2>&1 &
+            pid=$!
+            status=0
+            timeout 90 python3 scripts/check_param_binding.py "$1" --configure \
+              > binding.log 2>&1 || status=$?
+            stop "$pid"
+            cat binding.log
+            grep -E "\[(ERROR|FATAL)\]" "$2" | cut -c 1-600 || true
+          }
+          yaml=src/nav2_se_controller/config/nav2_se_controller_params.yaml
+
+          echo "::group::shipped YAML (se_enforce_rollout_check: true): configure must be refused"
+          configure "$yaml" refused.log
+          echo "::endgroup::"
+          [ "$status" -ne 0 ] || { echo "controller_server configured on an affected binary"; exit 1; }
+          grep -q "configure transition failed" binding.log \
+            || { echo "the check failed, but not on the configure transition"; exit 1; }
+          grep -F "SafeEscapeController[FollowPath] refuses to configure: the loaded nav2_mppi_controller library (" refused.log \
+            | grep -q -F "/lib/libmppi_controller.so) integrates sampled trajectories wrongly" \
+            || { echo "no refusal naming the loaded library in the server log"; exit 1; }
+          [ "$(grep -c "refuses to configure" refused.log)" -eq 1 ] \
+            || { echo "expected exactly one refusal ERROR"; exit 1; }
+
+          echo "::group::se_enforce_rollout_check: false: configures, with one ERROR"
+          sed 's/^      se_enforce_rollout_check: true$/      se_enforce_rollout_check: false/' \
+            "$yaml" > override.yaml
+          grep -q "^      se_enforce_rollout_check: false$" override.yaml
+          configure override.yaml overridden.log
+          echo "::endgroup::"
+          [ "$status" -eq 0 ] || { echo "the override did not configure"; cat overridden.log; exit 1; }
+          [ "$(grep -c "SafeEscapeController\[FollowPath\] runs although" overridden.log)" -eq 1 ] \
+            || { echo "expected exactly one override ERROR"; exit 1; }
+
+      - name: Build nav2_mppi_controller 1.1.20 from source without -ffast-math (overlay)
+        timeout-minutes: 20
+        run: scripts/build_mppi_overlay.sh ws
+
+      - name: Build against the overlay
+        timeout-minutes: 15
+        run: |
+          ln -s "$PWD/src/nav2_se_controller" ws/src/nav2_se_controller
+          cd ws
+          # The RPATH option: without it the plugin's toolchain RPATH (<env>/lib,
+          # searched before LD_LIBRARY_PATH) loads the environment's library.
+          colcon build --packages-select nav2_se_controller --event-handlers console_cohesion+ \
+            --cmake-args -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON
+          # The plugin must load the overlay's library, not the environment's.
+          ldd install/nav2_se_controller/lib/libsafe_escape_controller.so | grep mppi_controller
+          ldd install/nav2_se_controller/lib/libsafe_escape_controller.so \
+            | grep -q -F "$PWD/install/nav2_mppi_controller/lib/libmppi_controller.so"
+          source install/setup.bash
+          ros2 run nav2_se_controller check_mppi_rollout | tee tool.log
+          grep -q -F "OK: $PWD/install/nav2_mppi_controller/lib/libmppi_controller.so rolls trajectories out correctly" tool.log
+
+      - name: Unit, deployment and lint tests (on the overlay)
         timeout-minutes: 10
         run: |
           cd ws
@@ -185,13 +310,15 @@ jobs:
           colcon test --packages-select nav2_se_controller --event-handlers console_cohesion+
           colcon test-result --verbose --test-result-base build/nav2_se_controller
 
-      - name: escape_critic matches libmppi's xtensor storage (SIMD/ABI guard)
+      - name: escape_critic and mppi_rollout_check match libmppi's xtensor storage (SIMD/ABI guard)
         run: |
           python3 scripts/check_simd_abi.py \
-            --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
-            --critic ws/install/nav2_se_controller/lib/libescape_critic.so
+            --mppi ws/install/nav2_mppi_controller/lib/libmppi_controller.so \
+                   ws/install/nav2_mppi_controller/lib/libmppi_critics.so \
+            --critic ws/install/nav2_se_controller/lib/libescape_critic.so \
+                     ws/install/nav2_se_controller/lib/libmppi_rollout_check.so
 
-      - name: controller_server applies every plugin key in the shipped YAML
+      - name: controller_server applies every plugin key in the shipped YAML (on the overlay)
         timeout-minutes: 5
         run: |
           source ws/install/setup.bash

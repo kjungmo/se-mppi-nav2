@@ -19,9 +19,13 @@ endif()
 #    benchmark; unit tests compile everything consistently, so never saw it).
 #    Verified:  nm -DC libmppi_controller.so | grep uvector
 #      -> xt::uvector<float, xsimd::aligned_allocator<float, 32ul>>
-#    => escape_critic (and anything linking its xt-typed API) gets
-#       XTENSOR_USE_XSIMD + -mavx2 -mfma. Needs xsimd 7.x in the env (the
-#       generation xtensor 0.23 pairs with; 14.x headers do not compile).
+#    => escape_critic (and anything linking its xt-typed API) and
+#       mppi_rollout_check get XTENSOR_USE_XSIMD + -mavx2 -mfma. The env must
+#       hold the xsimd generation its xtensor pairs with: xtensor 0.25.0 with
+#       xsimd 11.2.0 (the pinned Jazzy env, = what its MPPI binary was built
+#       with), xtensor 0.23.9 with xsimd 7.6.0 (the pinned Humble env; xsimd
+#       14.x headers do not compile with it). scripts/check_simd_abi.py
+#       compares the resulting storage type with the MPPI library's.
 #
 # 2. se_mppi_core <-> OsqpEigen/Eigen from the env, which are built WITHOUT
 #    AVX2. Compiling se_mppi_core with -mavx2 flips Eigen's alignment
@@ -56,6 +60,53 @@ find_package(visualization_msgs REQUIRED)
 find_package(diagnostic_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OsqpEigen REQUIRED)
+
+# Optional RPATH to the nav2_mppi_controller library this package is built
+# against. OFF by default: nothing is added to what the toolchain itself puts
+# on the run path, and the installed binaries carry no extra absolute path.
+#
+# Turn it ON when nav2_mppi_controller comes from an overlay workspace
+# (scripts/build_mppi_overlay.sh, the remedy for binaries with negated rollout
+# trigonometry). Without it the overlay is found at build time but not at run
+# time: the conda toolchain's LDFLAGS give every binary of THIS package a
+# DT_RPATH to <environment>/lib, and the loader searches a DT_RPATH before
+# LD_LIBRARY_PATH, so the plugin loads the environment's libmppi_controller.so
+# even with the overlay sourced. ON prepends the overlay's lib directory to
+# that RPATH (to the linker flags themselves: CMake's BUILD_RPATH and
+# INSTALL_RPATH entries would come after the toolchain's). Consequences: the
+# entry also takes precedence over LD_LIBRARY_PATH; the install is tied to the
+# overlay's absolute path (not relocatable, not for binary packages); and if
+# the overlay is moved or deleted the loader falls back to the next entry, the
+# environment's library, without a message (the rollout check then refuses it
+# and names the library that was loaded).
+option(NAV2_SE_CONTROLLER_MPPI_RPATH
+  "Prepend the directory of the nav2_mppi_controller library found at configure time to the RPATH"
+  OFF)
+get_filename_component(MPPI_LIBRARY_DIR "${nav2_mppi_controller_DIR}/../../../lib" ABSOLUTE)
+string(FIND "${CMAKE_SHARED_LINKER_FLAGS}" "-rpath,${MPPI_LIBRARY_DIR}" MPPI_DIR_ON_RPATH)
+if(NAV2_SE_CONTROLLER_MPPI_RPATH)
+  if(NOT EXISTS "${MPPI_LIBRARY_DIR}/libmppi_controller.so")
+    message(FATAL_ERROR
+      "NAV2_SE_CONTROLLER_MPPI_RPATH: libmppi_controller.so not found in ${MPPI_LIBRARY_DIR} "
+      "(derived from nav2_mppi_controller_DIR=${nav2_mppi_controller_DIR})")
+  endif()
+  if(MPPI_DIR_ON_RPATH EQUAL -1)
+    message(STATUS "NAV2_SE_CONTROLLER_MPPI_RPATH: RPATH entry ${MPPI_LIBRARY_DIR}")
+    foreach(kind SHARED MODULE EXE)
+      set(CMAKE_${kind}_LINKER_FLAGS
+        "-Wl,-rpath,\"${MPPI_LIBRARY_DIR}\" ${CMAKE_${kind}_LINKER_FLAGS}")
+    endforeach()
+  else()
+    message(STATUS
+      "NAV2_SE_CONTROLLER_MPPI_RPATH: ${MPPI_LIBRARY_DIR} is already on the RPATH; nothing added")
+  endif()
+elseif(NOT "$ENV{CONDA_PREFIX}" STREQUAL "" AND MPPI_DIR_ON_RPATH EQUAL -1)
+  message(WARNING
+    "nav2_mppi_controller was found in ${MPPI_LIBRARY_DIR}, which is not on this build's RPATH. "
+    "At run time the binaries of this package will load libmppi_controller.so from "
+    "$ENV{CONDA_PREFIX}/lib instead. If that directory is an overlay you mean to use, configure "
+    "with -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON.")
+endif()
 
 # Humble (Nav2 1.1.x) API differences, guarded at compile time:
 #  - nav2_core::Controller has no virtual reset() (added in 1.2), so
@@ -111,6 +162,29 @@ target_compile_definitions(escape_critic PUBLIC XTENSOR_USE_XSIMD)
 target_compile_options(escape_critic PUBLIC ${MPPI_ABI_OPTIONS})
 
 # =============================================================================
+# mppi_rollout_check: asks the installed libmppi_controller where it puts a
+# known rollout (configure-time guard against binaries with negated rollout
+# trigonometry; mppi_rollout_check.hpp). It sizes and reads mppi's xt::xtensor
+# members, so it needs the MPPI xtensor-ABI flags (boundary 1); PRIVATE,
+# because its header is plain C++ and its users keep their own flags
+# (boundary 2). No -ffast-math here or anywhere else in this package.
+# =============================================================================
+add_library(mppi_rollout_check SHARED
+  src/mppi_rollout_check.cpp)
+target_include_directories(mppi_rollout_check PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+ament_target_dependencies(mppi_rollout_check
+  nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle)
+target_compile_definitions(mppi_rollout_check PRIVATE XTENSOR_USE_XSIMD)
+target_compile_options(mppi_rollout_check PRIVATE ${MPPI_ABI_OPTIONS})
+target_link_libraries(mppi_rollout_check ${CMAKE_DL_LIBS})
+
+# The same check from a shell: ros2 run nav2_se_controller check_mppi_rollout
+add_executable(check_mppi_rollout src/check_mppi_rollout_main.cpp)
+target_link_libraries(check_mppi_rollout mppi_rollout_check)
+
+# =============================================================================
 # safe_escape_controller: nav2_core controller plugin (subclasses MPPIController).
 # Links se_mppi_core only -- NOT escape_critic -- so loading the controller does
 # not pre-load the critic factory outside its class loader.
@@ -125,12 +199,14 @@ target_include_directories(safe_escape_controller PUBLIC
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(safe_escape_controller ${controller_dependencies})
 target_compile_definitions(safe_escape_controller PUBLIC ${SE_MPPI_API_DEFINITIONS})
-target_link_libraries(safe_escape_controller se_mppi_core)
+target_link_libraries(safe_escape_controller se_mppi_core mppi_rollout_check)
 
-install(TARGETS se_mppi_core escape_critic safe_escape_controller
+install(TARGETS se_mppi_core escape_critic mppi_rollout_check safe_escape_controller
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin)
+install(TARGETS check_mppi_rollout
+  RUNTIME DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/
   DESTINATION include)
 install(DIRECTORY config/
@@ -187,6 +263,20 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_controller_behaviour
     nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
 
+  # Rollout direction of the installed libmppi_controller, the sign of the
+  # controller's command, and the configure-time guard. Fails on a
+  # nav2_mppi_controller binary with negated rollout trigonometry.
+  ament_add_gtest(test_rollout_direction test/deployment/test_rollout_direction.cpp
+    TIMEOUT 180)
+  target_link_libraries(test_rollout_direction safe_escape_controller mppi_rollout_check)
+  ament_target_dependencies(test_rollout_direction
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros diagnostic_msgs)
+
+  # The shell tool gives the same verdict: exit status 0 on a correct library.
+  ament_add_test(check_mppi_rollout_tool
+    COMMAND "${CMAKE_CURRENT_BINARY_DIR}/check_mppi_rollout"
+    GENERATE_RESULT_FOR_RETURN_CODE_ZERO)
+
   ament_add_gtest(test_task_boundary test/deployment/test_task_boundary.cpp)
   target_include_directories(test_task_boundary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -200,7 +290,7 @@ if(BUILD_TESTING)
 endif()
 
 ament_export_include_directories(include)
-ament_export_libraries(se_mppi_core escape_critic safe_escape_controller)
+ament_export_libraries(se_mppi_core escape_critic mppi_rollout_check safe_escape_controller)
 ament_export_dependencies(${controller_dependencies})
 
 ament_package()

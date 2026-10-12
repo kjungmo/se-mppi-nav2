@@ -1,8 +1,19 @@
 # Minimal RoboStack ROS 2 Humble environment for CI (compile and test only;
 # SE-MPPI's control performance on Humble's MPPI 1.1.x is not evaluated).
 # Versions are pinned to the environment verified on 2026-10-05.
+#
+# The nav2_mppi_controller binary pinned here (1.1.20 build _18, as the newer
+# _20) is AFFECTED: built with -ffast-math, it negates cos/sin in the
+# optimizer's batch rollouts and commands motion away from the goal (README,
+# "Affected nav2_mppi_controller builds"). RoboStack has no corrected Humble
+# build. It stays in the environment on purpose: the CI job first shows that
+# the controller refuses it, then builds nav2_mppi_controller 1.1.20 from
+# source without -ffast-math (scripts/build_mppi_overlay.sh) and tests on that.
+#
 # xsimd is pinned to 7.x: xtensor 0.23 does not compile against newer xsimd,
 # and the solver would otherwise pick one (see CMakeLists.txt, boundary 1).
+# The stock binary was built against xtensor 0.24.7 / xsimd 10.0.0 (its conda
+# recipe); the overlay is built with the headers pinned here.
 name: ros2
 channels:
   - robostack-staging

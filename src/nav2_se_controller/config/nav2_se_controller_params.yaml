@@ -19,6 +19,15 @@ controller_server:
 
       # ---- SE-MPPI additions ----
       se_enabled: true
+      # Configure-time check that the loaded nav2_mppi_controller library rolls
+      # trajectories out in the right direction (some distributed binaries
+      # negate cos/sin there and drive away from the goal; see the README,
+      # "Affected nav2_mppi_controller builds"). true: refuse to configure on a
+      # library that fails. false: run anyway, with ERROR in the log and on
+      # /diagnostics. Read at configure only: after a refusal, change it here
+      # and restart controller_server (it cannot be configured a second time
+      # after a failed configure). No effect on a correct library.
+      se_enforce_rollout_check: true
       # Entrapment detection (detect-and-switch local-minima escape).
       se_progress_stall_window: 30      # control cycles without path progress
       # Escape-safety coordination (CBF class-K gain modulation).

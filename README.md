@@ -29,6 +29,7 @@ separate cleanly from stock (A), CBF-only (D), and no-gap (F⁻), which time out
 - [System architecture](#system-architecture)
 - [Features](#features)
 - [Requirements](#requirements)
+- [Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds)
 - [Install and build](#install-and-build)
 - [Quick start](#quick-start)
 - [Benchmark artifacts](#benchmark-artifacts)
@@ -115,6 +116,11 @@ coordinated gain.
 7. **Gazebo U-trap testbed + live Nav2 integration.** A committed testbed
    (`experiments/se_mppi_utrap/`) and a one-command sim launcher run the
    controller inside a live ROS 2 Jazzy + Nav2 + Gazebo Harmonic stack.
+   *Note, 2026-10-11:* the live runs committed so far (`experiments/results_pilot/`,
+   July 2026) were made on a `nav2_mppi_controller` build with flipped rollouts
+   (see [Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds),
+   PR #6). Whether that caused their outcome is not established; they have not
+   been repeated on a corrected build.
 
 ## Requirements
 
@@ -150,8 +156,153 @@ on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
 - **SE-MPPI's control performance on Humble's MPPI 1.1.x has not been
   evaluated**: every reported result comes from the Jazzy stack or the 2D
   benchmark.
+- **The RoboStack Humble `nav2_mppi_controller` binary is affected by the defect
+  below, and no corrected Humble binary exists.** The controller refuses to
+  configure on it. CI builds `nav2_mppi_controller` 1.1.20 from source without
+  `-ffast-math` and tests on that.
+- Humble's MPPI 1.1.20 is not reproducible run to run with the stock critic
+  stack: the same binary, inputs and noise seed gave 2 distinct command
+  sequences in 8 runs (7 in 8 in an independent repetition), and one sequence in
+  8 of 8 runs once `PathAlignCritic` alone is removed. This is upstream
+  behaviour that predates the guard; its root cause is unknown. Jazzy 1.3.13
+  gave one sequence in every run.
 
 See [`RUN.md`](RUN.md) for the full run guide and troubleshooting.
+
+## Affected nav2_mppi_controller builds
+
+> **Warning.** Some distributed `nav2_mppi_controller` binaries roll sampled
+> trajectories out in the wrong direction. A controller built on them, stock
+> MPPI or SE-MPPI, commands motion **away from the goal**. Check your library
+> before you drive a robot.
+
+**Defect.** The MPPI optimizer scores each sampled control sequence at the
+positions its batch integration computes. The affected binaries negate cos/sin
+in that integration for part of the heading range: cos for |yaw| < π/4 and sin
+for |yaw| < 3π/4 (yaw in the costmap frame); beyond 3π/4 the rollout is exact.
+The optimizer then sees its samples at mirrored positions. This is a build
+defect of the binary, not of Nav2's source: upstream report
+[RoboStack/ros-jazzy#290](https://github.com/RoboStack/ros-jazzy/issues/290),
+"[linux-64] MPPI 1.3.12 predicts motion in the wrong direction due to stale
+build dependency (xsimd / fast-math)" (closed 2026-10-10), which states: "The
+suspected cause is the interaction between fast-math and xsimd's use of
+positive/negative zero as sign masks. Removing `-ffast-math` or appending
+`-fsigned-zeros` restores the expected numerical results."
+
+**Symptom.** With a goal straight ahead and reversing allowed (`vx_min` < 0) the
+robot backs away from the goal, up to `vx_min`. With `vx_min` ≥ 0 it does not
+reverse; it creeps at `vx_min`. Headings beyond 3π/4 drive correctly, so the
+fault comes and goes with the heading. Nothing crashes and every command is
+finite.
+
+| Distribution | Package build | State | Basis |
+|---|---|---|---|
+| Humble | `ros-humble-nav2-mppi-controller 1.1.20 np2py312h2ed9cc7_18` (robostack-staging) | **affected** | measured (CI: the direction test fails on it) |
+| Humble | `ros2-nav2-mppi-controller 1.1.20 np2py314h53a0733_20` (robostack-staging) | **affected** | measured (`check_mppi_rollout`, 2026-10-11) |
+| Jazzy | `ros-jazzy-nav2-mppi-controller 1.3.11 np2py312h2ed9cc7_16` (robostack-jazzy) | **affected** | measured (direction test and `check_mppi_rollout`, 2026-10-11) |
+| Jazzy | `ros2-nav2-mppi-controller 1.3.12 np2py312h2ed9cc7_21` | **affected** | reported in the upstream issue; not run here |
+| Jazzy | `ros2-nav2-mppi-controller 1.3.12 np2py312h84585a2_22` | corrected per upstream | its conda recipe removes `-ffast-math`; not run here |
+| Jazzy | `ros2-nav2-mppi-controller 1.3.13 np2py312h405a742_25` (mutex `jazzy_25`) | **correct** | measured; the build CI is pinned to |
+
+Other sources (apt binaries, your own source build) were not tested; the check
+below tells.
+
+**How to check.** After building this package:
+
+```bash
+ros2 run nav2_se_controller check_mppi_rollout
+```
+
+It asks the `nav2_mppi_controller` library this package loads for a set of known
+rollouts (16 start headings, each straight and through a full left and right
+turn; 24,576 points) and compares them with the closed form. It prints the
+library's path and exits with status 0 if every point is within 1 mm (a correct
+library is within 1e-6 m), and with status 1 and the measurement otherwise.
+It needs no node, costmap or TF. To see which build is installed without
+building anything: `micromamba list nav2-mppi-controller` (the build string is
+the third column).
+
+**What the controller does.** `SafeEscapeController` runs the same check at every
+`configure`, before it creates anything:
+
+| Library | `se_enforce_rollout_check` | `configure` | Log | `/diagnostics` |
+|---|---|---|---|---|
+| passes the check | `true` or `false` | proceeds, unchanged | nothing | key `mppi_rollout_check: ok`; level as before |
+| fails the check | `true` (default) | throws: the configure transition fails. **Restart the process** after the fix; a second configure aborts it (below) | one ERROR: loaded library, measurement, known cause and builds, remedy, the override | none (the node never activates) |
+| fails the check | `false` | proceeds | one ERROR at each configure | ERROR every second while active; keys `mppi_rollout_check: failed`, `mppi_rollout_detail` |
+
+**After a refusal, restart `controller_server`.** The lifecycle state reads
+`unconfigured` after the failed transition, but Nav2's `controller_server` cannot
+configure a second time: it has already added its costmap node to an executor, and
+the second attempt ends with `terminate called after throwing an instance of
+'std::runtime_error'  what(): Node '/local_costmap/local_costmap' has already been
+added to an executor.` and `[ros2run]: Aborted` (reproduced on Humble 1.1.20 and
+Jazzy 1.3.11). That is how the server treats any controller plugin that throws
+from `configure`; the plugin cannot repair it from inside. So fix the library, or
+put `se_enforce_rollout_check: false` in the parameter file, and start the
+process again.
+
+The check uses its own throwaway optimizer object, so on a library that passes
+it changes no command (compared bit for bit with the previous commit over 120
+closed-loop cycles on Jazzy 1.3.13). `se_enforce_rollout_check` is read at
+configure only; a runtime set is rejected. It is an override for someone who has
+to look at an affected stack, not a setting for a robot that moves. Limits: the check covers
+the batch rollout integration, the known defect, not every function of the
+library; and it lives in `SafeEscapeController`, so an `EscapeCritic` loaded
+into a stock `nav2_mppi_controller::MPPIController` is not guarded.
+
+**Remedy.**
+
+- *Jazzy:* use `nav2_mppi_controller` 1.3.13 build `_25` or later. All ROS
+  packages of a RoboStack environment share one `ros2-distro-mutex`, so this
+  means the `jazzy_25` package set, i.e. a new environment:
+  `micromamba create -n <name> -f .github/environment-jazzy.yml` gives the
+  pinned CI set, and a fresh `scripts/setup_ros2_env.sh` resolves to the same
+  MPPI build (dry run, 2026-10-11). An environment that
+  `scripts/setup_ros2_env.sh` created earlier keeps its old build: the script
+  skips an existing environment.
+- *Humble:* build `nav2_mppi_controller` from source without `-ffast-math`, in
+  the workspace you build this package in:
+
+  ```bash
+  scripts/build_mppi_overlay.sh ws          # upstream 1.1.20, -ffast-math removed
+  ln -s "$PWD/src/nav2_se_controller" ws/src/
+  (cd ws && colcon build --packages-select nav2_se_controller \
+     --cmake-args -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON)
+  source ws/install/setup.bash
+  ros2 run nav2_se_controller check_mppi_rollout   # must print OK and the path under ws/
+  ```
+
+  `-DNAV2_SE_CONTROLLER_MPPI_RPATH=ON` (default `OFF`) is needed here. The conda
+  toolchain gives every binary it links, this package's included, a `DT_RPATH` to
+  `<environment>/lib`, and the loader searches a `DT_RPATH` before
+  `LD_LIBRARY_PATH`. So without the option the plugin is compiled against the
+  overlay but loads the environment's (affected) `libmppi_controller.so` at run
+  time, sourced overlay or not. The option puts the overlay's `lib` directory
+  first on that RPATH. What that means:
+
+  - the entry takes precedence over `LD_LIBRARY_PATH` for this package's binaries;
+  - the install is tied to the overlay's absolute path: it is not relocatable and
+    not fit for a binary package, which is why the option is off by default (a
+    default build adds nothing to the RPATH the toolchain writes);
+  - if the overlay is moved or deleted, the loader falls back to the next entry,
+    the environment's library, without a message. The rollout check then refuses
+    that library and names it;
+  - an executable of your own that links `libmppi_controller.so` directly
+    resolves it with its own RPATH, not with this one.
+
+  Measured on the Humble environment (`readelf -d`, `LD_DEBUG=libs`,
+  `check_mppi_rollout`), package built against the overlay:
+
+  | Option | Overlay | RPATH of the package's binaries | Library loaded | Check |
+  |---|---|---|---|---|
+  | `ON` | present | `<ws>/install/nav2_mppi_controller/lib:<env>/lib` | overlay | OK |
+  | `ON` | moved away | same | `<env>/lib` (stock) | FAILED, exit 1 |
+  | `OFF` | present, sourced | `<env>/lib` | `<env>/lib` (stock) | FAILED, exit 1 |
+  | `OFF` | moved away | `<env>/lib` | `<env>/lib` (stock) | FAILED, exit 1 |
+
+  With `OFF` and an overlay CMake prints a warning that the library it found is
+  not on the RPATH.
 
 ## Install and build
 
@@ -183,18 +334,28 @@ colcon test --packages-select nav2_se_controller && colcon test-result --verbose
 [`.github/environment-jazzy.yml`](.github/environment-jazzy.yml):
 
 - build `nav2_se_controller`, then `colcon test` (algorithm unit tests,
-  deployment tests, linters);
-- `scripts/check_simd_abi.py`: `libescape_critic` must use the same xtensor
-  storage type as the installed `libmppi_controller` (see the ABI note at the top
-  of `src/nav2_se_controller/CMakeLists.txt`);
+  deployment tests, linters). The deployment tests include
+  `test_rollout_direction`: the installed `libmppi_controller`'s batch rollout
+  against the closed form, the sign of the controller's command for a goal ahead
+  and behind at 15 headings, and the configure-time guard;
+- `scripts/check_simd_abi.py`: `libescape_critic` and `libmppi_rollout_check`
+  must use the same xtensor storage type as the `libmppi_controller` they run
+  with (see the ABI note at the top of `src/nav2_se_controller/CMakeLists.txt`);
 - `scripts/check_param_binding.py`: `controller_server` is lifecycle-configured
   headless with `config/nav2_se_controller_params.yaml` and
   `experiments/sim/nav2_se_loopback.yaml`, and every `FollowPath.*` key must be
   declared and hold the YAML value (a few keys in the experiment YAML are known to
   be unread and listed in the workflow; an injected unknown key must fail);
 - the deployment tests again under AddressSanitizer;
-- a Humble job (`.github/environment-humble.yml`): build, tests, the ABI check and
-  the parameter-binding check on the shipped YAML;
+- a Humble job (`.github/environment-humble.yml`). Its environment holds the
+  affected stock binary. The job first proves the defect and the guard on it
+  (the direction test must fail on the rollout and command-sign cases,
+  `check_mppi_rollout` must exit 1, `controller_server` must refuse to
+  configure, and must configure with one ERROR under
+  `se_enforce_rollout_check: false`), then builds `nav2_mppi_controller` 1.1.20
+  from source without `-ffast-math` (`scripts/build_mppi_overlay.sh`) and runs
+  the build, the tests, the ABI check and the parameter-binding check on the
+  shipped YAML against that;
 - `scripts/check_paper_numbers.py` (default mode).
 
 The lint tests include cppcheck: CI sets `AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1`,
@@ -204,7 +365,11 @@ To reproduce the CI jobs locally (from the repository root):
 
 ```bash
 micromamba create -y -n se_ci -f .github/environment-jazzy.yml
-# For the Humble job, use .github/environment-humble.yml instead.
+# For the Humble job, use .github/environment-humble.yml instead, build the
+# MPPI overlay first (the stock Humble binary is refused; see "Affected
+# nav2_mppi_controller builds"):  scripts/build_mppi_overlay.sh ws
+# and add  --cmake-args -DNAV2_SE_CONTROLLER_MPPI_RPATH=ON  to the colcon build.
+# In the ABI guard below, --mppi is then ws/install/nav2_mppi_controller/lib/libmppi_*.so
 micromamba activate se_ci
 export AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1
 mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/
@@ -215,7 +380,12 @@ mkdir -p ws/src && ln -s "$PWD/src/nav2_se_controller" ws/src/
 # ABI guard
 python3 scripts/check_simd_abi.py \
   --mppi "$CONDA_PREFIX/lib/libmppi_controller.so" "$CONDA_PREFIX/lib/libmppi_critics.so" \
-  --critic ws/install/nav2_se_controller/lib/libescape_critic.so
+  --critic ws/install/nav2_se_controller/lib/libescape_critic.so \
+           ws/install/nav2_se_controller/lib/libmppi_rollout_check.so
+
+# Rollout direction of the MPPI library this build loads (exit status 0 = correct)
+source ws/install/setup.bash
+ros2 run nav2_se_controller check_mppi_rollout
 
 # Parameter binding (headless controller_server, lifecycle configure), as in CI.
 # The Humble job runs only the shipped YAML and the negative fixture.
@@ -244,7 +414,7 @@ mkdir -p ws_asan/src && ln -s "$PWD/src/nav2_se_controller" ws_asan/src/
   "-DCMAKE_SHARED_LINKER_FLAGS=-fsanitize=address" "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address" \
   && source install/setup.bash \
   && export ASAN_OPTIONS=detect_stack_use_after_return=1:detect_leaks=0:new_delete_type_mismatch=0:alloc_dealloc_mismatch=0 \
-  && for t in test_controller_runtime test_controller_behaviour test_escape_critic_params; do ./build/nav2_se_controller/$t || exit 1; done)
+  && for t in test_controller_runtime test_controller_behaviour test_escape_critic_params test_rollout_direction; do ./build/nav2_se_controller/$t || exit 1; done)
 
 python3 scripts/check_paper_numbers.py
 ```
@@ -276,7 +446,11 @@ the new value reaches its consumer before the next control cycle:
 
 Configure-only (a runtime set is rejected with a reason; change them while the
 `controller_server` is unconfigured, then configure): `se_multirobot`, `se_viz`,
-`se_neighbor_odom_topics`.
+`se_neighbor_odom_topics`, `se_enforce_rollout_check` (default `true`; see
+[Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds):
+after a refusal it has to be changed in the parameter file and the process
+restarted, because `controller_server` cannot configure again after a failed
+configure).
 
 The CBF filter's velocity box follows MPPI's `vx_max`, `wz_max` and
 `min(vx_min, 0)`, scaled by Nav2's speed limit (`setSpeedLimit`, as MPPI scales its
@@ -306,6 +480,11 @@ slack), and ERROR when the QP has failed on every cycle for more than 2 s (40
 cycles at Nav2's default 20 Hz, inside the default 10 s progress-checker
 allowance). It carries counters for those events, dropped obstacle tracks, escape
 entries and the current alpha. The same events are logged as throttled warnings.
+The key `mppi_rollout_check` is `ok`, or `failed` when the loaded
+`nav2_mppi_controller` library failed the configure-time rollout check and
+`se_enforce_rollout_check` is `false`; the status is then ERROR for as long as the
+controller is active, whatever the other counters say (with the default `true`
+the controller does not configure, so there is no status).
 The status name uses the node name, not its namespace (`hardware_id` holds the
 namespace): in a multi-robot setup, namespace or remap `/diagnostics` per robot,
 or read `hardware_id`, to tell the robots apart.

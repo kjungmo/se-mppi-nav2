@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -34,8 +35,50 @@ void SafeEscapeController::configure(
   std::string name, const std::shared_ptr<tf2_ros::Buffer> tf,
   const std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros)
 {
+  // Before anything is created: does the loaded nav2_mppi_controller library
+  // roll trajectories out in the right direction? Some distributed binaries do
+  // not (README, "Affected nav2_mppi_controller builds"); the optimizer then
+  // commands motion away from the goal, and no later stage here can tell. The
+  // check uses its own throwaway optimizer, so it changes nothing on a correct
+  // library, and a refusal leaves nothing behind to clean up.
+  const std::string enforce_key = name + ".se_enforce_rollout_check";
+  enforce_rollout_check_ = true;
+  rclcpp::Logger early_logger = logger_;
+  if (auto node = parent.lock()) {
+    early_logger = node->get_logger();
+    if (!node->has_parameter(enforce_key)) {
+      node->declare_parameter(enforce_key, true);
+    }
+    node->get_parameter(enforce_key, enforce_rollout_check_);
+  }
+  const RolloutCheckResult rollout = runRolloutCheck();
+  rollout_check_failed_ = !rollout.ok;
+  rollout_failure_ = rollout.ok ? std::string() : describeRolloutFailure(rollout);
+  if (rollout_check_failed_) {
+    if (enforce_rollout_check_) {
+      RCLCPP_ERROR(
+        early_logger,
+        "SafeEscapeController[%s] refuses to configure: %s. Fix the library and restart this "
+        "process; do not configure it again (Nav2's controller_server aborts on a second "
+        "configure after a failed one). To run on this library anyway (not on a robot that "
+        "moves), set %s: false in the parameter file and restart.",
+        name.c_str(), rollout_failure_.c_str(), enforce_key.c_str());
+      throw std::runtime_error(
+              "nav2_se_controller: the loaded nav2_mppi_controller library failed the rollout "
+              "direction check (details in the ERROR logged just before); restart the "
+              "process after fixing the library, or with " + enforce_key + ": false");
+    }
+    RCLCPP_ERROR(
+      early_logger,
+      "SafeEscapeController[%s] runs although %s. %s is false, so it is not refused; its "
+      "commands can point away from the goal. /diagnostics reports ERROR.",
+      name.c_str(), rollout_failure_.c_str(), enforce_key.c_str());
+  }
+
   // Reuse the full MPPI setup (optimizer, path handler, parameters handler).
   MPPIController::configure(parent, name, tf, costmap_ros);
+  // Read once above; a runtime set would have no effect, so it is rejected.
+  configure_only_params_.insert(enforce_key);
 
   // CBF disc radius: the footprint's CIRCUMSCRIBED radius, so the certified
   // disc covers the whole (padded) footprint; the inscribed radius left the
@@ -259,6 +302,11 @@ void SafeEscapeController::configure(
     "SafeEscapeController[%s] configured: se_enabled=%d robot_radius=%.3f "
     "alpha_base=%.2f alpha_escape=%.2f",
     name_.c_str(), se_enabled_, robot_radius_, cc_.alpha_base, cc_.alpha_escape);
+}
+
+RolloutCheckResult SafeEscapeController::runRolloutCheck() const
+{
+  return checkMppiRolloutDirection();
 }
 
 void SafeEscapeController::reapplyConfig()
@@ -705,7 +753,13 @@ void SafeEscapeController::publishDiagnostics()
   diagnostic_msgs::msg::DiagnosticStatus st;
   st.name = diag_name_;
   st.hardware_id = diag_hardware_id_;
-  if (!se_enabled) {
+  if (rollout_check_failed_) {
+    // Only reachable with se_enforce_rollout_check=false. It outranks every
+    // other state: the MPPI command itself cannot be trusted.
+    st.level = diagnostic_msgs::msg::DiagnosticStatus::ERROR;
+    st.message = "nav2_mppi_controller failed the rollout direction check "
+      "(se_enforce_rollout_check=false): commands can point away from the goal";
+  } else if (!se_enabled) {
     st.level = diagnostic_msgs::msg::DiagnosticStatus::OK;
     st.message = "SE layer disabled (se_enabled=false): stock MPPI output";
   } else if (qp_failing_long) {
@@ -740,6 +794,10 @@ void SafeEscapeController::publishDiagnostics()
   kv("entrapped", counters_.entrapped.load() ? "true" : "false");
   kv("cbf_obstacles", std::to_string(counters_.cbf_obstacles.load()));
   kv("alpha", std::to_string(counters_.alpha.load()));
+  kv("mppi_rollout_check", rollout_check_failed_ ? "failed" : "ok");
+  if (rollout_check_failed_) {
+    kv("mppi_rollout_detail", rollout_failure_);
+  }
 
   diagnostic_msgs::msg::DiagnosticArray arr;
   if (auto node = parent_.lock()) {

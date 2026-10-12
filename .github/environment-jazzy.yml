@@ -2,8 +2,23 @@
 # nav2_se_controller and the parameter-binding check need, nothing for
 # simulation (scripts/setup_ros2_env.sh installs the full desktop/Gazebo set).
 # Versions are pinned to the environment the code was verified with
-# (2026-10-05). xtensor 0.23 / xsimd 7.6 must match what the RoboStack
-# nav2_mppi_controller binary was built against (CMakeLists.txt, boundary 1);
+# (2026-10-11).
+#
+# nav2_mppi_controller is pinned to 1.3.13 build _25 (mutex jazzy_25), the
+# RoboStack Jazzy build whose recipe removes -ffast-math. The build pinned here
+# before (1.3.11 _16) negates cos/sin in the optimizer's batch rollouts and
+# commands motion away from the goal; the controller refuses to configure on
+# such a library (README, "Affected nav2_mppi_controller builds").
+#
+# xtensor 0.25.0 / xsimd 11.2.0 are what the _25 binary was built against (its
+# conda recipe: host xtensor ==0.25.0, resolved xsimd 11.2.0), and the package
+# requires xtensor 0.25.0 at run time. escape_critic shares xt::xtensor
+# buffers with libmppi, so the headers here must give the same storage type as
+# the binary (CMakeLists.txt, boundary 1; scripts/check_simd_abi.py compares
+# it). The 1.3.11 _16 binary was built against xtensor 0.24.7 / xsimd 10.0.0,
+# not the 0.23.9 / 7.6.0 this file pinned next to it; the storage type and the
+# tensor layout were the same in both, which is why that worked.
+# eigen 5.0.1 is required by the jazzy_25 package set.
 # cppcheck is pinned because ament_cppcheck skips its checks for some versions,
 # so a floating version would change the test outcome between runs.
 name: ros2
@@ -11,23 +26,24 @@ channels:
   - robostack-jazzy
   - conda-forge
 dependencies:
-  - ros2-distro-mutex=0.14.0=jazzy_16
+  - ros2-distro-mutex=0.19.0=jazzy_25
   - python=3.12
   - ros-jazzy-ros-base=0.11.0
-  - ros-jazzy-nav2-mppi-controller=1.3.11
-  - ros-jazzy-nav2-controller=1.3.11
-  - ros-jazzy-nav2-core=1.3.11
-  - ros-jazzy-nav2-costmap-2d=1.3.11
-  - ros-jazzy-diagnostic-msgs=5.3.6
-  - ros-jazzy-lifecycle-msgs=2.0.3
-  - ros-jazzy-ament-cmake-gtest=2.5.5
-  - ros-jazzy-ament-lint-auto=0.17.4
-  - ros-jazzy-ament-lint-common=0.17.4
-  - xtensor=0.23.9
-  - xsimd=7.6.0
+  - ros-jazzy-nav2-mppi-controller=1.3.13
+  - ros2-nav2-mppi-controller=1.3.13=np2py312h405a742_25
+  - ros-jazzy-nav2-controller=1.3.13
+  - ros-jazzy-nav2-core=1.3.13
+  - ros-jazzy-nav2-costmap-2d=1.3.13
+  - ros-jazzy-diagnostic-msgs=5.3.8
+  - ros-jazzy-lifecycle-msgs=2.0.4
+  - ros-jazzy-ament-cmake-gtest=2.5.6
+  - ros-jazzy-ament-lint-auto=0.17.5
+  - ros-jazzy-ament-lint-common=0.17.5
+  - xtensor=0.25.0
+  - xsimd=11.2.0
   - osqp-eigen=0.11.0
   - libosqp=1.0.0
-  - eigen=3.4.0
+  - eigen=5.0.1
   - cppcheck=2.21.0
   - uncrustify=0.83.0
   - colcon-common-extensions=0.3.0
