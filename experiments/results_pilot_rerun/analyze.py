@@ -52,6 +52,7 @@ TELEM_RE = re.compile(
     r' nav=vx:(?P<nvx>[-\d.na]+) wz:(?P<nwz>[-\d.na]+)'
     r' cmd=vx:(?P<cvx>[-\d.na]+) wz:(?P<cwz>[-\d.na]+)')
 RESULT_RE = re.compile(r'SMOKE_RESULT=TaskResult\.(\w+)')
+OPTFAIL_RE = re.compile(_STAMP + r' \[controller_server\]: Optimizer fail to compute path')
 ENTER_RE = re.compile(_STAMP + r' \[MPPIController\]: SE escape ENTER at \((?P<x>[-\d.]+), (?P<y>[-\d.]+)\)')
 
 
@@ -211,6 +212,13 @@ def analyze_trial(tdir: str, boxes: list, chassis: tuple) -> dict:
     rec.update({k: drive[k] for k in ('nav2_result', 'watchdog_fired', 'n_telemetry_lines',
                                        'first5s')})
     rec['missed_control_cycles'] = launch.count('Control loop missed its desired rate')
+    # Descriptive fields added after the first registered trials (PREREG.md,
+    # amendment 7); no outcome definition uses them.
+    fails = [float(m.group('stamp')) for m in OPTFAIL_RE.finditer(launch)]
+    rec['optimizer_failures'] = len(fails)
+    rec['first_optimizer_failure_s'] = (fails[0] - drive['t0']
+                                        if fails and drive['t0'] else None)
+    rec['progress_failures'] = launch.count('Failed to make progress')
     enters = [m.groupdict() for m in ENTER_RE.finditer(launch)]
     rec['escape_enter'] = len(enters)
     rec['escape_injection_begin'] = launch.count('escape-cost injection BEGIN')
@@ -252,6 +260,17 @@ def analyze_trial(tdir: str, boxes: list, chassis: tuple) -> dict:
     rec['final_gt_xy'] = [round(last['gt_x'], 3), round(last['gt_y'], 3)]
     rec['final_goal_distance_m'] = math.hypot(last['gt_x'] - goal[0], last['gt_y'] - goal[1])
     rec['max_gt_x'] = max(r['gt_x'] for r in drive_rows)
+    # Last instant at which the robot was still moving (> 2 cm over 5 s).
+    moving_until = drive_rows[0]['wall_s']
+    k = 0
+    for r in drive_rows:
+        while r['wall_s'] - drive_rows[k]['wall_s'] > 5.0:
+            k += 1
+        if math.hypot(r['gt_x'] - drive_rows[k]['gt_x'],
+                      r['gt_y'] - drive_rows[k]['gt_y']) > 0.02:
+            moving_until = r['wall_s']
+    rec['stationary_from_s'] = moving_until - t0
+    rec['stationary_share'] = max(0.0, (t1 - moving_until) / (t1 - t0))
     rec['reached'] = rec['final_goal_distance_m'] <= GOAL_TOL
 
     lx, ly = chassis
@@ -443,6 +462,12 @@ def headline(result: dict) -> dict:
                            else 0.5 * (rtfs[len(rtfs) // 2 - 1] + rtfs[len(rtfs) // 2])),
             'missed_control_cycles_total': sum(t['missed_control_cycles'] for t in d),
             'trials_with_missed_cycles': sum(t['missed_control_cycles'] > 0 for t in d),
+            'trials_with_optimizer_failures': sum(t['optimizer_failures'] > 0 for t in d),
+            'not_reached': sum(not t['reached'] for t in d),
+            'not_reached_with_optimizer_failures': sum(
+                (not t['reached']) and t['optimizer_failures'] > 0 for t in d),
+            'not_reached_without_escape_enter': sum(
+                (not t['reached']) and t['escape_enter'] == 0 for t in d),
             'trials_with_escape_enter': sum(t['escape_enter'] > 0 for t in d),
             'first5s_vx_mean_min': min(f['vx_mean'] for f in first),
             'first5s_vx_mean_max': max(f['vx_mean'] for f in first),
@@ -487,8 +512,8 @@ def render(result: dict) -> str:
 
     def table(title, trials):
         out = ['', f'## {title}', '',
-               '| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |',
-               '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|']
+               '| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | Optimizer failures (first, s); stationary from (s) | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |',
+               '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|']
         for t in trials:
             f = t.get('first5s')
             first = (f"{f['vx_mean']:.3f} [{f['vx_min_seen']:.3f}, {f['vx_max_seen']:.3f}], "
@@ -504,7 +529,9 @@ def render(result: dict) -> str:
                 fmt(t.get('min_wall_distance_m'), 3), fmt(t.get('max_abs_pitch_deg'), 1),
                 f"{fmt(t.get('drive_wall_s'), 1)} / {fmt(t.get('drive_sim_s'), 1)}",
                 f"{fmt(t.get('rtf'))} ({fmt(t.get('rtf_min_10s'))})",
-                fmt(t.get('missed_control_cycles')), first,
+                fmt(t.get('missed_control_cycles')),
+                f"{fmt(t.get('optimizer_failures'))} ({fmt(t.get('first_optimizer_failure_s'), 1)}); "
+                f"{fmt(t.get('stationary_from_s'), 1)}", first,
                 f"{fmt(t.get('escape_enter'))} / {fmt(t.get('escape_injection_begin'))} "
                 f"({fmt(t.get('first_escape_enter_s'), 1)})",
                 f"{fmt(t.get('odom_path_m'))} / {fmt(t.get('gt_path_m'))}",

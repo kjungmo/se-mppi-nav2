@@ -307,3 +307,43 @@ order: the `P` part of the main block (20 trials), the affected block (4), then
 the `V` and `O` parts (24). Within each part the order is the one registered.
 Counts, sets, definitions and wording rules are unchanged. If the window closes
 before the `V` and `O` parts finish, the trials not run are reported as not run.
+
+## Amendment 7: interruption on 2026-10-12, continuation on 2026-10-14
+
+Committed on 2026-10-14 before any further trial.
+
+**What happened.** On 2026-10-12 the `P` part of the main block finished (20
+valid trials; one attempt invalid by host load and repeated). The affected
+block had three valid trials when the work session that owned the driver ended
+at about 18:46 KST and the driver stopped with it. That is an operational
+interruption, not a result. The fourth affected cell
+(`affected__s1_utrap_evidence__A_stock__P__rep0`) had one attempt invalid by host
+load (kept as `.invalid1`) and one attempt cut off before its drive (kept as
+`.aborted1` when the driver resumes). The `V` and `O` parts had not started. No
+Gazebo or Nav2 process was left behind.
+
+**Continuation.** The remaining registered trials run on 2026-10-14 on the same
+host under the same gate and validity rule, in the registered order: the fourth
+affected cell (1 trial), then the `V` and `O` parts (24). Nothing completed is
+repeated and nothing is replaced.
+
+**Environment changes detected since 2026-10-12.** The WSL2 kernel is now
+`6.18.54.1-microsoft-standard-WSL2` (it was `6.18.40.1`); each trial records its
+kernel in `meta.json`. Both micromamba environments are unchanged (their package
+lists are identical to the committed `env_correct.txt` and `env_affected.txt`),
+and the two workspaces are the builds of 2026-10-12. So the `P` part and three
+of the four affected trials ran on the older kernel, and the last affected trial
+and the `V` and `O` parts run on the newer one; comparisons across that boundary
+carry this caveat.
+
+**Descriptive fields added to the analysis.** After the first registered trials
+`analyze.py` gained fields that no outcome definition uses: the number of
+`Optimizer fail to compute path` warnings and the time of the first one, the
+number of `Failed to make progress` errors, and the time from which the robot
+stood still (less than 2 cm of ground-truth motion in 5 s). They were added
+because the trials showed the robot stopping at the back wall while MPPI's
+optimizer failed every cycle. The registered definitions are unchanged.
+
+**Outcomes seen so far** (stated so that the reader knows what was known when
+the continuation started): none of the 20 valid `P` trials on the correct build
+reached the goal.

@@ -7,38 +7,72 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 
 | Env | Set | Scenario | Config | n | Reached (ground truth) | Contact | Nav2 SUCCEEDED | of which not at the goal | Trials with escape ENTER | Missed control cycles | RTF min / median / max | First 5 s mean vx (min..max over trials) | Outcomes |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| affected | P | s1_utrap | A_stock | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.97 / 0.97 / 0.97 | 0.104..0.104 | NOT_REACHED_ABORTED 1 |
+| affected | P | s1_utrap | F_se_full | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.97 / 0.97 / 0.97 | 0.104..0.104 | NOT_REACHED_ABORTED 1 |
+| affected | P | s1_utrap_evidence | A_stock | 1 | 0 | 0 | 0 | 0 | 0 | 0 | -- / -- / -- | --..-- | INVALID 1 |
+| affected | P | s1_utrap_evidence | F_se_full | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.96 / 0.96 / 0.96 | 0.144..0.144 | NOT_REACHED_TIMEOUT 1 |
+| correct | P | s1_utrap | A_stock | 5 | 0 | 5 | 0 | 0 | 0 | 7 | 0.96 / 0.97 / 0.97 | 0.485..0.486 | NOT_REACHED_TIMEOUT 5 |
+| correct | P | s1_utrap | F_se_full | 5 | 0 | 4 | 1 | 1 | 1 | 5 | 0.96 / 0.97 / 0.97 | 0.485..0.485 | NOT_REACHED_ABORTED 1, NOT_REACHED_TIMEOUT 4 |
+| correct | P | s1_utrap_evidence | A_stock | 5 | 0 | 4 | 0 | 0 | 0 | 7 | 0.96 / 0.97 / 0.97 | 0.106..0.107 | NOT_REACHED_TIMEOUT 5 |
+| correct | P | s1_utrap_evidence | F_se_full | 5 | 0 | 1 | 1 | 1 | 0 | 4 | 0.96 / 0.97 / 0.97 | 0.106..0.107 | NOT_REACHED_ABORTED 1, NOT_REACHED_TIMEOUT 4 |
 
 ## Registered trials
 
-| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | Optimizer failures (first, s); stationary from (s) | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| affected__s1_utrap__A_stock__P__rep0 | NOT_REACHED_ABORTED | FAILED | 4.63 | -0.25, -3.30 | 0.000 | 0.0 | 187.6 / 181.7 | 0.97 (0.97) | 0 | 9 (24.8); 187.7 | 0.104 [0.100, 0.109], 100% (vx_min 0.1) | 0 / 0 (--) | 8.18 / 7.71 | failed | 1.2 / 5.4; 0.60 / 0.85 / 3.88 |
+| affected__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_ABORTED | FAILED | 4.84 | -0.07, -3.75 | 0.000 | 0.0 | 209.3 / 202.4 | 0.97 (0.96) | 0 | 73 (26.0); 81.5 | 0.104 [0.100, 0.109], 100% (vx_min 0.1) | 0 / 0 (--) | 6.86 / 6.69 | failed | 1.1 / 6.3; 0.55 / 1.19 / 3.92 |
+| affected__s1_utrap_evidence__A_stock__P__rep0 | INVALID (driver did not finish the trial) | -- | -- | -- | -- | -- | -- / -- | -- (--) | -- | -- (--); -- | -- | -- / -- (--) | -- / -- | -- | 1.4 / --; -- / -- / -- |
+| affected__s1_utrap_evidence__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, -0.00 | 0.000 | 0.0 | 299.9 / 289.1 | 0.96 (0.96) | 0 | 2946 (4.6); 10.0 | 0.144 [0.000, 0.343], 60% (vx_min 0.1) | 0 / 0 (--) | 0.81 / 0.71 | failed | 1.2 / 5.3; 0.33 / 0.88 / 4.07 |
+| correct__s1_utrap__A_stock__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.67, 0.05 | 0.000 | 0.0 | 300.0 / 289.5 | 0.97 (0.96) | 1 | 2862 (13.4); 18.6 | 0.486 [0.199, 0.515], 0% (vx_min 0.1) | 0 / 0 (--) | 3.68 / 3.67 | ok | 1.1 / 5.3; 0.75 / 1.27 / 3.90 |
+| correct__s1_utrap__A_stock__P__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.05 | 0.001 | 0.0 | 300.0 / 289.5 | 0.96 (0.96) | 2 | 2863 (13.5); 18.4 | 0.485 [0.199, 0.516], 0% (vx_min 0.1) | 0 / 0 (--) | 3.66 / 3.66 | ok | 1.0 / 6.0; 0.37 / 0.48 / 4.11 |
+| correct__s1_utrap__A_stock__P__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.05 | 0.000 | 0.0 | 300.0 / 290.4 | 0.97 (0.97) | 1 | 2865 (13.4); 18.3 | 0.486 [0.199, 0.515], 0% (vx_min 0.1) | 0 / 0 (--) | 3.66 / 3.66 | ok | 1.1 / 4.1; -0.12 / 0.07 / 3.89 |
+| correct__s1_utrap__A_stock__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.66, 0.05 | 0.000 | 0.0 | 299.9 / 290.4 | 0.97 (0.96) | 2 | 2862 (13.4); 18.5 | 0.485 [0.199, 0.516], 0% (vx_min 0.1) | 0 / 0 (--) | 3.68 / 3.67 | ok | 1.2 / 5.2; 0.18 / 0.38 / 4.00 |
+| correct__s1_utrap__A_stock__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.66, 0.06 | 0.000 | 0.0 | 300.1 / 290.4 | 0.97 (0.96) | 1 | 2863 (13.4); 18.6 | 0.485 [0.194, 0.516], 0% (vx_min 0.1) | 0 / 0 (--) | 3.68 / 3.67 | ok | 1.1 / 5.9; 0.15 / 0.32 / 3.90 |
+| correct__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.36 | 0.65, 0.27 | 0.000 | 0.0 | 300.0 / 289.6 | 0.97 (0.94) | 1 | 2834 (14.0); 22.4 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.99 / 3.86 | ok | 0.4 / 5.0; 0.50 / 1.98 / 3.92 |
+| correct__s1_utrap__F_se_full__P__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.15 | 0.006 | 0.0 | 300.0 / 289.2 | 0.96 (0.96) | 1 | 2859 (13.1); 143.2 | 0.485 [0.194, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.71 / 3.70 | ok | 1.3 / 5.7; 0.23 / 0.32 / 4.18 |
+| correct__s1_utrap__F_se_full__P__rep2 | NOT_REACHED_ABORTED | SUCCEEDED | 2.29 | 0.71, 0.04 | 0.000 | 0.0 | 22.2 / 21.6 | 0.97 (0.97) | 0 | 20 (13.4); 19.0 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 5.80 / 3.71 | ok | 1.0 / 2.3; 0.11 / 0.11 / 3.71 |
+| correct__s1_utrap__F_se_full__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.49 | 0.60, 0.66 | 0.001 | 0.0 | 300.1 / 289.7 | 0.97 (0.94) | 2 | 2816 (17.0); 23.4 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 1 / 1 (16.7) | 4.20 / 4.18 | ok | 1.4 / 5.3; 0.22 / 0.52 / 3.96 |
+| correct__s1_utrap__F_se_full__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.03 | 0.023 | 0.0 | 300.0 / 290.8 | 0.97 (0.96) | 1 | 2866 (13.4); 18.1 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.66 / 3.66 | ok | 1.1 / 5.3; 0.22 / 0.44 / 3.88 |
+| correct__s1_utrap_evidence__A_stock__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, 0.13 | 0.000 | 0.0 | 300.0 / 290.0 | 0.97 (0.96) | 1 | 2900 (6.0); 13.9 | 0.107 [0.100, 0.163], 84% (vx_min 0.1) | 0 / 0 (--) | 0.98 / 0.74 | ok | 1.2 / 6.3; 0.78 / 1.28 / 4.07 |
+| correct__s1_utrap_evidence__A_stock__P__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.32 | 0.68, 0.11 | 0.000 | 0.0 | 300.0 / 287.8 | 0.96 (0.95) | 2 | 2929 (6.0); 11.8 | 0.106 [0.100, 0.160], 84% (vx_min 0.1) | 0 / 0 (--) | 0.72 / 0.70 | ok | 1.1 / 6.1; 0.41 / 0.67 / 4.19 |
+| correct__s1_utrap_evidence__A_stock__P__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, 0.07 | 0.000 | 0.0 | 300.0 / 289.8 | 0.97 (0.96) | 1 | 2873 (5.9); 136.3 | 0.106 [0.100, 0.160], 84% (vx_min 0.1) | 0 / 0 (--) | 2.63 / 0.71 | ok | 1.4 / 5.4; 0.55 / 0.65 / 3.96 |
+| correct__s1_utrap_evidence__A_stock__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.059 | 0.0 | 300.0 / 290.0 | 0.97 (0.96) | 1 | 2940 (5.9); 10.7 | 0.106 [0.100, 0.161], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.2 / 4.7; 0.11 / 0.20 / 4.03 |
+| correct__s1_utrap_evidence__A_stock__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, 0.07 | 0.000 | 0.0 | 300.1 / 290.3 | 0.97 (0.96) | 2 | 2880 (5.9); 136.5 | 0.107 [0.100, 0.162], 84% (vx_min 0.1) | 0 / 0 (--) | 1.95 / 0.72 | ok | 1.1 / 4.8; 0.14 / 0.34 / 3.91 |
+| correct__s1_utrap_evidence__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.38 | 0.62, 0.05 | 0.053 | 0.0 | 300.1 / 288.3 | 0.96 (0.93) | 1 | 2939 (6.0); 11.0 | 0.107 [0.100, 0.163], 84% (vx_min 0.1) | 0 / 0 (--) | 0.62 / 0.62 | ok | 1.1 / 5.8; 0.95 / 2.27 / 4.04 |
+| correct__s1_utrap_evidence__F_se_full__P__rep1 | NOT_REACHED_ABORTED | SUCCEEDED | 2.29 | 0.71, 0.07 | 0.000 | 0.0 | 138.2 / 133.7 | 0.97 (0.97) | 0 | 1252 (5.9); 136.5 | 0.106 [0.100, 0.160], 84% (vx_min 0.1) | 0 / 0 (--) | 2.86 / 0.72 | ok | 1.1 / 3.7; 0.09 / 0.27 / 4.05 |
+| correct__s1_utrap_evidence__F_se_full__P__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.063 | 0.0 | 300.0 / 288.1 | 0.96 (0.94) | 2 | 2939 (6.0); 10.8 | 0.107 [0.100, 0.166], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.4 / 5.7; 0.42 / 0.79 / 4.23 |
+| correct__s1_utrap_evidence__F_se_full__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.04 | 0.036 | 0.0 | 299.9 / 290.5 | 0.97 (0.97) | 1 | 2936 (5.9); 11.4 | 0.107 [0.100, 0.165], 84% (vx_min 0.1) | 0 / 0 (--) | 0.65 / 0.65 | ok | 1.3 / 4.8; 0.08 / 0.18 / 3.91 |
+| correct__s1_utrap_evidence__F_se_full__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.060 | 0.0 | 300.1 / 290.2 | 0.97 (0.96) | 0 | 2941 (6.0); 10.9 | 0.106 [0.100, 0.161], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.0 / 4.9; 0.53 / 0.66 / 3.99 |
 
 ## Attempts invalidated by host load or interrupted, and repeated (not counted above)
 
-| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | Optimizer failures (first, s); stationary from (s) | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| affected__s1_utrap_evidence__A_stock__P__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.47 cores mean, 2.26 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, -0.00 | 0.000 | 0.0 | 300.0 / 288.4 | 0.96 (0.95) | 0 | 2946 (4.5); 10.2 | 0.134 [0.000, 0.342], 60% (vx_min 0.1) | 0 / 0 (--) | 0.80 / 0.71 | failed | 1.6 / 7.1; 1.47 / 2.26 / 4.18 |
+| correct__s1_utrap_evidence__A_stock__P__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.54 cores mean, 1.78 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.068 | 0.0 | 300.1 / 289.6 | 0.96 (0.96) | 0 | 2941 (6.0); 10.9 | 0.107 [0.100, 0.162], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.6 / 7.1; 1.54 / 1.78 / 3.98 |
 
 ## Exploratory runs under uncontrolled host load (first start of the main block; not used for any statement)
 
-| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| correct__s1_utrap__A_stock__P__rep0 | INVALID_HOST_LOAD (no host-load samples over the drive); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.66, 0.09 | 0.000 | 0.0 | 300.1 / 212.1 | 0.71 (0.48) | 0 | 0.486 [0.199, 0.515], 0% (vx_min 0.1) | 0 / 0 (--) | 3.72 / 3.68 | ok | 5.3 / 19.8; -- / -- / -- |
-| correct__s1_utrap__F_se_full__P__rep0 | INVALID_HOST_LOAD (no host-load samples over the drive); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.40 | 0.60, 0.10 | 0.067 | 0.0 | 300.1 / 283.8 | 0.95 (0.92) | 0 | 0.484 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.62 / 3.62 | ok | 5.4 / 8.8; -- / -- / -- |
+| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | Optimizer failures (first, s); stationary from (s) | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| correct__s1_utrap__A_stock__P__rep0 | INVALID_HOST_LOAD (no host-load samples over the drive); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.66, 0.09 | 0.000 | 0.0 | 300.1 / 212.1 | 0.71 (0.48) | 0 | 2858 (13.3); 155.8 | 0.486 [0.199, 0.515], 0% (vx_min 0.1) | 0 / 0 (--) | 3.72 / 3.68 | ok | 5.3 / 19.8; -- / -- / -- |
+| correct__s1_utrap__F_se_full__P__rep0 | INVALID_HOST_LOAD (no host-load samples over the drive); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.40 | 0.60, 0.10 | 0.067 | 0.0 | 300.1 / 283.8 | 0.95 (0.92) | 0 | 2867 (13.4); 18.2 | 0.484 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.62 / 3.62 | ok | 5.4 / 8.8; -- / -- / -- |
 
 ## Idle-host calibration run (not a registered trial)
 
-| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| correct__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.36 | 0.65, 0.10 | 0.001 | 0.0 | 300.0 / 289.4 | 0.96 (0.96) | 2 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.67 / 3.66 | ok | 1.4 / 6.5; 0.76 / 1.90 / 4.07 |
-| correct__s1_utrap__F_se_full__P__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.94 cores mean, 3.23 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.33 | 0.68, -0.18 | 0.000 | 0.0 | 300.1 / 286.8 | 0.96 (0.92) | 1 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.73 / 3.70 | ok | 1.5 / 6.7; 1.94 / 3.23 / 4.04 |
+| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | Optimizer failures (first, s); stationary from (s) | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| correct__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.36 | 0.65, 0.10 | 0.001 | 0.0 | 300.0 / 289.4 | 0.96 (0.96) | 2 | 2862 (13.6); 18.4 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.67 / 3.66 | ok | 1.4 / 6.5; 0.76 / 1.90 / 4.07 |
+| correct__s1_utrap__F_se_full__P__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.94 cores mean, 3.23 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.33 | 0.68, -0.18 | 0.000 | 0.0 | 300.1 / 286.8 | 0.96 (0.92) | 1 | 2852 (13.2); 269.9 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.73 / 3.70 | ok | 1.5 / 6.7; 1.94 / 3.23 / 4.04 |
 
 ## Shakedown runs (not registered trials)
 
-| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| shake1 | NO_GOAL_SENT | -- | -- | -- | -- | -- | -- / -- | -- (--) | 0 | -- | 0 / 0 (--) | -- / -- | -- | -- / --; -- / -- / -- |
-| shake2 | INVALID (no ground truth in telemetry.csv) | UNKNOWN | -- | -- | -- | -- | -- / -- | -- (--) | 0 | 0.484 [0.199, 0.500], 0% (vx_min 0.1) | 1 / 1 (16.1) | -- / -- | ok | 5.4 / --; -- / -- / -- |
-| shake3 | INVALID_HOST_LOAD (no host-load samples over the drive); measured: NOT_REACHED_ABORTED | SUCCEEDED | 2.29 | 0.71, 0.02 | 0.000 | 0.0 | 26.2 / 15.9 | 0.60 (0.58) | 0 | 0.480 [0.194, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 5.89 / 3.71 | ok | 5.6 / 11.2; -- / -- / -- |
+| Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | Optimizer failures (first, s); stationary from (s) | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| shake1 | NO_GOAL_SENT | -- | -- | -- | -- | -- | -- / -- | -- (--) | 0 | 0 (--); -- | -- | 0 / 0 (--) | -- / -- | -- | -- / --; -- / -- / -- |
+| shake2 | INVALID (no ground truth in telemetry.csv) | UNKNOWN | -- | -- | -- | -- | -- / -- | -- (--) | 0 | 2894 (18.1); -- | 0.484 [0.199, 0.500], 0% (vx_min 0.1) | 1 / 1 (16.1) | -- / -- | ok | 5.4 / --; -- / -- / -- |
+| shake3 | INVALID_HOST_LOAD (no host-load samples over the drive); measured: NOT_REACHED_ABORTED | SUCCEEDED | 2.29 | 0.71, 0.02 | 0.000 | 0.0 | 26.2 / 15.9 | 0.60 (0.58) | 0 | 23 (16.2); 20.5 | 0.480 [0.194, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 5.89 / 3.71 | ok | 5.6 / 11.2; -- / -- / -- |
 
 ## July 2026 pilot, same first-seconds statistic
 
@@ -51,10 +85,69 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 
 ```json
 {
- "n_affected": 0,
- "n_correct": 0,
- "n_registered_trials": 0,
- "outcomes_affected": {},
- "outcomes_correct": {}
+ "affected": {
+  "contact": 3,
+  "first5s_vx_mean_max": 0.14356000000000002,
+  "first5s_vx_mean_min": 0.10396000000000002,
+  "foreign_cores_mean_max": 0.598,
+  "foreign_cores_worst_window_max": 1.193,
+  "load1_at_start_max": 1.21,
+  "load1_mean_max": 6.272578796561566,
+  "load1_mean_min": 5.277314228590501,
+  "missed_control_cycles_total": 0,
+  "n_driven": 3,
+  "nav2_false_success": 0,
+  "nav2_succeeded": 0,
+  "not_reached": 3,
+  "not_reached_with_optimizer_failures": 3,
+  "not_reached_without_escape_enter": 3,
+  "own_cores_mean_max": 4.073,
+  "own_cores_mean_min": 3.876,
+  "reached": 0,
+  "rtf_max": 0.9679158581210476,
+  "rtf_median": 0.9669173752056438,
+  "rtf_min": 0.9635333333333334,
+  "trials_with_escape_enter": 0,
+  "trials_with_missed_cycles": 0,
+  "trials_with_optimizer_failures": 3
+ },
+ "correct": {
+  "contact": 14,
+  "first5s_vx_mean_max": 0.48560000000000003,
+  "first5s_vx_mean_min": 0.10628000000000005,
+  "foreign_cores_mean_max": 0.948,
+  "foreign_cores_worst_window_max": 2.27,
+  "load1_at_start_max": 1.44,
+  "load1_mean_max": 6.251655011654918,
+  "load1_mean_min": 2.3338839285714266,
+  "missed_control_cycles_total": 23,
+  "n_driven": 20,
+  "nav2_false_success": 2,
+  "nav2_succeeded": 2,
+  "not_reached": 20,
+  "not_reached_with_optimizer_failures": 20,
+  "not_reached_without_escape_enter": 19,
+  "own_cores_mean_max": 4.231,
+  "own_cores_mean_min": 3.707,
+  "reached": 0,
+  "rtf_max": 0.9689150776246512,
+  "rtf_median": 0.9660718273067259,
+  "rtf_min": 0.9588533957876989,
+  "trials_with_escape_enter": 1,
+  "trials_with_missed_cycles": 17,
+  "trials_with_optimizer_failures": 20
+ },
+ "n_affected": 4,
+ "n_correct": 20,
+ "n_registered_trials": 24,
+ "outcomes_affected": {
+  "INVALID": 1,
+  "NOT_REACHED_ABORTED": 2,
+  "NOT_REACHED_TIMEOUT": 1
+ },
+ "outcomes_correct": {
+  "NOT_REACHED_ABORTED": 2,
+  "NOT_REACHED_TIMEOUT": 18
+ }
 }
 ```

@@ -1,0 +1,100 @@
+{
+  "trial_id": "correct__s1_utrap__F_se_full__P__rep3",
+  "env_label": "correct",
+  "scenario": "s1_utrap",
+  "config": "F_se_full",
+  "param_set": "P",
+  "rep": 3,
+  "override_guard": false,
+  "launch_argv": [
+    "ros2",
+    "launch",
+    "se_mppi_utrap",
+    "utrap_bench.launch.py",
+    "headless:=True",
+    "use_rviz:=False",
+    "params_file:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/results_pilot_rerun/trials/correct__s1_utrap__F_se_full__P__rep3/params.yaml",
+    "use_sim_time:=True",
+    "map:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/se_mppi_utrap/maps/utrap_loc.yaml",
+    "x_pose:=-3.0",
+    "y_pose:=0.0",
+    "yaw:=0.0"
+  ],
+  "start": [
+    -3.0,
+    0.0,
+    0.0
+  ],
+  "goal": [
+    3.0,
+    0.0,
+    0.0
+  ],
+  "watchdog_s": 300.0,
+  "setup_timeout_s": 120.0,
+  "ros_domain_id": "87",
+  "env": {
+    "conda_env": "semppi_rerun",
+    "package_builds": [
+      "gz-sim8-8.10.0-hfc2019e_3",
+      "gz-sim8-python-8.10.0-py312hce064e6_3",
+      "libgz-sim8-8.10.0-py312h50b3465_3",
+      "libgz-sim8-8.10.0-py312h50b3465_3",
+      "ros-jazzy-nav2-mppi-controller-1.3.13-hb0f4dca_25",
+      "ros2-distro-mutex-0.19.0-jazzy_25",
+      "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+      "ros2-ros-gz-sim-1.0.24-np2py312h7224bc2_25",
+      "xsimd-11.2.0-h00ab1b0_0",
+      "xtensor-0.25.0-h00ab1b0_0"
+    ],
+    "check_mppi_rollout": "OK: /home/cona/micromamba/envs/semppi_rerun/lib/libmppi_controller.so rolls trajectories out correctly (24576 rollout points within 1e-03 m of the closed form, worst 8.3e-07 m).",
+    "check_mppi_rollout_exit": 0,
+    "repo_commit": "4e1be1499e8068c2da2c7baaae5bf112b8952d98",
+    "tracked_inputs_modified": "",
+    "kernel": "6.18.40.1-microsoft-standard-WSL2",
+    "cpu": "AMD Ryzen 5 5500GT with Radeon Graphics",
+    "cpus": 12
+  },
+  "wall_start": 1791793909.8066103,
+  "complete": true,
+  "setup_attempts": 1,
+  "ncpu": 12,
+  "active": true,
+  "load1_at_start": 1.35,
+  "load5_at_start": 3.48,
+  "load_gate_waited_s": 90.0,
+  "top_before": [
+    "9.3 2.1.296",
+    "0.7 Xvfb",
+    "0.4 wget",
+    "0.3 claude",
+    "0.2 x-terminal-emul",
+    "0.2 claude",
+    "0.1 x11vnc",
+    "0.1 xfwm4"
+  ],
+  "launch_log": "launch.log",
+  "drive_wall_start": 1791793920.8129618,
+  "drive_returncode": 1,
+  "drive_wall_end": 1791794226.3245137,
+  "swept_pids": [],
+  "wall_end": 1791794241.3316967,
+  "top_after": [
+    "9.2 2.1.296",
+    "0.7 Xvfb",
+    "0.4 wget",
+    "0.3 claude",
+    "0.2 x-terminal-emul",
+    "0.2 claude",
+    "0.2 wget",
+    "0.1 x11vnc"
+  ],
+  "host_load": {
+    "foreign_cores_mean": 0.218,
+    "foreign_cores_worst_window": 0.522,
+    "own_cores_mean": 3.958,
+    "load1_min": 1.85,
+    "load1_max": 6.95,
+    "valid": true
+  }
+}
