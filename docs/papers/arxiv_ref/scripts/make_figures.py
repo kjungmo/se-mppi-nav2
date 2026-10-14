@@ -12,8 +12,8 @@ The mechanism scenarios are re-run through the unmodified
 ``data/mechanism_validation.json`` are exactly the values that script prints.
 Nothing is written under experiments/.
 
-Needs numpy, matplotlib, scipy and osqp (e.g. the RoboStack ``ros2`` env):
-    micromamba run -n ros2 python3 docs/papers/arxiv_ref/scripts/make_figures.py
+Needs numpy, matplotlib, scipy and osqp (experiments/requirements.txt):
+    python3 docs/papers/arxiv_ref/scripts/make_figures.py
 """
 
 from __future__ import annotations
@@ -194,7 +194,7 @@ def mechanism():
     ax.plot(t[:, 0], t[:, 1], color=C_COLL, lw=2.2, label='stock (stalls)')
     ax.plot(*t[-1], 's', color=C_COLL, ms=3.5)
     ax.set_ylabel('$y$ (m)')
-    ax.set_title('(a) U-trap escape')
+    ax.set_title('(a) Finite-wall escape')
     ax.legend(loc='lower left', frameon=False, handlelength=1.4)
 
     ax = axes[1]

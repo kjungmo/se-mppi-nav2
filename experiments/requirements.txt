@@ -1,0 +1,6 @@
+# Python packages of the 2D benchmark, the mechanism runs and the paper figures.
+# ROS is not needed. Versions are those the committed data were regenerated with.
+numpy==2.4.6
+scipy==1.18.0
+matplotlib==3.11.0
+osqp==1.1.3

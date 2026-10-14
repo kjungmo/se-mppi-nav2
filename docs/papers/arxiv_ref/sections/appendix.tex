@@ -2,21 +2,21 @@
 
 All paths are relative to the code release (\url{https://github.com/kjungmo/se-mppi-nav2}, Apache-2.0).
 
-\noindent\textbf{Software.} ROS~2 Jazzy, Nav2 and Gazebo are installed through RoboStack (conda channels \code{robostack-jazzy} and \code{conda-forge}) by \code{scripts/setup_ros2_env.sh}, which also installs \code{osqp-eigen} and \code{eigen} for the CBF-QP and a compiler toolchain, so the build does not depend on the host OS version.
+\noindent\textbf{Software.} ROS~2 Jazzy, Nav2 and Gazebo are installed through RoboStack (conda channels \code{robostack-jazzy} and \code{conda-forge}) by \code{scripts/setup_ros2_env.sh}, which also installs \code{osqp-eigen} and \code{eigen} for the CBF-QP and a compiler toolchain, so the build does not depend on the host OS version. The script resolves package versions at the time it is run; the exact package lists of the two environments used for the live trials are committed (\code{experiments/results_pilot_rerun/env_correct.txt} and \code{env_affected.txt}), and continuous integration uses a pinned list (\code{.github/environment-jazzy.yml}). After building, \code{ros2 run nav2_se_controller check_mppi_rollout} reports whether the installed \code{nav2_mppi_controller} is affected by the defect of \cref{sec:impl}. The 2D benchmark needs no ROS: it needs Python with the four packages pinned in \code{experiments/requirements.txt} (NumPy, SciPy, Matplotlib, OSQP), which the setup script does not install.
 
 \noindent\textbf{Benchmark regeneration.} Every benchmark number is generated from the committed per-trial file by committed scripts. The committed data use $N=50$:
 {\small
 \begin{verbatim}
-export MAMBA_ROOT_PREFIX=$HOME/micromamba
-micromamba run -n ros2 python3 -m experiments.benchmark2d.runner \
+python3 -m pip install -r experiments/requirements.txt
+python3 -m experiments.benchmark2d.runner \
     --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400
-micromamba run -n ros2 python3 -m experiments.benchmark2d.report
+python3 -m experiments.benchmark2d.report
 \end{verbatim}
 }
 \noindent The figures and tables of this paper are regenerated from those outputs, and the mechanism runs of \cref{tab:mechanism} are re-executed, by
 {\small
 \begin{verbatim}
-micromamba run -n ros2 python3 docs/papers/arxiv_ref/scripts/make_figures.py
+python3 docs/papers/arxiv_ref/scripts/make_figures.py
 python3 docs/papers/arxiv_ref/scripts/make_tables.py
 python3 scripts/check_paper_numbers.py --arxiv
 \end{verbatim}
@@ -32,13 +32,18 @@ python3 scripts/check_paper_numbers.py --arxiv
 
 \section{Differences Between the 2D Mirror and the Nav2 Controller}\label{app:mirror}
 
-The 2D mirror (\code{experiments/prototype/se_mppi_proto.py}, driven by \code{experiments/benchmark2d/rollout.py}) reuses the controller's formulas but differs in the following documented ways.
+The 2D mirror (\code{experiments/prototype/se_mppi_proto.py}, driven by \code{experiments/benchmark2d/rollout.py}) follows the controller's design but is a separate implementation. It is plain Python on NumPy, SciPy and OSQP, imports nothing from ROS or Nav2, and integrates its own unicycle model ($x\mathrel{+}=v\cos\theta\,\Delta t$, $y\mathrel{+}=v\sin\theta\,\Delta t$), so neither Nav2's optimizer nor the defective binary of \cref{sec:impl} takes part in any benchmark number. It differs from the controller in the following ways; the list is what a side-by-side reading of the two code bases found and may not be complete.
 \begin{itemize}
     \item \emph{Progress signal.} Without a global path, entrapment is declared when the best distance-to-goal has not improved by $10^{-3}$\,m for $W=15$ cycles, instead of the stall of $k^{\max}_t$ in \eqref{eq:detect}.
     \item \emph{Gap use.} The selected gap bearing places a temporary subgoal $2.5$\,m along the opening, replacing the goal in the MPPI cost while entrapped, in lieu of Nav2's global routing and the critic's $C_{\mathrm{gap}}$ term; the gap choice carries a hysteresis term toward the previous bearing so that symmetric openings do not flip every cycle.
     \item \emph{Geometry.} Obstacles, including walls built from chains of discs, are circles; APF distances and ray lengths are computed analytically against them rather than on a costmap distance field.
     \item \emph{Obstacle knowledge.} The CBF and TTC receive the true positions and velocities of the moving obstacles, so the tracker of \cref{sec:track} is not exercised.
-    \item \emph{Costs.} The MPPI cost is a goal-distance, path-progress and obstacle-proximity cost rather than Nav2's critic stack; parameters differ as listed in \cref{tab:params}.
+    \item \emph{Costs.} The MPPI cost has three terms, the goal distance at the end of the rollout, the mean goal distance over the rollout, and an obstacle-proximity penalty evaluated at the obstacles' current positions, rather than Nav2's critic stack; there is no control-effort or smoothing term. Parameters differ as listed in \cref{tab:params}.
+    \item \emph{Repulsion.} The mirror sums the potential $U$ of \eqref{eq:apf} over every obstacle disc within $d_0$, so a wall built from discs contributes several terms, with $d_{\min}=0.02$\,m and distances to the true surface, and it adds this sum unweighted to the rollout cost; the controller applies $U$ once, to the distance to the nearest inflated cell.
+    \item \emph{Flag timing.} The mirror applies the entrapment flag in the cycle in which it is raised; the C++ critic sees it one cycle later (\cref{sec:sample}). The mirror's detector has no reset near the goal and no path-change reset.
+    \item \emph{Plant and timing.} The mirror's control period equals its model step ($0.1$\,s). The plant is a kinematic unicycle that executes each command exactly, with perfect state knowledge and no acceleration limit.
+    \item \emph{Barrier details.} The set of moving obstacles is fixed at the start of a trial from their true velocities; there is no pruning to $N_{\mathrm{obs}}$, no static classification and no conformal margin, and a QP whose solver does not report a solved status triggers the brake.
+    \item \emph{Outcome definitions.} A collision is an overlap of the robot disc (radius $0.22$\,m) with an obstacle disc, tested once per $0.1$\,s step; success is reaching within $0.25$\,m of the goal with no collision.
     \item \emph{Mechanism scenes.} \Cref{tab:mechanism} comes from \code{run_validation.py}, whose CBF sees all obstacles, including the static wall discs; the benchmark mirror restricts the CBF to movers, as the Nav2 controller does.
 \end{itemize}
 

@@ -14,15 +14,15 @@
 
 \begin{document}
 
-\title{Safe-Escape MPPI: Coordinating Online Local-Minima Escape with\\
+\title{SE-MPPI: Coordinating Online Local-Minima Escape with\\
 Control-Barrier-Function Safety in a Nav2-Native Controller}
 
-\author{Jung~Mo~Kang% <-this % stops a space
-\thanks{J.~M.~Kang is an independent researcher based in
+\author{Jungmo~Kang% <-this % stops a space
+\thanks{J.~Kang is an independent researcher based in
 Seoul, Republic of Korea (e-mail: kangjmo91@gmail.com).}}
 
-\markboth{Preprint submitted to IEEE Robotics and Automation Letters (RA-L)}%
-{Kang: Safe-Escape MPPI}
+\markboth{Preprint. Two-column companion copy; the submission version is docs/papers/arxiv\_ref}%
+{Kang: SE-MPPI}
 
 \maketitle
 
@@ -73,7 +73,7 @@ controller must be simultaneously \emph{fast}, \emph{non-conservative}, and
 \emph{safe}. Within the ROS~2 Nav2 ecosystem, the MPPI controller
 (\texttt{nav2\_mppi\_controller}) \cite{nav2} is a widely used
 high-performance option: it supports differential, omnidirectional, and
-Ackermann robots and runs at 50+~Hz on CPU by sampling \texttt{batch\_size}
+Ackermann robots and works by sampling \texttt{batch\_size}
 rollouts, scoring them with a bank of critics, and combining them with an
 information-theoretic softmax \cite{mppi_orig}.
 
@@ -93,9 +93,10 @@ most:
   tree then clears the costmaps and runs generic recoveries such as
   spinning, waiting, and backing up \cite{nav2,nav2_progress,nav2_bt}.
   These recoveries are not directed toward an opening. In the MPPI
-  literature, escape methods either reshape the sampling distribution all
-  the time \cite{log_mppi,tsallis_mppi,svg_mppi,biased_mppi,flow_mppi} or
-  add guidance: GP-MPPI recommends a free-space subgoal from a learned
+  literature, one line of work reshapes the sampling distribution all the
+  time, in part to reduce entrapment \cite{log_mppi,biased_mppi,flow_mppi}
+  and in part for other aims \cite{tsallis_mppi,svg_mppi}; another adds
+  guidance: GP-MPPI recommends a free-space subgoal from a learned
   navigability surface \cite{gp_mppi}, and repulsive-potential
   augmentation adds an artificial potential field to the MPPI cost
   \cite{drpa_sii}, which DRPA-MPPI switches on only when it detects
@@ -218,13 +219,17 @@ allowance, and the default behavior tree answers with costmap clearing,
 spinning, waiting, and backing up \cite{nav2_progress,nav2_bt}. SE-MPPI's
 detector differs in that it runs inside the controller on progress along
 the path and steers the escape instead of triggering generic recoveries;
-the two mechanisms can coexist.
+the two mechanisms can coexist. The submission version
+(\texttt{docs/papers/arxiv\_ref}) is the complete and authoritative text;
+this copy is shorter and defers to it for the method details, the list of
+mirror differences and the per-trial live results.
 
-\textbf{Local-minima escape.} Most escape methods for MPPI are
-\emph{always-on} changes of the sampling distribution: log-MPPI
-\cite{log_mppi}, Tsallis-MPPI \cite{tsallis_mppi}, SVG-MPPI (Stein
-mode-seeking) \cite{svg_mppi}, Biased-MPPI \cite{biased_mppi}, and learned
-sampling distributions for MPC (Sacks and Boots) \cite{flow_mppi}. Others
+\textbf{Local-minima escape.} Most MPPI variants that bear on local minima
+are \emph{always-on} changes of the sampling distribution: log-MPPI
+\cite{log_mppi} and Biased-MPPI \cite{biased_mppi} name entrapment as a
+motivation and learned sampling distributions \cite{flow_mppi} mention poor
+local optima, whereas Tsallis-divergence MPC \cite{tsallis_mppi} and
+SVG-MPPI \cite{svg_mppi} change the distribution for other reasons. Others
 add guidance. GP-MPPI learns a sparse-Gaussian-process model of the
 navigable space around the robot and recommends a free-space subgoal to
 the local MPPI planner, which lets the robot escape local minima without a
@@ -282,7 +287,8 @@ the final command). For dynamic obstacles, DPCBF \cite{dpcbf} uses a
 parabolic safe set that is less conservative than collision-cone barriers
 but is QP-only and not embedded in MPPI. Our filter builds on the
 classical CBF-QP \cite{ames_cbf_tac,ames_cbf_ecc}. None of these works
-ships as a Nav2 controller (CBFKit builds a standalone node), and none
+ships as a Nav2 controller (CBFKit connects to ROS through its own wrapper module, not through Nav2's
+controller interface), and none
 detects entrapment or adds an escape mechanism, although GS-MPPI counters
 the myopic behavior often associated with CBFs through long-term
 performance terms \cite{gs_mppi}. Among Nav2 integrations of a CBF that
@@ -306,7 +312,8 @@ Kee, and Panagou adapt the parameters of input-constrained CBFs online
 with a learned ensemble model and select, among the candidates that pass
 their uncertainty and risk checks, the class-$\mathcal{K}$ parameters with
 the minimum predicted deadlock time \cite{kim_adaptive_cbf}; BR-MPPI lets
-MPPI optimize the class-$\mathcal{K}$ parameter directly \cite{br_mppi}.
+MPPI optimize the rate of the class-$\mathcal{K}$ parameter as an extra
+control input \cite{br_mppi}.
 Concurrent work switches nominal objectives when CBF and control-Lyapunov
 constraints conflict, to reduce slowdowns and deadlocks
 \cite{walia_conflict}, and schedules the gain of a frontier barrier on an
@@ -351,16 +358,16 @@ an outcome benefit from it.
 \textbf{(b)}~online local-minimum escape or avoidance; \textbf{(c)}~an
 explicit safety constraint, filter or backup enforced at run time (for
 DualGuard, Hamilton--Jacobi reachability; for Soloperto et~al., a safe
-backup trajectory; for Safer Gap, zeroing barrier functions);
+backup trajectory; for the gap-based planners, a safety projection
+operator on the command and, in Dynamic Gap and Safer Gap, zeroing barrier
+functions);
 \textbf{(d)}~online adaptation of the CBF class-$\mathcal{K}$ gain.
 \checkmark{} = holds; \pmark{} = holds in part: stock Nav2 detects stalls
 at the stack level and runs generic recoveries rather than a steered
 escape; the 3Laws Supervisor is integrated with Nav2 as a separate node
 after the controller, not as a controller plugin; the gap-based planners
 guide the robot through free-space gaps rather than escaping a detected
-minimum, and the provable collision-free properties of Potential Gap and
-Dynamic Gap follow from the planners' gap construction rather than from an
-explicit run-time constraint or filter; Kim et~al.\ reduce predicted
+minimum; Kim et~al.\ reduce predicted
 deadlock through class-$\mathcal{K}$ parameter selection rather than
 escaping a detected minimum. For the 3Laws Supervisor, (b) is marked
 absent because neither cited source describes a local-minimum escape
@@ -384,8 +391,7 @@ System & (a) & (b) & (c) & (d) \\
 Nav2 MPPI with progress checker and recoveries \cite{nav2,nav2_progress,nav2_bt} & \checkmark & \pmark & -- & -- \\
 3Laws Supervisor in Nav2 \cite{nav2_3laws,threelaws_pr} & \pmark & -- & \checkmark & -- \\
 DRPA-MPPI, GP-MPPI \cite{drpa_mppi,gp_mppi} & -- & \checkmark & -- & -- \\
-Dynamic Gap, Potential Gap \cite{dynamic_gap,potential_gap} & -- & \pmark & \pmark & -- \\
-Safer Gap \cite{safer_gap} & -- & \pmark & \checkmark & -- \\
+Dynamic Gap, Potential Gap, Safer Gap \cite{dynamic_gap,potential_gap,safer_gap} & -- & \pmark & \checkmark & -- \\
 Backup-trajectory MPC \cite{soloperto} & -- & \checkmark & \checkmark & -- \\
 MILP-MPC with CBF$^{\dagger}$; MCBF-QP; predictive MCBF$^{\dagger}$ \cite{chen_milp_cbf,mcbf_qp,xue_proactive} & -- & \checkmark & \checkmark & -- \\
 DualGuard, SCBF-MPPI, GS-MPPI, Shield-MPPI \cite{dualguard,scbf_mppi,gs_mppi,shield_mppi} & -- & -- & \checkmark & -- \\
@@ -405,7 +411,9 @@ Consider a differential-drive robot with pose $(x,y,\theta)$ and control
 $u=(v,\omega)$, tracking a global path $\sigma$ produced by a Nav2 global
 planner, amid static structure and a set $\mathcal{O}$ of dynamic
 obstacles $o$ with position $p_o$, radius $R_o$, and (estimated) velocity
-$v_o$. Let $r$ be the robot's inscribed radius and $m$ a safety margin. We
+$v_o$. Let $r$ be the radius of the disc that stands for the robot in the barrier
+(by default the circumscribed radius of the costmap footprint) and $m$ a
+safety margin. We
 want a control policy that (G1)~makes monotone progress along $\sigma$ --
 i.e., does not stall in a local minimum -- and (G2)~keeps the robot
 clear of the obstacles in $\mathcal{O}$ through a barrier whose forward

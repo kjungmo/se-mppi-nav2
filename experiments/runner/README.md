@@ -124,3 +124,23 @@ optimal_length: 3.1            # optional; defaults to straight-line for SPL/BAR
 `scenario.validate()` rejects a goal that is not in the start's eroded free
 component, so an impossible task is recorded SETUP_FAIL rather than counted as a
 navigation failure (design §7).
+
+## Known defects of this harness (found 2026-10-12, not fixed)
+
+Found while re-running the live U-trap trials
+(`experiments/results_pilot_rerun/`, which uses its own driver for these reasons):
+
+- `reached_goal` compares odometry-frame positions with the map-frame goal. They
+  differ by the spawn offset whenever the robot does not start at the map origin
+  (`s1_utrap` starts at x = -3 m), so the field is wrong there.
+- `collided` is computed from an obstacle list that the launcher never supplies,
+  so it is always false. "Collision-free" cannot be read from a trial JSON.
+- Nav2 can report `SUCCEEDED` while the robot is not at the goal: with the wheels
+  slipping against a wall, odometry keeps counting and AMCL follows it. Outcomes
+  need the simulator's ground-truth pose.
+- `log_is_active` accepts the localization manager's "Managed nodes are active"
+  line together with "Created controller : FollowPath", which is logged before
+  the critics load, so a stack whose `controller_server` then failed to configure
+  counts as active.
+- `cleanup.py` stops processes with `pkill -f` patterns such as `nav2`, which
+  also match unrelated processes whose command line contains the repository path.
