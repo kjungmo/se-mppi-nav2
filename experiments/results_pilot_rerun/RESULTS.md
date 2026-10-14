@@ -9,7 +9,6 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | affected | P | s1_utrap | A_stock | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.97 / 0.97 / 0.97 | 0.104..0.104 | NOT_REACHED_ABORTED 1 |
 | affected | P | s1_utrap | F_se_full | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.97 / 0.97 / 0.97 | 0.104..0.104 | NOT_REACHED_ABORTED 1 |
-| affected | P | s1_utrap_evidence | A_stock | 1 | 0 | 0 | 0 | 0 | 0 | 0 | -- / -- / -- | --..-- | INVALID 1 |
 | affected | P | s1_utrap_evidence | F_se_full | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.96 / 0.96 / 0.96 | 0.144..0.144 | NOT_REACHED_TIMEOUT 1 |
 | correct | P | s1_utrap | A_stock | 5 | 0 | 5 | 0 | 0 | 0 | 7 | 0.96 / 0.97 / 0.97 | 0.485..0.486 | NOT_REACHED_TIMEOUT 5 |
 | correct | P | s1_utrap | F_se_full | 5 | 0 | 4 | 1 | 1 | 1 | 5 | 0.96 / 0.97 / 0.97 | 0.485..0.485 | NOT_REACHED_ABORTED 1, NOT_REACHED_TIMEOUT 4 |
@@ -22,7 +21,6 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | affected__s1_utrap__A_stock__P__rep0 | NOT_REACHED_ABORTED | FAILED | 4.63 | -0.25, -3.30 | 0.000 | 0.0 | 187.6 / 181.7 | 0.97 (0.97) | 0 | 9 (24.8); 187.7 | 0.104 [0.100, 0.109], 100% (vx_min 0.1) | 0 / 0 (--) | 8.18 / 7.71 | failed | 1.2 / 5.4; 0.60 / 0.85 / 3.88 |
 | affected__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_ABORTED | FAILED | 4.84 | -0.07, -3.75 | 0.000 | 0.0 | 209.3 / 202.4 | 0.97 (0.96) | 0 | 73 (26.0); 81.5 | 0.104 [0.100, 0.109], 100% (vx_min 0.1) | 0 / 0 (--) | 6.86 / 6.69 | failed | 1.1 / 6.3; 0.55 / 1.19 / 3.92 |
-| affected__s1_utrap_evidence__A_stock__P__rep0 | INVALID (driver did not finish the trial) | -- | -- | -- | -- | -- | -- / -- | -- (--) | -- | -- (--); -- | -- | -- / -- (--) | -- / -- | -- | 1.4 / --; -- / -- / -- |
 | affected__s1_utrap_evidence__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, -0.00 | 0.000 | 0.0 | 299.9 / 289.1 | 0.96 (0.96) | 0 | 2946 (4.6); 10.0 | 0.144 [0.000, 0.343], 60% (vx_min 0.1) | 0 / 0 (--) | 0.81 / 0.71 | failed | 1.2 / 5.3; 0.33 / 0.88 / 4.07 |
 | correct__s1_utrap__A_stock__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.67, 0.05 | 0.000 | 0.0 | 300.0 / 289.5 | 0.97 (0.96) | 1 | 2862 (13.4); 18.6 | 0.486 [0.199, 0.515], 0% (vx_min 0.1) | 0 / 0 (--) | 3.68 / 3.67 | ok | 1.1 / 5.3; 0.75 / 1.27 / 3.90 |
 | correct__s1_utrap__A_stock__P__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.05 | 0.001 | 0.0 | 300.0 / 289.5 | 0.96 (0.96) | 2 | 2863 (13.5); 18.4 | 0.485 [0.199, 0.516], 0% (vx_min 0.1) | 0 / 0 (--) | 3.66 / 3.66 | ok | 1.0 / 6.0; 0.37 / 0.48 / 4.11 |
@@ -49,7 +47,12 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 
 | Trial | Outcome | Nav2 result | Final distance to goal (m) | Final ground-truth x, y | Min wall distance (m) | Max pitch (deg) | Drive wall / sim (s) | RTF (min 10 s) | Missed cycles | Optimizer failures (first, s); stationary from (s) | First 5 s vx mean [min, max], share at vx_min | Escape ENTER / injection BEGIN (first ENTER, s) | Odometry / ground-truth path (m) | Guard | Load1 at start / mean; foreign CPU cores mean / worst 30 s; own cores |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| affected__s1_utrap_evidence__A_stock__P__rep0.aborted1 | INVALID (driver did not finish the trial) | -- | -- | -- | -- | -- | -- / -- | -- (--) | -- | -- (--); -- | -- | -- / -- (--) | -- / -- | -- | 1.4 / --; -- / -- / -- |
 | affected__s1_utrap_evidence__A_stock__P__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.47 cores mean, 2.26 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, -0.00 | 0.000 | 0.0 | 300.0 / 288.4 | 0.96 (0.95) | 0 | 2946 (4.5); 10.2 | 0.134 [0.000, 0.342], 60% (vx_min 0.1) | 0 / 0 (--) | 0.80 / 0.71 | failed | 1.6 / 7.1; 1.47 / 2.26 / 4.18 |
+| affected__s1_utrap_evidence__A_stock__P__rep0.invalid2 | INVALID_HOST_LOAD (foreign CPU 1.05 cores mean, 2.38 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, 0.00 | 0.000 | 0.0 | 300.1 / 287.2 | 0.96 (0.92) | 0 | 2948 (4.6); 134.6 | 0.129 [0.000, 0.339], 60% (vx_min 0.1) | 0 / 0 (--) | 0.75 / 0.71 | failed | 1.7 / 6.4; 1.05 / 2.38 / 4.09 |
+| correct__s1_utrap__F_se_full__V__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.32 cores mean, 1.82 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.74 | 0.27, -0.28 | 0.332 | 0.0 | 300.0 / 288.0 | 0.96 (0.95) | 0 | 0 (--); 300.1 | 0.473 [0.140, 0.500], 0% (vx_min -0.35) | 25 / 25 (12.6) | 11.67 / 11.61 | ok | 1.5 / 8.5; 1.32 / 1.82 / 4.24 |
+| correct__s1_utrap__F_se_full__V__rep0.invalid2 | INVALID_HOST_LOAD (foreign CPU 1.20 cores mean, 1.43 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.76 | 0.24, -0.22 | 0.313 | 0.0 | 300.1 / 289.2 | 0.96 (0.96) | 0 | 0 (--); 300.3 | 0.474 [0.140, 0.500], 0% (vx_min -0.35) | 27 / 27 (14.2) | 12.69 / 12.58 | ok | 1.7 / 7.7; 1.20 / 1.43 / 3.95 |
+| correct__s1_utrap__F_se_full__V__rep0.invalid3 | INVALID_HOST_LOAD (foreign CPU 1.30 cores mean, 1.59 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.80 | 0.21, 0.10 | 0.337 | 0.0 | 300.1 / 289.0 | 0.96 (0.95) | 0 | 0 (--); 300.3 | 0.473 [0.140, 0.500], 0% (vx_min -0.35) | 18 / 18 (14.2) | 11.51 / 11.41 | ok | 1.5 / 7.2; 1.30 / 1.59 / 4.00 |
 | correct__s1_utrap_evidence__A_stock__P__rep0.invalid1 | INVALID_HOST_LOAD (foreign CPU 1.54 cores mean, 1.78 worst 30 s window (limits 1.0, 3.0)); measured: NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.068 | 0.0 | 300.1 / 289.6 | 0.96 (0.96) | 0 | 2941 (6.0); 10.9 | 0.107 [0.100, 0.162], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.6 / 7.1; 1.54 / 1.78 / 3.98 |
 
 ## Exploratory runs under uncontrolled host load (first start of the main block; not used for any statement)
@@ -137,11 +140,10 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
   "trials_with_missed_cycles": 17,
   "trials_with_optimizer_failures": 20
  },
- "n_affected": 4,
+ "n_affected": 3,
  "n_correct": 20,
- "n_registered_trials": 24,
+ "n_registered_trials": 23,
  "outcomes_affected": {
-  "INVALID": 1,
   "NOT_REACHED_ABORTED": 2,
   "NOT_REACHED_TIMEOUT": 1
  },

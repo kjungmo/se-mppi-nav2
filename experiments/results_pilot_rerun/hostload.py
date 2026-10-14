@@ -30,6 +30,7 @@ import time
 
 ADMIT_LOAD1 = 2.0
 ADMIT_SPACING_S = 30.0
+ADMIT_BUSY_CORES = 0.5       # host busy CPU over the 30 s before a start (amendment 8)
 VALID_MEAN_CORES = 1.0
 VALID_WINDOW_CORES = 3.0
 WINDOW_S = 30.0
@@ -69,16 +70,22 @@ def wait_for_quiet(log=print, poll_s: float = 15.0) -> dict:
         now = time.time()
         if l1 < ADMIT_LOAD1:
             if first_ok is None:
-                first_ok = now
+                first_ok, busy0 = now, host_busy_cpu_s()
             elif now - first_ok >= ADMIT_SPACING_S:
-                return {'load1_at_start': l1, 'load5_at_start': l5,
-                        'load_gate_waited_s': round(now - t0, 1),
-                        'top_before': top_consumers()}
+                # No trial is running here, so all busy CPU is foreign.
+                busy = (host_busy_cpu_s() - busy0) / (now - first_ok)
+                if busy < ADMIT_BUSY_CORES:
+                    return {'load1_at_start': l1, 'load5_at_start': l5,
+                            'busy_cores_before_start': round(busy, 3),
+                            'load_gate_waited_s': round(now - t0, 1),
+                            'top_before': top_consumers()}
+                first_ok = None
         else:
             first_ok = None
         if int(now - t0) % 300 < poll_s:
             log(f'[gate] waiting for a quiet host: load1={l1:.2f} '
-                f'(need < {ADMIT_LOAD1}), waited {now - t0:.0f} s')
+                f'(need < {ADMIT_LOAD1} and busy CPU < {ADMIT_BUSY_CORES} cores), '
+                f'waited {now - t0:.0f} s')
         time.sleep(poll_s)
 
 

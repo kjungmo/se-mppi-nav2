@@ -347,3 +347,47 @@ optimizer failed every cycle. The registered definitions are unchanged.
 **Outcomes seen so far** (stated so that the reader knows what was known when
 the continuation started): none of the 20 valid `P` trials on the correct build
 reached the goal.
+
+## Amendment 8: four attempts invalidated by a known constant job (2026-10-14)
+
+Committed on 2026-10-14 at about 10:05 KST, before any further trial.
+
+**What happened.** The continuation started at 09:25 KST while one
+single-threaded job of another work session (`hitrate_probe`, nice 19) was
+running on the host. It used 0.8 to 1.0 core all the time, which together with
+the host's baseline put foreign CPU at 1.05 to 1.32 cores on average, above the
+limit of 1.0. Four attempts ran and all four were invalid by the unchanged rule:
+one of `affected__s1_utrap_evidence__A_stock__P__rep0` (kept as `.invalid2`) and
+three of `correct__s1_utrap__F_se_full__V__rep0` (kept as `.invalid1` to
+`.invalid3`). The driver was stopped at 09:58 KST. No valid trial was added.
+
+**What the invalid attempts showed** (seen, reported in the results, counted for
+nothing): the affected attempt ended at the back wall like the valid affected
+trial of the same scenario; the three `V` attempts did not reach the goal, with
+no optimizer failure and 25 to 27 escape transitions each.
+
+**Rule changes, all made before any further trial.**
+
+1. *Stricter admission.* The load-average gate lets a one-core job through. A
+   trial now also starts only if the host's busy CPU over the 30 s before the
+   start is below 0.5 core (`busy_cores_before_start` in `meta.json`). The
+   validity rule during the trial is unchanged (1.0 core mean, 3.0 cores in any
+   30 s window).
+2. *Repetition cap.* The cap of two repetitions was meant to stop a trial that
+   cannot be made valid. Here the cause was one identified, constant job, so the
+   attempts it invalidated are not counted against the cap: a cell is now given
+   up only after six load-invalid attempts in total. This is a change of a
+   registered rule after seeing data, made so that a scheduling accident does
+   not remove a cell; every invalid attempt stays in the record.
+3. *Driver fix.* After a restart the driver tried to rename a second invalid
+   attempt to a name that already existed, failed, and the affected block ended
+   early (the `V` block then started). Invalid attempts now get the next free
+   suffix. No trial outcome was affected.
+
+**Process priority.** On 2026-10-14 the trial's own processes run at nice 5 (the
+session that starts them is niced). The niceness on 2026-10-12 was not recorded.
+With eleven cores free this should not matter, but it is a difference between
+the two days that cannot be excluded.
+
+**Order from here.** The fourth affected cell, then the `V` and `O` parts, as
+registered.

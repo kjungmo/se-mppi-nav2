@@ -56,7 +56,7 @@ WATCHDOG_S = 300.0           # experiments/configs/suite.yaml
 SETUP_RETRIES = 1            # experiments/configs/suite.yaml
 ROS_DOMAIN_ID = '87'
 TAG_VAR = 'SE_RERUN_TAG'
-MAX_ATTEMPTS = 3             # a trial invalidated by host load is repeated twice at most
+MAX_INVALID = 6              # load-invalid attempts kept per cell before giving up (amendment 8)
 GT_GZ_TOPIC = '/world/testbed/dynamic_pose/info'
 FP = 'controller_server.ros__parameters.FollowPath'
 
@@ -392,16 +392,22 @@ def main():
                 else args.out + '_' + args.block)
     os.makedirs(out_root, exist_ok=True)
     for s, c, p, r in trials:
-        for attempt in range(1, MAX_ATTEMPTS + 1):
+        while True:
             meta = run_trial(suite, scenarios[s], c, p, r, args.env_label, out_root,
                              args.override_guard, info)
             time.sleep(5.0)
             load = (meta or {}).get('host_load')
-            if load is None or load['valid'] or attempt == MAX_ATTEMPTS:
+            if load is None or load['valid']:
                 break
-            # Invalidated by foreign load: keep the attempt, report it, repeat it.
+            # Invalidated by foreign load: keep the attempt under the next free
+            # name, report it, repeat it.
             tdir = os.path.join(out_root, meta['trial_id'])
-            os.rename(tdir, f'{tdir}.invalid{attempt}')
+            n = 1
+            while os.path.exists(f'{tdir}.invalid{n}'):
+                n += 1
+            if n > MAX_INVALID:
+                break
+            os.rename(tdir, f'{tdir}.invalid{n}')
             print(f'[rerun] invalid by host load, repeating: {meta["trial_id"]} '
                   f'({load.get("reason")})', flush=True)
     return 0
