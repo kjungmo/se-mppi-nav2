@@ -465,6 +465,43 @@ def test_ctrl_c_leaves_an_interrupted_trial_that_resume_repeats(monkeypatch, tmp
     assert drv.existing_state(d, IDENT) == 'complete_valid'
 
 
+def test_a_stack_that_never_becomes_active_is_a_complete_setup_failure_not_an_interruption(
+        monkeypatch, tmp_path):
+    FakeProc.behaviour = 'ok'
+    rr = fake_stack(monkeypatch)
+    rr.stack_is_active = lambda text: False                # the launch never reports active
+    monkeypatch.setattr(FakeProc, 'poll', lambda self: 1)  # and the launch process has exited
+    meta = run(rr, tmp_path)
+    assert meta['complete'] is True and meta['active'] is False and 'interrupted' not in meta
+    d = str(tmp_path / TRIAL.trial_id)
+    assert drv.existing_state(d, IDENT) == 'complete_valid'
+    assert an.analyze_trial(d, [], (0.5, 0.3))['outcome'] == 'SETUP_FAIL'
+
+
+def test_the_attempt_number_selects_the_raw_root_in_main(monkeypatch, capsys):
+    import freeze_manifest
+    monkeypatch.setattr(freeze_manifest, 'check', lambda *a, **k: [])
+    seen = []
+    monkeypatch.setattr(drv, 'phase_gate_refusal', lambda raw, what: seen.append(raw) or 'stop here')
+    for argv, expect in ((['--attempt', '2'], plan.raw_root(2)), ([], plan.raw_root(1)),
+                         (['--attempt', '3', '--raw', '/somewhere'], '/somewhere')):
+        seen.clear()
+        monkeypatch.setattr(sys, 'argv', ['run_campaign2.py', '--block', 'B'] + argv)
+        assert drv.main() == drv.EXIT_REFUSED
+        assert seen == [expect], (argv, seen)
+
+
+def test_the_analysis_record_carries_the_identity_of_the_attempt(tmp_path):
+    d = make_trial(str(tmp_path), 'correct__s0_open__C2__rep0', 's0_open', 'C2',
+                   [(0.0, -3.0, 0.0, 0.0), (5.0, 3.0, 0.0, 0.0)])
+    meta = read_meta(d)
+    meta.update(IDENT)
+    with open(os.path.join(d, 'meta.json'), 'w') as f:
+        json.dump(meta, f)
+    r = an.analyze_trial(d, an.world_boxes(an.WORLDS['s0_open']), an.pilot.chassis_size())
+    assert (r['freeze_manifest_sha256'], r['controller_tag_commit']) == ('aa', 'cc')
+
+
 def test_a_directory_of_another_attempt_is_foreign_and_refused(monkeypatch, tmp_path):
     FakeProc.behaviour = 'ok'
     rr = fake_stack(monkeypatch)
