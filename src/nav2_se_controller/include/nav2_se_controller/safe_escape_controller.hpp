@@ -87,6 +87,21 @@ public:
     nav2_core::GoalChecker * goal_checker) override;
 
 protected:
+  /// The nominal command of the cycle: the base MPPI optimizer's output. The
+  /// SE layer calls the base class by qualified name, so a test cannot
+  /// intercept that call; it overrides this hook instead (to throw
+  /// nav2_core::NoValidControl, or to script a command). The default forwards
+  /// to MPPIController::computeVelocityCommands.
+  virtual geometry_msgs::msg::TwistStamped nominalCommand(
+    const geometry_msgs::msg::PoseStamped & robot_pose,
+    const geometry_msgs::msg::Twist & robot_speed,
+    nav2_core::GoalChecker * goal_checker);
+
+  /// The path the base MPPI optimizer follows. The default forwards to
+  /// MPPIController::setPlan. A test overrides it to capture what the
+  /// optimizer is given.
+  virtual void handNominalPath(const nav_msgs::msg::Path & path);
+
   /// Self-check of the loaded nav2_mppi_controller library's batch rollout,
   /// run once per configure() before anything is created. Virtual so that a
   /// test can stand in for a library with the defect.

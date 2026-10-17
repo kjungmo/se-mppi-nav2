@@ -304,6 +304,19 @@ void SafeEscapeController::configure(
     name_.c_str(), se_enabled_, robot_radius_, cc_.alpha_base, cc_.alpha_escape);
 }
 
+geometry_msgs::msg::TwistStamped SafeEscapeController::nominalCommand(
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::Twist & robot_speed,
+  nav2_core::GoalChecker * goal_checker)
+{
+  return MPPIController::computeVelocityCommands(robot_pose, robot_speed, goal_checker);
+}
+
+void SafeEscapeController::handNominalPath(const nav_msgs::msg::Path & path)
+{
+  MPPIController::setPlan(path);
+}
+
 RolloutCheckResult SafeEscapeController::runRolloutCheck() const
 {
   return checkMppiRolloutDirection();
@@ -425,7 +438,7 @@ void SafeEscapeController::deactivate()
 
 void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
 {
-  MPPIController::setPlan(path);
+  handNominalPath(path);
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   global_plan_ = path;
   if (path.poses.empty()) {
@@ -504,7 +517,7 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
 
   // Nominal command from the stock MPPI optimizer (incl. EscapeCritic if listed).
   geometry_msgs::msg::TwistStamped cmd =
-    MPPIController::computeVelocityCommands(robot_pose, robot_speed, goal_checker);
+    nominalCommand(robot_pose, robot_speed, goal_checker);
 
   // MPPI released its parameter lock on return; hold it for the SE part so a
   // runtime parameter set (and the config re-apply) cannot land mid-cycle.
