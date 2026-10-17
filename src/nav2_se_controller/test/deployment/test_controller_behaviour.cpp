@@ -1250,6 +1250,22 @@ TEST_F(ControllerEscapePath, TheWaypointRadiusBoundary)
   EXPECT_EQ(controller_->hops(), 2u) << "0.39 m from the waypoint";
 }
 
+// Exactly at the radius counts (inclusive): the radius is set to the very
+// distance the controller computes.
+TEST_F(ControllerEscapePath, TheWaypointRadiusIsInclusive)
+{
+  begin({rclcpp::Parameter("FollowPath.se_escape_stall_time", 100.0)});
+  stallUntilEscapePath();
+  const auto wp = controller_->handed.back().poses.back().pose.position;
+  const double rx = wp.x + 0.5;  // a robot position in the pocket mouth direction
+  const double ry = wp.y;
+  const double d = std::hypot(wp.x - rx, wp.y - ry);
+  ASSERT_TRUE(
+    node_->set_parameter(rclcpp::Parameter("FollowPath.se_escape_reselect_radius", d)).successful);
+  step(rx, ry);
+  EXPECT_EQ(controller_->hops(), 2u) << "distance equal to the radius re-selects";
+}
+
 // The straight line to the waypoint is blocked: re-select.
 TEST_F(ControllerEscapePath, ABlockedWaypointLineSelectsAnotherHop)
 {

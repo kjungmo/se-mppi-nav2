@@ -26,7 +26,6 @@
 #include "tf2/LinearMath/Transform.h"
 #include "tf2/utils.hpp"
 
-
 #include "nav2_se_controller/no_valid_control.hpp"
 #include "nav2_se_controller/path_progress.hpp"
 
