@@ -32,6 +32,7 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
+#include "nav2_core/controller_exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rcl/time.h"
 #include "rclcpp/rclcpp.hpp"
@@ -52,6 +53,23 @@ public:
   bool entrapped() const {return prev_entrapped_;}
   std::size_t trackCount() const {return tracker_.trackCount();}
   int cbfObstacles() const {return counters_.cbf_obstacles.load();}
+  std::uint64_t baseFailures() const {return counters_.base_failures.load();}
+  std::uint64_t escapeEntries() const {return counters_.escape_entries.load();}
+  // Scripted nominal command: throw instead of calling the optimizer.
+  enum class Throw { kNone, kNoValidControl, kRuntimeError };
+  Throw throw_mode{Throw::kNone};
+  geometry_msgs::msg::TwistStamped nominalCommand(
+    const geometry_msgs::msg::PoseStamped & pose, const geometry_msgs::msg::Twist & speed,
+    nav2_core::GoalChecker * goal_checker) override
+  {
+    if (throw_mode == Throw::kNoValidControl) {
+      throw nav2_core::NoValidControl("scripted: no valid control");
+    }
+    if (throw_mode == Throw::kRuntimeError) {
+      throw std::runtime_error("scripted: another failure");
+    }
+    return nav2_se_controller::SafeEscapeController::nominalCommand(pose, speed, goal_checker);
+  }
   double trackedSpeed() const
   {
     return last_tracked_.empty() ? 0.0 : last_tracked_.front().velocity.norm();
@@ -553,6 +571,123 @@ TEST_F(ControllerCostmapRate, SlowMoverIsInTheCbfMoreOftenThanBefore)
   EXPECT_GE(speed_sum / std::max(speed_n, 1), speed * 0.9);
   EXPECT_LE(ratio_now, ratio_before);
   EXPECT_LE(ratio_now, 0.25);
+}
+
+// ---------------------------------------------------------------------------
+// Defect 2 (campaign 1, ROOT_CAUSE.md): the optimizer throws NoValidControl
+// when every rollout collides, and the entrapment detector, which ran after the
+// base call, never saw the stall.
+// ---------------------------------------------------------------------------
+class ControllerNoValidControl : public ControllerBehaviour
+{
+protected:
+  void SetUp() override
+  {
+    Options opt;
+    opt.overrides = {rclcpp::Parameter("FollowPath.se_progress_stall_window", 5)};
+    start(opt);
+    controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  }
+  // true if the cycle threw NoValidControl.
+  bool stepThrows(double x, double y)
+  {
+    try {
+      step(x, y);
+    } catch (const nav2_core::NoValidControl &) {
+      return true;
+    }
+    return false;
+  }
+};
+
+// The real optimizer: the whole costmap lethal, so every rollout collides.
+TEST_F(ControllerNoValidControl, LethalCostmapEveryCycleThrowsAndEntrapmentIsDeclared)
+{
+  block(0, 0, 120);
+  int threw = 0;
+  int first_entrapped = -1;
+  for (int k = 0; k < 60; ++k) {
+    threw += stepThrows(0.5, 0.0) ? 1 : 0;
+    if (first_entrapped < 0 && controller_->entrapped()) {
+      first_entrapped = k;
+    }
+  }
+  EXPECT_EQ(threw, 60) << "the exception must still reach controller_server";
+  EXPECT_TRUE(controller_->entrapped());
+  // The first cycle only records the baseline; the window of 5 stalled cycles
+  // then ends on the sixth cycle (index 5).
+  EXPECT_EQ(first_entrapped, 5);
+  EXPECT_EQ(controller_->baseFailures(), 60u);
+  EXPECT_EQ(controller_->escapeEntries(), 1u);
+}
+
+// The hook: a scripted NoValidControl on every cycle.
+TEST_F(ControllerNoValidControl, HookThrowingNoValidControlFeedsTheDetectorAndRethrows)
+{
+  controller_->throw_mode = ProbeController::Throw::kNoValidControl;
+  for (int k = 0; k < 4; ++k) {
+    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+    EXPECT_FALSE(controller_->entrapped()) << "cycle " << k << " is inside the window";
+  }
+  for (int k = 4; k < 12; ++k) {
+    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+  }
+  EXPECT_TRUE(controller_->entrapped());
+  EXPECT_EQ(controller_->baseFailures(), 12u);
+}
+
+// Progress during failing cycles is still progress: a robot that advances
+// along the plan is not declared entrapped, and entrapment clears.
+TEST_F(ControllerNoValidControl, AdvancingWhileTheOptimizerFailsIsNotEntrapment)
+{
+  controller_->throw_mode = ProbeController::Throw::kNoValidControl;
+  for (int k = 0; k < 30; ++k) {
+    EXPECT_THROW(step(0.05 * k, 0.0), nav2_core::NoValidControl);
+    EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
+  }
+}
+
+TEST_F(ControllerNoValidControl, EntrapmentFromFailingCyclesClearsOnProgress)
+{
+  controller_->throw_mode = ProbeController::Throw::kNoValidControl;
+  for (int k = 0; k < 10; ++k) {
+    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+  }
+  ASSERT_TRUE(controller_->entrapped());
+  EXPECT_THROW(step(0.6, 0.0), nav2_core::NoValidControl);  // 2 cells further along
+  EXPECT_FALSE(controller_->entrapped());
+}
+
+// Only NoValidControl is stall evidence; another failure passes through and
+// leaves the detector alone.
+TEST_F(ControllerNoValidControl, OtherExceptionsPassThroughWithoutTouchingTheDetector)
+{
+  controller_->throw_mode = ProbeController::Throw::kRuntimeError;
+  for (int k = 0; k < 20; ++k) {
+    EXPECT_THROW(step(0.5, 0.0), std::runtime_error);
+  }
+  EXPECT_FALSE(controller_->entrapped());
+  EXPECT_EQ(controller_->baseFailures(), 0u);
+}
+
+TEST_F(ControllerNoValidControl, WithTheSeLayerDisabledTheExceptionPassesThroughUntouched)
+{
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.se_enabled", false)).successful);
+  controller_->throw_mode = ProbeController::Throw::kNoValidControl;
+  for (int k = 0; k < 20; ++k) {
+    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+  }
+  EXPECT_FALSE(controller_->entrapped());
+}
+
+// Near the goal a failing optimizer is not entrapment (the robot is finishing).
+TEST_F(ControllerNoValidControl, FailingCyclesAtTheGoalAreNotEntrapment)
+{
+  controller_->throw_mode = ProbeController::Throw::kNoValidControl;
+  for (int k = 0; k < 20; ++k) {
+    EXPECT_THROW(step(2.0, 0.0), nav2_core::NoValidControl);
+  }
+  EXPECT_FALSE(controller_->entrapped());
 }
 
 int main(int argc, char ** argv)

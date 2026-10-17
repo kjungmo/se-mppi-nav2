@@ -195,6 +195,7 @@ protected:
     std::atomic<std::uint64_t> slack_active{0};    // barrier relaxed (slack > 0)
     std::atomic<std::uint64_t> tracks_dropped{0};  // tracks aged out unmatched
     std::atomic<std::uint64_t> escape_entries{0};
+    std::atomic<std::uint64_t> base_failures{0};   // optimizer threw NoValidControl
     std::atomic<bool> entrapped{false};
     std::atomic<int> cbf_obstacles{0};
     std::atomic<double> alpha{0.0};
