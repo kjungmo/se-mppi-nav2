@@ -55,6 +55,9 @@ public:
   int cbfObstacles() const {return counters_.cbf_obstacles.load();}
   std::uint64_t baseFailures() const {return counters_.base_failures.load();}
   std::uint64_t escapeEntries() const {return counters_.escape_entries.load();}
+  std::size_t progressEvents() const {return progress_.events();}
+  std::size_t adoptions() const {return progress_.adoptions();}
+  bool hasAnchor() const {return progress_.hasAnchor();}
   // Scripted nominal command: throw instead of calling the optimizer.
   enum class Throw { kNone, kNoValidControl, kRuntimeError };
   Throw throw_mode{Throw::kNone};
@@ -654,7 +657,7 @@ TEST_F(ControllerNoValidControl, EntrapmentFromFailingCyclesClearsOnProgress)
     EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
   }
   ASSERT_TRUE(controller_->entrapped());
-  EXPECT_THROW(step(0.6, 0.0), nav2_core::NoValidControl);  // 2 cells further along
+  EXPECT_THROW(step(0.65, 0.0), nav2_core::NoValidControl);  // 0.15 m further along
   EXPECT_FALSE(controller_->entrapped());
 }
 
@@ -748,6 +751,8 @@ TEST_F(ControllerReplan, ReplansFromAStationaryRobotDoNotCancelEntrapment)
     if (k >= 5) {EXPECT_TRUE(controller_->entrapped()) << "cycle " << k;}
   }
   EXPECT_EQ(first_entrapped, 5);
+  EXPECT_EQ(controller_->adoptions(), 0u);
+  EXPECT_EQ(controller_->progressEvents(), 0u);
 }
 
 // (ii) After entrapment, motion along the new paths that adds up to less than
@@ -768,6 +773,8 @@ TEST_F(ControllerReplan, ThreeCentimetresAfterAReplanDoNotClearEntrapmentFifteen
   EXPECT_TRUE(controller_->entrapped()) << "0.09 m past the furthest point (0.5)";
   step(0.65, 0.0);
   EXPECT_FALSE(controller_->entrapped()) << "0.15 m past the furthest point (0.5)";
+  EXPECT_EQ(controller_->progressEvents(), 1u);
+  EXPECT_EQ(controller_->adoptions(), 0u);
 }
 
 // ROOT_CAUSE.md section 2.1: the robot reached x = 1.0, backed to 0.6 and
@@ -812,11 +819,56 @@ TEST_F(ControllerReplan, ADivergingReplanFollowedForSixDecimetresIsNotEntrapment
     step(0.5, 0.03 * k);
     EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
   }
+  EXPECT_EQ(controller_->adoptions(), 1u);
   // The detour keeps going; still progress.
   for (int k = 21; k < 60; ++k) {
     step(0.5, std::min(0.03 * k, 1.5));
     EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
   }
+}
+
+// The adoption distance is 0.5 m by default: 0.45 m along a diverging replan is
+// not adopted, 0.55 m is. (Entrapment is declared in between: the stall window
+// is shorter than the time the robot needs.)
+TEST_F(ControllerReplan, ADivergingReplanIsAdoptedAtHalfAMetreNotBefore)
+{
+  begin(5);
+  for (int k = 0; k < 3; ++k) {step(0.5, 0.0);}
+  controller_->setPlan(detourPath(0.5));
+  step(0.5, 0.0);
+  step(0.5, 0.45);
+  EXPECT_EQ(controller_->adoptions(), 0u) << "0.45 m along the replan";
+  step(0.5, 0.55);
+  EXPECT_EQ(controller_->adoptions(), 1u) << "0.55 m along the replan";
+}
+
+// reset() (a new task from Nav2) forgets the anchor path.
+TEST_F(ControllerReplan, ResetForgetsTheAnchorPath)
+{
+  begin(5);
+  EXPECT_TRUE(controller_->hasAnchor());
+  controller_->reset();
+  EXPECT_FALSE(controller_->hasAnchor());
+}
+
+// Both distances are runtime parameters and reach the tracker.
+TEST_F(ControllerReplan, ProgressDistancesCanBeSetAtRuntime)
+{
+  begin(5);
+  ASSERT_TRUE(
+    node_->set_parameter(rclcpp::Parameter("FollowPath.se_progress_min_advance", 0.3)).successful);
+  ASSERT_TRUE(
+    node_->set_parameter(rclcpp::Parameter("FollowPath.se_progress_adopt_advance", 0.2)).successful);
+  for (int k = 0; k < 10; ++k) {step(0.5, 0.0);}
+  ASSERT_TRUE(controller_->entrapped());
+  step(0.65, 0.0);
+  EXPECT_TRUE(controller_->entrapped()) << "0.15 m is below the new minimum of 0.3 m";
+  step(0.85, 0.0);
+  EXPECT_FALSE(controller_->entrapped()) << "0.35 m is above it";
+  controller_->setPlan(detourPath(0.85));
+  step(0.85, 0.0);
+  step(0.85, 0.25);
+  EXPECT_EQ(controller_->adoptions(), 1u) << "0.25 m is above the new adoption distance 0.2 m";
 }
 
 int main(int argc, char ** argv)

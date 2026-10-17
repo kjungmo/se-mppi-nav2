@@ -36,6 +36,7 @@
 #include "nav2_se_controller/failure_streak.hpp"
 #include "nav2_se_controller/mppi_rollout_check.hpp"
 #include "nav2_se_controller/multi_robot_coordinator.hpp"
+#include "nav2_se_controller/path_progress.hpp"
 #include "nav2_se_controller/task_boundary.hpp"
 
 namespace nav2_se_controller
@@ -154,13 +155,15 @@ protected:
   {
     kDetector = 1u, kCoordinator = 2u, kFilter = 4u, kTracker = 8u, kMulti = 16u,
     kConformal = 32u,  // the tracker's conformal calibration must restart
-    kAllConsumers = 63u
+    kProgress = 64u,
+    kAllConsumers = 127u
   };
   EntrapmentConfig ec_;
   CoordinationConfig cc_;
   CbfConfig fc_;              // alpha and robot_radius are filled in on re-apply
   TrackerConfig tc_;          // cost_threshold / predictor model derived on re-apply
   MultiRobotConfig mc_;
+  ProgressConfig pc_;
   int cost_threshold_{253};
   double cbf_robot_radius_{0.0};  // se_cbf_robot_radius; <= 0: footprint circumscribed radius
   double speed_limit_ratio_{1.0};  // Nav2 speed limit applied to the CBF box
@@ -238,14 +241,13 @@ protected:
 
   // Single entrapment source of truth, shared with the EscapeCritic.
   std::shared_ptr<SharedEntrapment> shared_;
-  std::size_t furthest_progress_{0};  // monotonic furthest reached path index
-  // Same-goal replanning (Nav2's default tree replans at 1 Hz) keeps the task
-  // state; only the progress index is re-anchored on the new path.
+  // Progress along the task's anchor path; a same-goal replan (Nav2's default
+  // tree replans at 1 Hz) keeps the task state and is only a candidate anchor.
+  PathProgressTracker progress_;
   bool has_goal_{false};
   std::string goal_frame_;
   double goal_x_{0.0};
   double goal_y_{0.0};
-  bool rebase_progress_{false};
   // A plan after the control loop was idle longer than se_task_idle_threshold
   // (>= 3 control periods) starts a new task even for the same goal: Humble's
   // controller_server never calls reset(), so a retry would otherwise inherit

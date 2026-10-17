@@ -126,6 +126,8 @@ void SafeEscapeController::configure(
   }
 
   bindConfig(ec_.progress_stall_window, "se_progress_stall_window", 30, kDetector);
+  bindConfig(pc_.min_advance, "se_progress_min_advance", 0.10, kProgress);
+  bindConfig(pc_.adopt_advance, "se_progress_adopt_advance", 0.5, kProgress);
 
   bindConfig(cc_.alpha_base, "se_alpha_base", 2.0, kCoordinator | kFilter);
   bindConfig(cc_.alpha_escape, "se_alpha_escape", 6.0, kCoordinator);
@@ -331,6 +333,9 @@ void SafeEscapeController::reapplyConfig()
   if (pending & kDetector) {
     detector_.configure(ec_);
   }
+  if (pending & kProgress) {
+    progress_.configure(pc_);
+  }
   if (pending & kCoordinator) {
     coordinator_.configure(cc_);
   }
@@ -459,13 +464,13 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
   goal_y_ = g.y;
   const bool new_task = task_boundary_.newPlanStartsTask(steady_clock_.now().seconds());
   if (same_goal && !new_task) {
-    // Replanned path to the same goal: obstacle tracks and the stall count are
-    // world/task state, not path state. Only the path-index baseline changes.
-    rebase_progress_ = true;
+    // Replanned path to the same goal: obstacle tracks, the stall count and the
+    // anchor path are task state. The new path is only a candidate anchor.
+    progress_.offerReplan(path);
     return;
   }
   // New goal or new task => reset the per-task escape/tracking state.
-  rebase_progress_ = false;
+  progress_.startTask(path);
   detector_.reset();
   tracker_.reset();
   multi_.reset();
@@ -478,7 +483,6 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
   prev_entrapped_ = false;
   last_grid_.clear();
   last_tracked_.clear();
-  furthest_progress_ = 0;
   has_stamp_ = false;
   if (shared_) {
     shared_->entrapped.store(false, std::memory_order_relaxed);
@@ -495,10 +499,9 @@ void SafeEscapeController::reset()
   last_grid_.clear();
   last_tracked_.clear();
   multi_.reset();
-  furthest_progress_ = 0;
+  progress_.reset();
   has_stamp_ = false;
   has_goal_ = false;
-  rebase_progress_ = false;
   if (shared_) {
     shared_->entrapped.store(false, std::memory_order_relaxed);
   }
@@ -555,15 +558,7 @@ bool SafeEscapeController::updateEntrapment(
   // nearestPathIndex is non-monotonic, so track the furthest reached index.
   bool entrapped = prev_entrapped_;
   if (plan_frame.ok) {
-    const std::size_t nearest =
-      nearestPathIndex(global_plan_, plan_frame.plan_x, plan_frame.plan_y);
-    if (rebase_progress_) {
-      furthest_progress_ = nearest;
-      detector_.rebase(nearest);
-      rebase_progress_ = false;
-    }
-    furthest_progress_ = std::max(furthest_progress_, nearest);
-    entrapped = detector_.update(furthest_progress_);
+    entrapped = detector_.update(progress_.update(plan_frame.plan_x, plan_frame.plan_y));
 
     // Suppress entrapment near the goal: a robot finishing at the path end would
     // otherwise stall the progress signal and trigger a false escape.
@@ -574,7 +569,6 @@ bool SafeEscapeController::updateEntrapment(
       if (dist_to_goal <= goal_reached_tolerance_) {
         entrapped = false;
         detector_.reset();
-        furthest_progress_ = 0;
       }
     }
   }
@@ -587,9 +581,9 @@ bool SafeEscapeController::updateEntrapment(
   if (entrapped != prev_entrapped_) {
     RCLCPP_INFO(
       logger_,
-      "SE escape %s at (%.2f, %.2f): progress_idx=%zu stall=%d",
+      "SE escape %s at (%.2f, %.2f): progress_events=%zu arc=%.2f stall=%d",
       entrapped ? "ENTER" : "EXIT", state.x, state.y,
-      furthest_progress_, detector_.stallCount());
+      progress_.events(), progress_.bestArc(), detector_.stallCount());
     prev_entrapped_ = entrapped;
     if (entrapped) {
       counters_.escape_entries.fetch_add(1);
