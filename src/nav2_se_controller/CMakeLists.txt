@@ -226,6 +226,18 @@ install(DIRECTORY include/
 install(DIRECTORY config/
   DESTINATION share/${PROJECT_NAME}/config)
 
+# Build stamp: the repository state of the tree that is built, rewritten at every build (not
+# only at configure time) and installed with the package. The campaign driver reads it.
+get_filename_component(SE_SOURCE_REAL "${CMAKE_CURRENT_SOURCE_DIR}" REALPATH)
+set(SE_BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/build_stamp.txt")
+add_custom_target(se_build_stamp ALL
+  COMMAND ${CMAKE_COMMAND} -DSRC=${SE_SOURCE_REAL} -DOUT=${SE_BUILD_STAMP}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/write_build_stamp.cmake
+  BYPRODUCTS ${SE_BUILD_STAMP}
+  COMMENT "Writing the build stamp")
+install(FILES ${SE_BUILD_STAMP}
+  DESTINATION share/${PROJECT_NAME})
+
 # Export the critic plugin (loaded by nav2_mppi_controller's CriticManager) and
 # the controller plugin (loaded by nav2_core's controller server).
 pluginlib_export_plugin_description_file(nav2_mppi_controller escape_critics.xml)
@@ -320,6 +332,13 @@ if(BUILD_TESTING)
   target_include_directories(test_path_progress_tracker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
   target_link_libraries(test_path_progress_tracker se_mppi_core)
   ament_target_dependencies(test_path_progress_tracker nav_msgs)
+
+  # Parity shim: the Python mirror calls the C++ escape logic through it
+  # (experiments/benchmark2d/tests/test_v2_cxx_parity.py). Not installed.
+  add_executable(parity_shim test/deployment/parity_shim.cpp)
+  target_include_directories(parity_shim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(parity_shim se_mppi_core escape_critic)
+  ament_target_dependencies(parity_shim nav2_mppi_controller nav2_costmap_2d nav_msgs)
 
   ament_add_gtest(test_task_boundary test/deployment/test_task_boundary.cpp)
   target_include_directories(test_task_boundary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

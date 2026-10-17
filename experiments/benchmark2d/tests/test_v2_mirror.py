@@ -4,7 +4,8 @@
 Covers: anchor-path progress (the Python analogue of the root-cause scratch
 test), horizon-ray opening selection, frozen-waypoint hopping, the "all
 rollouts collide -> zero command" mode, and that every flag off reproduces the
-paper-v1 loop exactly.
+paper-v1 loop exactly. The mirror transcribes the plugin's C++ (extras included);
+``test_v2_cxx_parity.py`` checks it against the C++ itself.
 """
 
 import os
@@ -25,7 +26,14 @@ import se_mppi_proto as se  # noqa: E402
 import se_mppi_v2 as v2m  # noqa: E402
 
 P = v2m.v2_params()
+P_DESIGN = v2m.v2_params(escape_extras=False)       # the design as advised, without the extras
 STEP = 2 * np.pi / P['gap_num_rays']
+
+
+def _open(*args, **kw):
+    """select_opening as the older (bearing, clearance, horizon) triple."""
+    g = v2m.select_opening(*args, **kw)
+    return g.bearing, g.clearance, g.horizon
 
 
 # --------------------------------------------------------------------------- #
@@ -72,13 +80,14 @@ def test_progress_needs_min_advance_beyond_the_furthest_point():
 
 
 def test_exactly_at_the_min_advance_threshold():
-    tr = v2m.AnchorProgress((0.0, 0.0), (2.0, 0.0), 0.10, 0.5)
-    tr.update((1.0, 0.0))
-    n = tr.events
-    tr.update((1.10, 0.0))                                   # advance == 0.10: no event
-    assert tr.events == n
-    tr.update((1.1001, 0.0))
-    assert tr.events == n + 1
+    # path_progress.cpp fires at `arc - best >= min_advance` (inclusive). Dyadic numbers: exact.
+    tr = v2m.AnchorProgress((0.0, 0.0), (2.0, 0.0), 0.125, 0.5)
+    tr.update((1.0, 0.0))                                    # baseline, not progress
+    assert tr.events == 0
+    tr.update((1.125 - 2.0 ** -20, 0.0))                     # just under
+    assert tr.events == 0
+    tr.update((1.125, 0.0))                                  # advance == min_advance: event
+    assert tr.events == 1
 
 
 def test_creeping_with_replans_never_stalls():
@@ -90,16 +99,31 @@ def test_creeping_with_replans_never_stalls():
 
 
 def test_following_replans_adopts_the_candidate():
-    # 0.3 m per second along successive 1 Hz replans: no single replan reaches
-    # 0.5 m, the lineage does (mirror reading of "adopts within seconds").
+    # A detour followed at 0.3 m/s with a replan every second adopts: no single replan reaches
+    # 0.5 m, the chain of the signed advances does. The same case as the C++ test
+    # PathProgressTracker.TheChainCarriesAcrossReplansAtOneHertz (the detour leaves the anchor,
+    # so no anchor event restarts the chain).
+    tr = v2m.PathProgressTracker(0.10, 0.5)
+    tr.start_task([(0, 0), (5, 0)])
+    tr.update((1.0, 0.0))
+    y = 0.0
+    for _ in range(4):
+        tr.offer_replan([(1.0, y), (1.0, 2.0), (5.0, 2.0), (5.0, 0.0)])
+        for _ in range(10):
+            y += 0.03
+            tr.update((1.0, y))
+    assert tr.adoptions == 1
+
+
+def test_motion_along_the_anchor_never_adopts_because_events_restart_the_chain():
     tr = v2m.AnchorProgress((0.0, 0.0), (6.0, 0.0), 0.10, 0.5)
     x = 0.0
-    for sec in range(4):
+    for _ in range(4):
         tr.replan((x, 0.0), (6.0, 0.0))
         for _ in range(10):
             x += 0.03
             tr.update((x, 0.0))
-    assert tr.adoptions >= 1
+    assert tr.adoptions == 0 and tr.events >= 3
 
 
 def test_rocking_in_place_never_adopts():
@@ -113,32 +137,57 @@ def test_rocking_in_place_never_adopts():
     assert tr.adoptions == 0
 
 
-def test_adoption_and_carry_thresholds_are_inclusive():
-    # dyadic numbers: every arc length below is exact in floating point
-    tr = v2m.AnchorProgress((0.0, 0.0), (2.0, 0.0), 0.125, 0.5)
-    tr.replan((0.0, 0.0), (2.0, 0.0))
-    tr.update((0.125, 0.0))                                   # advance == min_advance
-    tr.replan((0.125, 0.0), (2.125, 0.0))                     # carried: 0.125 >= 0.125
-    tr.update((0.5, 0.0))                                     # 0.125 + 0.375 == adopt
-    assert tr.adoptions == 1
-    # just under the carry gate: nothing is carried, 0.375 alone does not adopt
-    tr = v2m.AnchorProgress((0.0, 0.0), (2.0, 0.0), 0.125, 0.5)
-    tr.replan((0.0, 0.0), (2.0, 0.0))
-    tr.update((0.0625, 0.0))
-    tr.replan((0.0625, 0.0), (2.0625, 0.0))
-    tr.update((0.4375, 0.0))                                  # 0.375 + 0 carried
-    assert tr.adoptions == 0
+def test_adoption_threshold_is_inclusive_and_the_chain_carries_every_candidate():
+    # dyadic numbers: every arc length below is exact in floating point. The anchor's best is held
+    # at 1.0 by driving the robot to 1.0 first, so only the chain can adopt.
+    def fresh():
+        tr = v2m.AnchorProgress((0.0, 0.0), (8.0, 0.0), 0.5, 0.5)
+        tr.update((1.0, 0.0))                                # baseline arc 1.0
+        return tr
+    # one candidate: chain == adopt_advance exactly -> adopted (inclusive)
+    tr = fresh()
+    tr.replan((1.0, 0.0), (8.0, 0.0))
+    tr.update((1.0, 0.0))
+    tr.update((1.25, 0.0))
+    assert tr.adoptions == 0 and tr.tracker.chain == 0.25
+    # a second candidate: the advance of the first (0.25) joins the chain; 0.25 + 0.25 adopts
+    tr.replan((1.25, 0.0), (8.0, 0.0))
+    tr.update((1.25, 0.0))
+    tr.update((1.4375, 0.0))
+    assert tr.adoptions == 0 and tr.tracker.chain == 0.4375
+    tr.update((1.5, 0.0))
+    assert tr.adoptions == 1                                  # chain == 0.25 + 0.25 == 0.5
+    # the signed advance is carried: moving backwards along a candidate lowers the chain
+    tr = fresh()
+    tr.replan((1.0, 0.0), (8.0, 0.0))
+    tr.update((1.0, 0.0))
+    tr.update((0.5, 0.0))                                     # -0.5 along the candidate
+    tr.replan((0.5, 0.0), (8.0, 0.0))
+    tr.update((0.5, 0.0))
+    tr.update((1.0, 0.0))                                     # +0.5 on the new one, -0.5 carried
+    assert tr.adoptions == 0 and tr.tracker.chain == 0.0
 
 
 def test_backing_off_and_returning_earns_no_advance():
     tr = v2m.AnchorProgress((0.0, 0.0), (6.0, 0.0), 0.10, 0.5)
     tr.update((1.0, 0.0))
     tr.replan((1.0, 0.0), (6.0, 0.0))
-    for x in (1.45, 1.0):                                     # forward 0.45, back to 0
+    for x in (1.0, 1.45, 1.0):                               # forward 0.45, back to 0
         tr.update((x, 0.0))
     tr.replan((1.0, 0.0), (6.0, 0.0))
     tr.update((1.06, 0.0))
     assert tr.adoptions == 0
+
+
+def test_an_anchor_event_restarts_the_chain():
+    tr = v2m.AnchorProgress((0.0, 0.0), (8.0, 0.0), 0.25, 1.0)
+    tr.update((0.0, 0.0))
+    tr.replan((0.0, 0.0), (8.0, 0.0))
+    tr.update((0.0, 0.0))
+    tr.update((0.25, 0.0))                                   # anchor event: chain restarts at 0
+    assert tr.events == 1 and tr.tracker.chain == 0.0
+    tr.update((0.375, 0.0))
+    assert tr.tracker.chain == 0.125
 
 
 def test_polyline_nearest_arc_and_degenerate_path():
@@ -146,10 +195,13 @@ def test_polyline_nearest_arc_and_degenerate_path():
     assert path.length == pytest.approx(2.0)
     assert path.nearest_arc((0.5, 0.3)) == pytest.approx(0.5)
     assert path.nearest_arc((1.2, 0.5)) == pytest.approx(1.5)
-    assert path.nearest_arc((-3, 0)) == pytest.approx(0.0)    # clamped before start
-    assert path.nearest_arc((9, 9)) == pytest.approx(2.0)     # clamped after end
+    # behind the first pose the arc continues backwards (path_progress.cpp, arcAtNearest)
+    assert path.nearest_arc((-3, 0)) == pytest.approx(-3.0)
+    assert path.nearest_arc((9, 9)) == pytest.approx(2.0)     # clamped after the end
     deg = v2m.PolylinePath([(1, 1), (1, 1)])                  # robot on the goal
     assert deg.length == 0.0 and deg.nearest_arc((5, 5)) == 0.0
+    assert v2m.PolylinePath([(1, 1)]).nearest_arc((5, 5)) == 0.0   # fewer than two poses
+    assert v2m.PolylinePath([(0, 0), (np.nan, 1), (2, 0)]).length == pytest.approx(2.0)
 
 
 # --------------------------------------------------------------------------- #
@@ -177,14 +229,14 @@ def test_horizon_rule_picks_the_mouth_where_closest_to_goal_picks_a_side():
                              min_clearance=0.6)
     assert old is not None and _angdiff(old, np.pi) > np.radians(20), old
     # the v2 rule: only rays that leave through the mouth reach the horizon
-    b, free, reached = v2m.select_opening(pos, gb, world, P)
+    b, free, reached = _open(pos, gb, world, P)
     assert reached
     assert _angdiff(b, np.pi) <= np.radians(20)
 
 
 def test_open_world_takes_the_ray_closest_to_the_goal():
     world = se.World([], goal=(3.0, 0.0))
-    b, free, reached = v2m.select_opening((0, 0), 0.3, world, P)
+    b, free, reached = _open((0, 0), 0.3, world, P)
     assert reached and _angdiff(b, 0.3) <= STEP / 2 + 1e-9
 
 
@@ -194,10 +246,10 @@ def test_hysteresis_equal_to_the_improvement_keeps_the_previous_ray():
     prev = -np.pi + 2 * np.pi * kp / P['gap_num_rays']
     gain = abs(float(v2m.wrap(prev - 0.0)))                   # a_prev - a_best exactly
     p = v2m.v2_params(hysteresis=gain)
-    b, _, _ = v2m.select_opening((0, 0), 0.0, world, p, prev_bearing=prev)
+    b, _, _ = _open((0, 0), 0.0, world, p, prev_bearing=prev)
     assert b == pytest.approx(v2m.wrap(prev))                 # equal: keep
     p = v2m.v2_params(hysteresis=np.nextafter(gain, -np.inf))
-    b, _, _ = v2m.select_opening((0, 0), 0.0, world, p, prev_bearing=prev)
+    b, _, _ = _open((0, 0), 0.0, world, p, prev_bearing=prev)
     assert b == pytest.approx(0.0)                            # just better: switch
 
 
@@ -214,13 +266,13 @@ def test_hysteresis_boundary():
     assert ks == 18
     # previous ray 2 steps off (0.349 rad < 0.5 better): kept
     prev_keep = 2 * STEP
-    b, _, _ = v2m.select_opening((0, 0), 0.0, world, P, prev_bearing=prev_keep)
+    b, _, _ = _open((0, 0), 0.0, world, P, prev_bearing=prev_keep)
     assert b == pytest.approx(v2m.wrap(prev_keep))
     # previous ray 3 steps off (0.524 rad > 0.5 better): switched to the goal ray
-    b, _, _ = v2m.select_opening((0, 0), 0.0, world, P, prev_bearing=3 * STEP)
+    b, _, _ = _open((0, 0), 0.0, world, P, prev_bearing=3 * STEP)
     assert b == pytest.approx(0.0)
     # sign and wrap-around: previous ray across the +-pi seam
-    b, _, _ = v2m.select_opening((0, 0), np.pi, world, P, prev_bearing=-np.pi + STEP)
+    b, _, _ = _open((0, 0), np.pi, world, P, prev_bearing=-np.pi + STEP)
     assert abs(float(v2m.wrap(b - np.pi))) <= STEP + 1e-9
 
 
@@ -230,7 +282,7 @@ def test_previous_ray_that_no_longer_reaches_the_horizon_is_dropped():
     gb = 0.0
     # bearing 0 hits the back wall: even a huge hysteresis cannot keep it
     p = v2m.v2_params(hysteresis=10.0)
-    b, _, reached = v2m.select_opening(pos, gb, world, p, prev_bearing=0.0)
+    b, _, reached = _open(pos, gb, world, p, prev_bearing=0.0)
     assert reached and _angdiff(b, np.pi) <= np.radians(20)
 
 
@@ -241,7 +293,7 @@ def test_no_ray_reaches_the_horizon_takes_the_longest():
     ring = [o for o in ring if not (abs(o.p[1]) < 0.4 and o.p[0] > 0)]
     ring += [se.Obstacle(1.9, 0.0, 0.3)]                      # far plug on +x
     world = se.World(ring, goal=(3.0, 0.0))
-    b, free, reached = v2m.select_opening((0, 0), np.pi, world, P)
+    b, free, reached = _open((0, 0), np.pi, world, P)
     assert not reached
     bearings, lengths, rch = v2m.scan_rays((0, 0), world, 36, 2.0, 1.5)
     assert not rch.any() and free == pytest.approx(lengths.max())
@@ -285,7 +337,7 @@ def test_waypoint_is_frozen_until_a_rule_fires():
     d = np.hypot(*(wp0 - pos))
     assert d == pytest.approx(min(free0 - 0.22 - 0.05, 2.5))
     assert np.arctan2(*(wp0 - pos)[::-1]) == pytest.approx(b0)
-    for step in range(1, 50):                                # the robot barely moves
+    for step in range(1, 29):                                # the robot barely moves (< 3 s)
         wp = hop.update(step, pos + [0.0, 0.0], 0.0, world)
         assert wp is wp0 and hop.hops == 1
 
@@ -311,9 +363,10 @@ def test_reselect_when_the_straight_segment_is_blocked():
 
 def test_reselect_after_the_timeout_boundary():
     world = se.World([], goal=(5.0, 0.0))
-    hop = v2m.WaypointHopper(P, 0.1)
+    hop = v2m.WaypointHopper(P_DESIGN, 0.1)                  # no watchdog: only the timeout
     hop.update(0, np.zeros(2), 0.0, world)
-    hop.update(149, np.zeros(2), 0.0, world)                 # 14.9 s
+    for k in range(1, 150):                                  # one call per control cycle
+        hop.update(k, np.zeros(2), 0.0, world)               # the 149th call: 14.9 s
     assert hop.hops == 1
     hop.update(150, np.zeros(2), 0.0, world)                 # 15.0 s
     assert hop.hops == 2 and hop.log[-1][4] == 'timeout'
@@ -329,19 +382,20 @@ def test_release_forgets_the_waypoint_and_the_previous_bearing():
     assert hop.hops == 2 and hop.log[-1][4] == 'first'
 
 
-def test_reselect_radius_boundary_is_exclusive():
+def test_reselect_radius_boundary_is_inclusive():
+    # manageEscapePath: `hypot(w - x) <= escape_reselect_radius_`
     world = se.World([], goal=(5.0, 0.0))
     probe = v2m.WaypointHopper(P, 0.1)
     wp = probe.update(0, np.zeros(2), 0.0, world).copy()
     d = float(np.hypot(*(wp - np.zeros(2))))
     hop = v2m.WaypointHopper(v2m.v2_params(reselect_radius=d), 0.1)
     hop.update(0, np.zeros(2), 0.0, world)
-    hop.update(1, np.zeros(2), 0.0, world)                    # distance == radius
-    assert hop.hops == 1
-    hop = v2m.WaypointHopper(v2m.v2_params(reselect_radius=np.nextafter(d, np.inf)), 0.1)
+    hop.update(1, np.zeros(2), 0.0, world)                    # distance == radius: reselect
+    assert hop.hops == 2 and hop.log[-1][4] == 'reached'
+    hop = v2m.WaypointHopper(v2m.v2_params(reselect_radius=np.nextafter(d, -np.inf)), 0.1)
     hop.update(0, np.zeros(2), 0.0, world)
-    hop.update(1, np.zeros(2), 0.0, world)                    # distance < radius
-    assert hop.hops == 2
+    hop.update(1, np.zeros(2), 0.0, world)                    # distance > radius: frozen
+    assert hop.hops == 1
 
 
 def test_waypoint_distance_is_capped():
@@ -351,14 +405,33 @@ def test_waypoint_distance_is_capped():
     assert np.hypot(*wp) == pytest.approx(2.5)                # min(6 - 0.27, 2.5)
 
 
-def test_waypoint_distance_floor_is_zero():
-    # a ray blocked at 0.1 m: free - 0.22 - 0.05 < 0 is clipped to 0, not negative
+def _ring_world():
     ring = [se.Obstacle(0.45 * np.cos(a), 0.45 * np.sin(a), 0.2)
             for a in np.linspace(0, 2 * np.pi, 30, endpoint=False)]
-    world = se.World(ring, goal=(5.0, 0.0))
-    hop = v2m.WaypointHopper(P, 0.1)
-    wp = hop.update(0, np.zeros(2), 0.0, world)
+    return se.World(ring, goal=(5.0, 0.0))
+
+
+def test_waypoint_distance_floor_is_zero_in_the_design():
+    # a ray blocked at 0.1 m: free - 0.22 - 0.05 < 0 is clipped to 0, not negative
+    hop = v2m.WaypointHopper(P_DESIGN, 0.1)
+    wp = hop.update(0, np.zeros(2), 0.0, _ring_world())
     assert np.hypot(*wp) == pytest.approx(0.0)
+
+
+def test_a_waypoint_closer_than_the_minimum_is_not_taken():
+    # extra (c): safe_escape_controller.cpp `gap.found && dist >= 0.2`; nothing changes, no hop
+    hop = v2m.WaypointHopper(v2m.v2_params(gap_min_clearance=0.0), 0.1)
+    assert hop.update(0, np.zeros(2), 0.0, _ring_world()) is None
+    assert hop.hops == 0 and not hop.active
+
+
+def test_the_minimum_waypoint_boundary():
+    # a free ray of clearance c gives d = c - 0.22 - 0.05; d == 0.2 is taken, just under is not
+    world = se.World([], goal=(5.0, 0.0))
+    for wh, ok in ((0.2 + 0.22 + 0.05, True), (0.2 + 0.22 + 0.05 - 1e-6, False)):
+        p = v2m.v2_params(gap_max_range=wh, window_half=wh, gap_min_clearance=0.0)
+        hop = v2m.WaypointHopper(p, 0.1)
+        assert (hop.update(0, np.zeros(2), 0.0, world) is not None) is ok, wh
 
 
 def test_hop_off_reselects_every_step():
@@ -367,6 +440,86 @@ def test_hop_off_reselects_every_step():
     for s in range(5):
         hop.update(s, np.zeros(2), 0.0, world)
     assert hop.hops == 5
+
+
+def test_the_movement_watchdog_fires_after_stall_time_and_not_before():
+    # extra (b): no movement of stall_distance in stall_time_s (30 cycles at 0.1 s) re-selects
+    world = se.World([], goal=(5.0, 0.0))
+    hop = v2m.WaypointHopper(P, 0.1)
+    hop.update(0, np.zeros(2), 0.0, world)
+    for k in range(1, 30):
+        hop.update(k, np.zeros(2), 0.0, world)
+    assert hop.hops == 1                                      # 29 stalled cycles
+    hop.update(30, np.zeros(2), 0.0, world)                   # the 30th
+    assert hop.hops == 2 and hop.log[-1][4] == 'no_movement'
+    assert len(hop.failed) == 1                               # the waypoint that did not work
+
+
+def test_the_watchdog_counter_restarts_after_stall_distance_of_movement():
+    world = se.World([], goal=(5.0, 0.0))
+    hop = v2m.WaypointHopper(P, 0.1)
+    hop.update(0, np.zeros(2), 0.0, world)
+    for k in range(1, 25):
+        hop.update(k, np.zeros(2), 0.0, world)
+    hop.update(25, np.array([0.15, 0.0]), 0.0, world)         # exactly stall_distance: counts as moved
+    for k in range(26, 55):
+        hop.update(k, np.array([0.15, 0.0]), 0.0, world)      # 29 cycles since the move
+    assert hop.hops == 1
+    hop.update(55, np.array([0.15, 0.0]), 0.0, world)
+    assert hop.hops == 2 and hop.log[-1][4] == 'no_movement'
+
+
+def test_extras_off_has_no_watchdog_and_no_avoid_list():
+    world = se.World([], goal=(5.0, 0.0))
+    hop = v2m.WaypointHopper(P_DESIGN, 0.1)
+    hop.update(0, np.zeros(2), 0.0, world)
+    for k in range(1, 149):
+        hop.update(k, np.zeros(2), 0.0, world)
+    assert hop.hops == 1
+    hop.mark_entry(np.zeros(2))
+    assert hop._avoid(np.zeros(2)) != []                      # remembered, but not used:
+    g1 = v2m.select_opening(np.zeros(2), 0.0, world, P_DESIGN, None, [(0.0, 1.5, 0.6)])
+    g2 = v2m.select_opening(np.zeros(2), 0.0, world, P_DESIGN, None, ())
+    assert g1.as_tuple() == g2.as_tuple()
+
+
+def test_the_stall_pose_is_avoided_and_forgotten_on_release():
+    # an open world: the goal bearing is 0, the stall pose is 1.5 m ahead on the +x ray
+    world = se.World([], goal=(5.0, 0.0))
+    hop = v2m.WaypointHopper(P, 0.1)
+    hop.mark_entry(np.array([1.5, 0.0]))
+    hop.update(0, np.zeros(2), 0.0, world)
+    b = hop.log[0][1]
+    assert abs(float(v2m.wrap(b))) >= np.radians(30), b       # not the ray through the stall pose
+    hop.release()
+    hop.update(1, np.zeros(2), 0.0, world)
+    assert abs(float(v2m.wrap(hop.log[1][1]))) <= STEP / 2 + 1e-9
+
+
+def test_hop_origins_are_remembered_up_to_avoid_hops_oldest_dropped():
+    world = se.World([], goal=(50.0, 0.0))
+    hop = v2m.WaypointHopper(v2m.v2_params(reselect_radius=1e9), 0.1)
+    for k in range(6):
+        hop.update(k, np.array([float(k), 0.0]), 0.0, world)
+    assert hop.origins == [(3.0, 0.0), (4.0, 0.0), (5.0, 0.0)]
+    assert hop.hops == 6
+
+
+def test_failed_waypoints_are_remembered_up_to_six():
+    world = se.World([], goal=(50.0, 0.0))
+    hop = v2m.WaypointHopper(v2m.v2_params(reselect_timeout_s=0.1), 0.1)   # timeout every call
+    hop.update(0, np.zeros(2), 0.0, world)
+    for k in range(1, 12):
+        hop.update(k, np.array([0.0, 0.0]), 0.0, world)
+    assert len(hop.failed) == 6
+
+
+def test_a_waypoint_that_was_reached_is_not_a_failed_one():
+    world = se.World([], goal=(5.0, 0.0))
+    hop = v2m.WaypointHopper(P, 0.1)
+    wp = hop.update(0, np.zeros(2), 0.0, world).copy()
+    hop.update(1, wp, 0.0, world)
+    assert hop.log[-1][4] == 'reached' and hop.failed == []
 
 
 # --------------------------------------------------------------------------- #
@@ -446,7 +599,8 @@ def test_v1_configs_carry_no_v2_key():
                                               ('narrowdyn', 4, 'F_full')])
 def test_every_flag_off_reproduces_the_v1_rollout(family, seed, name):
     off = make_v2_configs(progress='goal_distance', gap_rule='closest_viable',
-                          hop=False, zero_on_all_collide=False, stall_window=15)
+                          hop=False, zero_on_all_collide=False, stall_window=15,
+                          act_on_previous_cycle=False, escape_extras=False)
     a = sc.make(family, seed)
     b = sc.make(family, seed)
     r1 = rollout(a.world, CONFIGS[name], a.start, max_steps=400, seed=seed)
