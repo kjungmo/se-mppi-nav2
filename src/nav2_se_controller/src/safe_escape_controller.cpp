@@ -684,6 +684,22 @@ void SafeEscapeController::manageEscapePath(const geometry_msgs::msg::PoseStampe
   bool publish = false;
   {
     std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+    if (!se_enabled_) {
+      // The SE layer is off: computeVelocityCommands returns before updateEntrapment,
+      // so nothing would ever clear the entrapment state. Clear it here (a toggle is a
+      // task boundary for the escape): otherwise EscapeCritic keeps injecting from the
+      // stale shared flag, and a toggle back on selects a hop from a stale
+      // prev_entrapped_ before the detector has seen a single cycle.
+      if (prev_entrapped_ || (shared_ && shared_->entrapped.load(std::memory_order_relaxed))) {
+        RCLCPP_INFO(logger_, "SE layer off: the entrapment state is cleared");
+      }
+      prev_entrapped_ = false;
+      detector_.reset();
+      if (shared_) {
+        shared_->entrapped.store(false, std::memory_order_relaxed);
+      }
+      counters_.entrapped.store(false);
+    }
     const bool want = se_enabled_ && escape_substitution_ && prev_entrapped_ &&
       !global_plan_.poses.empty();
     if (!want) {

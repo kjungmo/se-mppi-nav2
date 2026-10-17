@@ -122,8 +122,11 @@ WAYPOINT_RE = re.compile(
     r'(?P<kind>horizon ray|longest ray \(no horizon ray\))')
 INJECT_BEGIN_RE = re.compile(r'escape-cost injection BEGIN')
 INJECT_END_RE = re.compile(r'escape-cost injection END')
-OPENING_RE = re.compile(
-    _STAMP + r' \[controller_server\]: EscapeCritic\[[^\]]*\] selected opening: bearing '
+# The critic's probe line is NOT the escape heading (no avoid list, no hysteresis, its goal is
+# the escape waypoint). The controller's heading is the "SE escape waypoint" line (WAYPOINT_RE).
+CRITIC_PROBE_RE = re.compile(
+    _STAMP + r' \[controller_server\]: EscapeCritic\[[^\]]*\] critic-side probe \(no avoid list, '
+    r'no hysteresis; NOT the escape heading\): bearing '
     r'(?P<bearing>-?\d+) deg, clearance (?P<clearance>[\d.]+) m')
 OPTFAIL_RE = re.compile(_STAMP + r' \[controller_server\]: Optimizer fail to compute path')
 PROGRESS_FAIL_RE = re.compile(r'\[controller_server\]: Failed to make progress')
@@ -140,7 +143,7 @@ DIED_RE = re.compile(r'process has died \[pid \d+, exit code (?P<code>-?\d+)')
 # Any other exit code (SIGSEGV -11, SIGABRT -6, a positive status) is a crash.
 TEARDOWN_EXIT_CODES = (0, -2, -15, -9)
 KEY_LINE_RE = re.compile(
-    r'SE escape |escape-cost injection|selected opening|no opening found|'
+    r'SE escape |escape-cost injection|critic-side probe|'
     r'Failed to make progress|Running (?:spin|backup|wait)\b|'
     r'Received request to clear entirely|SafeEscapeController\[|Control loop missed|'
     r'process has died|Aborting|Goal (?:succeeded|failed|canceled)|NavigateToPose')
@@ -224,7 +227,7 @@ def parse_launch_log(text: str, t0: float | None) -> dict:
         'escape_hop_list': hops,
         'escape_injection_begin': len(INJECT_BEGIN_RE.findall(text)),
         'escape_injection_end': len(INJECT_END_RE.findall(text)),
-        'escape_opening_lines': len(OPENING_RE.findall(text)),
+        'escape_critic_probe_lines': len(CRITIC_PROBE_RE.findall(text)),
         'first_escape_enter_s': rel(enters[0][0]) if enters else None,
         'optimizer_failures': len(optfails),
         'first_optimizer_failure_s': rel(optfails[0]) if optfails else None,

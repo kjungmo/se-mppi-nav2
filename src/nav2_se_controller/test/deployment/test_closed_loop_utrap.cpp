@@ -75,6 +75,16 @@ void report(const utrap::RunResult & r, int run)
     return ::testing::AssertionFailure()
            << r.geometry << ": " << r.contacts << " wall contacts";
   }
+  // The campaign runs with failure_tolerance 0.0: controller_server rethrows
+  // NoValidControl, computeControl catches it and publishZeroVelocity() calls
+  // reset() on every controller, which clears the detector in the same cycle. In C3 and C4
+  // the first throw ends the goal. The rig keeps going after a throw (as
+  // failure_tolerance -1 would), so a run with a throw would not be a C4 pass.
+  if (r.throws != 0) {
+    return ::testing::AssertionFailure()
+           << r.geometry << ": " << r.throws << " NoValidControl throws; with the campaign's "
+           << "failure_tolerance 0.0 the first one ends the goal (C4 would abort)";
+  }
   return ::testing::AssertionSuccess();
 }
 
@@ -165,7 +175,8 @@ void captureLog(
 }  // namespace
 
 // The selected bearing and clearance are logged: one line per hop from the
-// controller, and one from the critic at injection BEGIN and every 2 s.
+// controller (this is the escape heading), and a critic-side probe at injection BEGIN
+// and every 2 s that is labelled as NOT the escape heading.
 TEST(ClosedLoopUtrap, TheSelectedBearingAndClearanceAreLogged)
 {
   g_log_lines.clear();
@@ -185,14 +196,17 @@ TEST(ClosedLoopUtrap, TheSelectedBearingAndClearanceAreLogged)
     {
       ++waypoint_lines;
     }
-    if (line.find("selected opening: bearing ") != std::string::npos &&
+    if (line.find("critic-side probe") != std::string::npos &&
+      line.find("NOT the escape") != std::string::npos &&
       line.find("clearance ") != std::string::npos)
     {
       ++critic_lines;
     }
+    EXPECT_EQ(line.find("selected opening"), std::string::npos)
+      << "the critic's line must not read as the controller's selection: " << line;
   }
   EXPECT_EQ(waypoint_lines, r.hops) << "one log line per hop";
-  EXPECT_GE(critic_lines, 1) << "the critic logs at injection BEGIN";
+  EXPECT_GE(critic_lines, 1) << "the critic logs a labelled probe at injection BEGIN";
 }
 
 // Debugging aid: run one named geometry of the family, SE_UTRAP_RUNS times.

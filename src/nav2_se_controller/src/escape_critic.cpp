@@ -102,9 +102,12 @@ void EscapeCritic::score(mppi::CriticData & data)
       repulsion_weight_, repulsion_power_);
   }
 
-  // --- Free-space gap: log the opening the horizon-ray rule selects (BEGIN and
-  //     every 2 s while injecting), and, for ablation only (gap_weight > 0), add
-  //     the legacy gap bearing cost. ---
+  // --- Free-space gap: a critic-side probe of the horizon-ray rule (BEGIN and every
+  //     2 s while injecting), and, for ablation only (gap_weight > 0), the legacy gap
+  //     bearing cost. The probe is NOT the controller's choice: it has no avoid list
+  //     and no hysteresis, and its goal is data.goal, which is the escape waypoint
+  //     while the escape path is substituted. The controller's own choice is logged
+  //     by "SE escape waypoint N" lines. ---
   if (use_gap_search_ && data.trajectories.x.shape(1) > 0) {
     const double rx = static_cast<double>(data.trajectories.x(0, 0));
     const double ry = static_cast<double>(data.trajectories.y(0, 0));
@@ -127,14 +130,17 @@ void EscapeCritic::score(mppi::CriticData & data)
       if (hg.found) {
         RCLCPP_INFO(
           logger_,
-          "EscapeCritic[%s] selected opening: bearing %.0f deg, clearance %.2f m, %s "
-          "(%zu horizon rays) from (%.2f, %.2f); goal bearing %.0f deg",
+          "EscapeCritic[%s] critic-side probe (no avoid list, no hysteresis; NOT the escape "
+          "heading): bearing %.0f deg, clearance %.2f m, %s (%zu horizon rays) from "
+          "(%.2f, %.2f); bearing to the critic goal %.0f deg",
           name_.c_str(), hg.bearing * 180.0 / M_PI, hg.clearance,
           hg.horizon ? "horizon ray" : "longest ray", hg.candidates, rx, ry,
           goal_bearing * 180.0 / M_PI);
       } else {
         RCLCPP_INFO(
-          logger_, "EscapeCritic[%s] no opening found from (%.2f, %.2f)", name_.c_str(), rx, ry);
+          logger_,
+          "EscapeCritic[%s] critic-side probe (NOT the escape heading): no opening found from "
+          "(%.2f, %.2f)", name_.c_str(), rx, ry);
       }
     }
     if (gap_weight_ > 0.0f) {

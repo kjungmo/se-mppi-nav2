@@ -31,8 +31,9 @@ REAL_EXIT = ('[INFO] [1792268244.704772041] [MPPIController]: SE escape EXIT at 
 REAL_BEGIN = ('[INFO] [1792268244.589940793] [controller_server]: EscapeCritic[FollowPath.EscapeCritic] '
               'escape-cost injection BEGIN (entrapped=1)')
 REAL_OPEN = ('[INFO] [1792268244.590437266] [controller_server]: EscapeCritic[FollowPath.EscapeCritic] '
-             'selected opening: bearing 130 deg, clearance 2.00 m, horizon ray (7 horizon rays) from '
-             '(0.45, 0.18); goal bearing 130 deg')
+             'critic-side probe (no avoid list, no hysteresis; NOT the escape heading): bearing 130 deg, '
+             'clearance 2.00 m, horizon ray (7 horizon rays) from (0.45, 0.18); bearing to the critic '
+             'goal 130 deg')
 LONGEST = ('[INFO] [1792268244.7] [MPPIController]: SE escape waypoint 3 (stalled): from (1.00, 2.00) '
            'to (1.50, 2.50); bearing -45 deg, clearance 0.90 m, longest ray (no horizon ray), '
            'previous bearing kept; goal bearing 0 deg')
@@ -46,7 +47,8 @@ def test_patterns_parse_real_controller_lines():
     p = an.parse_launch_log(text, T0)
     assert p['escape_enter'] == 1 and p['escape_exit'] == 1
     assert p['escape_hops'] == 2 and p['escape_injection_begin'] == 1
-    assert p['escape_opening_lines'] == 1
+    assert p['escape_critic_probe_lines'] == 1
+    assert 'escape_opening_lines' not in p        # the probe is not the escape heading
     ep = p['escape_episodes'][0]
     assert ep['duration_s'] == pytest.approx(1792268244.704772041 - 1792268244.589171131)
     assert ep['enter_xy'] == [0.45, 0.17]
@@ -73,7 +75,7 @@ def test_patterns_agree_with_the_format_strings_of_the_controller_source():
     assert 'entrapped ? "ENTER" : "EXIT"' in src
     crit = open(CRIT).read()
     assert 'escape-cost injection %s (entrapped=%d)' in crit
-    assert 'selected opening: bearing %.0f deg, clearance %.2f m, %s' in crit
+    assert 'critic-side probe (no avoid list, no hysteresis; NOT the escape "\n          "heading): bearing %.0f deg, clearance %.2f m, %s' in crit
     assert 'log_begin ? "BEGIN"' in crit or '"BEGIN"' in crit
 
 

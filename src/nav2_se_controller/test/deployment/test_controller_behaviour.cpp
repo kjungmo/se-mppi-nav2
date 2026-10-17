@@ -55,6 +55,8 @@ public:
   const nav2_se_controller::CbfConfig & cbf() const {return filter_.config();}
   double robotRadius() const {return robot_radius_;}
   bool entrapped() const {return prev_entrapped_;}
+  bool sharedEntrapped() const {return shared_ && shared_->entrapped.load();}
+  int stallCount() const {return detector_.stallCount();}
   std::size_t trackCount() const {return tracker_.trackCount();}
   int cbfObstacles() const {return counters_.cbf_obstacles.load();}
   std::uint64_t baseFailures() const {return counters_.base_failures.load();}
@@ -1189,6 +1191,31 @@ TEST_F(ControllerEscapePath, SwitchingTheSeLayerOffGivesTheBtPathBack)
   EXPECT_FALSE(controller_->escapeActive());
   step(kStallX, 0.0);
   EXPECT_EQ(controller_->handed.size(), before + 1);
+}
+
+// A runtime toggle of the SE layer during an escape is a task boundary for the escape:
+// the shared flag (EscapeCritic), the detector and prev_entrapped_ are cleared while the
+// layer is off, and nothing is selected from stale state when it is switched on again.
+TEST_F(ControllerEscapePath, ToggleOffAndOnDuringAnEscapeClearsTheEntrapmentState)
+{
+  begin();
+  stallUntilEscapePath();
+  ASSERT_TRUE(controller_->sharedEntrapped());
+  const std::uint64_t hops_before = controller_->hops();
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.se_enabled", false)).successful);
+  step(kStallX, 0.0);
+  EXPECT_FALSE(controller_->entrapped()) << "prev_entrapped_ is cleared while the layer is off";
+  EXPECT_FALSE(controller_->sharedEntrapped()) << "EscapeCritic must stop injecting";
+  EXPECT_EQ(controller_->stallCount(), 0) << "the detector is cleared";
+  EXPECT_FALSE(controller_->escapeActive());
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.se_enabled", true)).successful);
+  step(kStallX, 0.0);
+  EXPECT_EQ(controller_->hops(), hops_before) << "no hop is selected from stale state";
+  EXPECT_FALSE(controller_->escapeActive());
+  EXPECT_FALSE(controller_->entrapped()) << "the detector has seen one cycle only";
+  // The stall is detected again after a full window, then an escape starts.
+  stallUntilEscapePath();
+  EXPECT_EQ(controller_->hops(), hops_before + 1);
 }
 
 TEST_F(ControllerEscapePath, SubstitutionCanBeSwitchedOff)
