@@ -25,6 +25,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
@@ -93,6 +94,7 @@ class Rig
 public:
   explicit Rig(const std::vector<rclcpp::Parameter> & extra = {})
   {
+    verbose_ = std::getenv("SE_UTRAP_VERBOSE") != nullptr;
     std::vector<rclcpp::Parameter> params{
       rclcpp::Parameter("controller_frequency", 10.0),
       rclcpp::Parameter("FollowPath.time_steps", 28),
@@ -246,6 +248,9 @@ public:
       } catch (const nav2_core::NoValidControl &) {
         ++r.throws;  // controller_server publishes zero velocity
       }
+      if (verbose_ && k % 5 == 0) {
+        std::printf("UTRAPV t=%.1f pose=(%.2f,%.2f,%.2f) cmd=(%.3f,%.3f) throws=%d\n", t, x, y, yaw, cv, cw, r.throws);
+      }
       // Acceleration limits as in the MPPI configuration.
       cv = std::clamp(cv, v - 3.0 * kDt, v + 3.0 * kDt);
       cw = std::clamp(cw, w - 3.5 * kDt, w + 3.5 * kDt);
@@ -292,6 +297,7 @@ public:
   }
 
 private:
+  bool verbose_{false};
   rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::shared_ptr<nav2_costmap_2d::Costmap2DROS> costmap_ros_;
   std::shared_ptr<tf2_ros::Buffer> tf_;

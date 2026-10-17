@@ -38,7 +38,7 @@ class ClosedLoopProbe : public nav2_se_controller::SafeEscapeController
 {
 public:
   int enters() const {return static_cast<int>(counters_.escape_entries.load());}
-  int hops() const {return 0;}
+  int hops() const {return static_cast<int>(counters_.escape_hops.load());}
 };
 
 void report(const utrap::RunResult & r, int run)
@@ -76,8 +76,21 @@ void report(const utrap::RunResult & r, int run)
 
 utrap::RunResult runOnce(const utrap::Pocket & p)
 {
+  static int counter = 0;
   utrap::Rig<ClosedLoopProbe> rig;
-  return rig.run(p);
+  auto r = rig.run(p);
+  // SE_UTRAP_TRACE_DIR: write the path of every run as CSV (t, x, y).
+  if (const char * dir = std::getenv("SE_UTRAP_TRACE_DIR")) {
+    const std::string file =
+      std::string(dir) + "/" + r.geometry + "_" + std::to_string(counter++) + ".csv";
+    if (FILE * f = std::fopen(file.c_str(), "w")) {
+      for (const auto & row : r.trace) {
+        std::fprintf(f, "%.1f,%.3f,%.3f\n", row[0], row[1], row[2]);
+      }
+      std::fclose(f);
+    }
+  }
+  return r;
 }
 
 }  // namespace
@@ -110,18 +123,43 @@ TEST(ClosedLoopUtrap, PrimaryGeometriesLeaveThePocketAndReachTheGoalThreeOfThree
 // Informational: every 7th valid geometry, one run each. Not gating.
 TEST(ClosedLoopUtrap, SweepReportsEveryGeometry)
 {
-  if (std::getenv("SE_UTRAP_SWEEP") == nullptr) {
-    GTEST_SKIP() << "set SE_UTRAP_SWEEP=1 to run the informational sweep";
+  const char * mode = std::getenv("SE_UTRAP_SWEEP");
+  if (mode == nullptr) {
+    GTEST_SKIP() << "set SE_UTRAP_SWEEP=1 (every 7th geometry) or =all (the whole family)";
   }
+  const auto list = std::string(mode) == "all" ? utrap::family() : utrap::sweep();
   int ok = 0;
   int n = 0;
-  for (const auto & p : utrap::sweep()) {
+  for (const auto & p : list) {
     const auto r = runOnce(p);
     report(r, 0);
     ok += passes(r) ? 1 : 0;
     ++n;
   }
   std::printf("UTRAP sweep passed %d of %d\n", ok, n);
+}
+
+// Debugging aid: run one named geometry of the family, SE_UTRAP_RUNS times.
+TEST(ClosedLoopUtrap, NamedGeometryFromTheEnvironment)
+{
+  const char * want = std::getenv("SE_UTRAP_GEOMETRY");
+  if (want == nullptr) {
+    GTEST_SKIP() << "set SE_UTRAP_GEOMETRY=<name> (and SE_UTRAP_RUNS) to run one geometry";
+  }
+  const char * runs_env = std::getenv("SE_UTRAP_RUNS");
+  const int runs = runs_env != nullptr ? std::atoi(runs_env) : 1;
+  bool found = false;
+  for (const auto & p : utrap::family()) {
+    if (utrap::name(p) != want) {
+      continue;
+    }
+    found = true;
+    for (int run = 0; run < runs; ++run) {
+      const auto r = runOnce(p);
+      report(r, run);
+    }
+  }
+  EXPECT_TRUE(found) << want << " is not in the family";
 }
 
 int main(int argc, char ** argv)

@@ -21,11 +21,14 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "diagnostic_msgs/msg/diagnostic_array.hpp"
+#include "tf2/LinearMath/Transform.h"
 #include "nav2_mppi_controller/controller.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 
 #include "nav2_se_controller/cbf_safety_filter.hpp"
@@ -36,6 +39,7 @@
 #include "nav2_se_controller/failure_streak.hpp"
 #include "nav2_se_controller/mppi_rollout_check.hpp"
 #include "nav2_se_controller/multi_robot_coordinator.hpp"
+#include "nav2_se_controller/opening_search.hpp"
 #include "nav2_se_controller/path_progress.hpp"
 #include "nav2_se_controller/task_boundary.hpp"
 
@@ -215,6 +219,9 @@ protected:
     std::atomic<std::uint64_t> tracks_dropped{0};  // tracks aged out unmatched
     std::atomic<std::uint64_t> escape_entries{0};
     std::atomic<std::uint64_t> base_failures{0};   // optimizer threw NoValidControl
+    std::atomic<std::uint64_t> escape_hops{0};     // escape waypoints selected
+    std::atomic<double> escape_bearing{0.0};       // last selected bearing (rad)
+    std::atomic<double> escape_clearance{0.0};     // its clearance (m)
     std::atomic<bool> entrapped{false};
     std::atomic<int> cbf_obstacles{0};
     std::atomic<double> alpha{0.0};
@@ -275,6 +282,72 @@ protected:
   double prev_stamp_{0.0};
   bool has_stamp_{false};
   bool prev_entrapped_{false};  // for ENTER/EXIT escape-mode transition logs
+
+  // ---- Escape path substitution ------------------------------------------
+  // While entrapped, MPPI is handed a short path from the robot along the
+  // bearing of the opening chosen by the horizon-ray rule (gap_search.hpp), in
+  // place of the behaviour tree's path, which leads through the obstacle. The
+  // optimizer's path and goal critics then pull toward the waypoint. The BT
+  // path is kept in global_plan_ (progress, near-goal test), is not forwarded
+  // to MPPI while the substitution is active, and is forwarded again when the
+  // escape ends, the controller is reset, a new task starts, or se_enabled
+  // becomes false. controller_server checks goal arrival against its own copy
+  // of the BT path, so the substitution cannot fake a goal.
+  struct EscapeState
+  {
+    bool active{false};       // MPPI currently holds the escape path
+    double wx{0.0};           // waypoint, costmap frame
+    double wy{0.0};
+    double bearing{0.0};      // selected ray (rad, costmap frame)
+    double clearance{0.0};    // its free length (m)
+    int cycles{0};            // control cycles since the selection
+    int hop{0};               // selections in this escape episode
+    bool has_prev{false};     // hysteresis memory
+    double prev_bearing{0.0};
+    bool has_stall{false};    // where entrapment was declared, costmap frame
+    double stall_x{0.0};
+    double stall_y{0.0};
+    // Where the recent hops started (costmap frame), oldest first.
+    std::vector<std::pair<double, double>> origins;
+    // Waypoints that were not reached (timeout, blocked, no movement).
+    std::vector<std::pair<double, double>> failed;
+    // Movement watchdog: the position at the last 0.15 m of movement.
+    double ref_x{0.0};
+    double ref_y{0.0};
+    int ref_cycles{0};
+  };
+  EscapeState escape_;
+  bool escape_substitution_{true};      // se_escape_path_substitution
+  double escape_waypoint_cap_{2.5};     // se_escape_waypoint_cap (m)
+  double escape_reselect_radius_{0.4};  // se_escape_reselect_radius (m)
+  double escape_reselect_period_{15.0};  // se_escape_reselect_period (s)
+  double escape_stall_time_{3.0};       // se_escape_stall_time (s): no movement -> re-select
+  double escape_stall_distance_{0.15};  // se_escape_stall_distance (m)
+  double escape_hysteresis_{0.5};       // se_escape_hysteresis (rad)
+  double escape_avoid_radius_{1.0};     // se_escape_avoid_radius (m): the stall pose
+  double escape_avoid_hop_radius_{0.6};  // se_escape_avoid_hop_radius (m): recent hop origins
+  int escape_avoid_hops_{3};            // se_escape_avoid_hops: how many recent origins
+  int gap_num_rays_{36};                // se_gap_num_rays
+  double gap_max_range_{2.0};           // se_gap_max_range (m)
+  double gap_min_clearance_{0.6};       // se_gap_min_clearance (m)
+  rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::Path>::SharedPtr escape_path_pub_;
+
+  /// Before the base call: hand MPPI the escape path while entrapped (select
+  /// or re-select the waypoint), or give it the behaviour tree's path back.
+  void manageEscapePath(const geometry_msgs::msg::PoseStamped & robot_pose);
+  /// The plan-frame transform of a costmap-frame point; false when the
+  /// transform is missing.
+  bool planFromRobot(
+    const geometry_msgs::msg::PoseStamped & robot_pose, tf2::Transform & out) const;
+
+  // se_enabled with vx_min > 0: the robot cannot stop or reverse, so the
+  // escape cannot act (campaign 1, set P). Warned at configure and on every
+  // change; reported on /diagnostics.
+  std::atomic<double> vx_min_param_{-0.35};
+  bool vxMinBlocksReversal() const
+  {
+    return se_enabled_mirror_.load() && vx_min_param_.load() > 0.0;
+  }
 };
 
 }  // namespace nav2_se_controller

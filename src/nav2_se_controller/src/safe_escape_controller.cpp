@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -126,6 +127,19 @@ void SafeEscapeController::configure(
   }
 
   bindConfig(ec_.progress_stall_window, "se_progress_stall_window", 30, kDetector);
+  getParam(escape_substitution_, "se_escape_path_substitution", true);
+  getParam(escape_waypoint_cap_, "se_escape_waypoint_cap", 2.5);
+  getParam(escape_reselect_radius_, "se_escape_reselect_radius", 0.4);
+  getParam(escape_reselect_period_, "se_escape_reselect_period", 15.0);
+  getParam(escape_stall_time_, "se_escape_stall_time", 3.0);
+  getParam(escape_stall_distance_, "se_escape_stall_distance", 0.15);
+  getParam(escape_hysteresis_, "se_escape_hysteresis", 0.5);
+  getParam(escape_avoid_radius_, "se_escape_avoid_radius", 1.0);
+  getParam(escape_avoid_hop_radius_, "se_escape_avoid_hop_radius", 0.6);
+  getParam(escape_avoid_hops_, "se_escape_avoid_hops", 3);
+  getParam(gap_num_rays_, "se_gap_num_rays", 36);
+  getParam(gap_max_range_, "se_gap_max_range", 2.0);
+  getParam(gap_min_clearance_, "se_gap_min_clearance", 0.6);
   bindConfig(pc_.min_advance, "se_progress_min_advance", 0.10, kProgress);
   bindConfig(pc_.adopt_advance, "se_progress_adopt_advance", 0.5, kProgress);
 
@@ -220,6 +234,14 @@ void SafeEscapeController::configure(
     node->get_parameter(name_ + ".vx_max", fc_.v_max);
     node->get_parameter(name_ + ".vx_min", fc_.v_min);
     node->get_parameter(name_ + ".wz_max", fc_.w_max);
+    vx_min_param_.store(fc_.v_min);
+    if (se_enabled_ && fc_.v_min > 0.0) {
+      RCLCPP_WARN(
+        logger_,
+        "SafeEscapeController[%s]: vx_min = %.3f > 0 with se_enabled: the robot cannot stop or "
+        "reverse, so the escape cannot act (campaign 1, set P). Set vx_min <= 0, for example "
+        "-0.35.", name_.c_str(), fc_.v_min);
+    }
     // Braking to a stop must stay feasible even when MPPI's vx_min > 0.
     fc_.v_min = std::min(fc_.v_min, 0.0);
   }
@@ -259,6 +281,14 @@ void SafeEscapeController::configure(
             fc_.v_max = p.as_double();
           } else if (p.get_name() == name_ + ".vx_min") {
             fc_.v_min = std::min(p.as_double(), 0.0);  // stopping stays feasible
+            vx_min_param_.store(p.as_double());
+            if (se_enabled_ && p.as_double() > 0.0) {
+              RCLCPP_WARN(
+                logger_,
+                "SafeEscapeController[%s]: vx_min = %.3f > 0 with se_enabled: the robot cannot "
+                "stop or reverse, so the escape cannot act. Set vx_min <= 0.",
+                name_.c_str(), p.as_double());
+            }
           } else if (p.get_name() == name_ + ".wz_max") {
             fc_.w_max = p.as_double();
           } else {
@@ -281,6 +311,12 @@ void SafeEscapeController::configure(
       viz_pub_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(
         name_ + "/se_markers", rclcpp::QoS(1));
     }
+  }
+
+  // The escape path handed to MPPI while entrapped (RViz: what the escape heads for).
+  if (auto node = parent_.lock()) {
+    escape_path_pub_ = node->create_publisher<nav_msgs::msg::Path>(
+      name_ + "/se_escape_path", rclcpp::QoS(1));
   }
 
   // Failure visibility on /diagnostics (the aggregator's conventional topic).
@@ -421,6 +457,9 @@ void SafeEscapeController::activate()
   if (viz_pub_) {
     viz_pub_->on_activate();
   }
+  if (escape_path_pub_) {
+    escape_path_pub_->on_activate();
+  }
   if (diag_pub_) {
     diag_pub_->on_activate();
     if (auto node = parent_.lock()) {
@@ -440,15 +479,19 @@ void SafeEscapeController::deactivate()
   if (viz_pub_) {
     viz_pub_->on_deactivate();
   }
+  if (escape_path_pub_) {
+    escape_path_pub_->on_deactivate();
+  }
   MPPIController::deactivate();
 }
 
 void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
 {
-  handNominalPath(path);
   std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
   global_plan_ = path;
   if (path.poses.empty()) {
+    escape_ = EscapeState{};
+    handNominalPath(path);
     return;
   }
   const auto & g = path.poses.back().pose.position;
@@ -467,9 +510,17 @@ void SafeEscapeController::setPlan(const nav_msgs::msg::Path & path)
     // Replanned path to the same goal: obstacle tracks, the stall count and the
     // anchor path are task state. The new path is only a candidate anchor.
     progress_.offerReplan(path);
+    // While the escape path is substituted, the BT path stays here (progress,
+    // near-goal test) and MPPI keeps following the escape path.
+    if (!escape_.active) {
+      handNominalPath(path);
+    }
     return;
   }
-  // New goal or new task => reset the per-task escape/tracking state.
+  // New goal or new task => reset the per-task escape/tracking state, and give
+  // MPPI the new path.
+  escape_ = EscapeState{};
+  handNominalPath(path);
   progress_.startTask(path);
   detector_.reset();
   tracker_.reset();
@@ -500,10 +551,40 @@ void SafeEscapeController::reset()
   last_tracked_.clear();
   multi_.reset();
   progress_.reset();
+  escape_ = EscapeState{};
+  prev_entrapped_ = false;
   has_stamp_ = false;
   has_goal_ = false;
   if (shared_) {
     shared_->entrapped.store(false, std::memory_order_relaxed);
+  }
+}
+
+bool SafeEscapeController::planFromRobot(
+  const geometry_msgs::msg::PoseStamped & robot_pose, tf2::Transform & out) const
+{
+  out = tf2::Transform::getIdentity();
+  const std::string & plan_frame = global_plan_.header.frame_id;
+  if (plan_frame.empty() || plan_frame == robot_pose.header.frame_id) {
+    return true;
+  }
+  try {
+    const auto t = tf_buffer_->lookupTransform(
+      plan_frame, robot_pose.header.frame_id, tf2::TimePointZero);
+    out = tf2::Transform(
+      tf2::Quaternion(
+        t.transform.rotation.x, t.transform.rotation.y,
+        t.transform.rotation.z, t.transform.rotation.w),
+      tf2::Vector3(
+        t.transform.translation.x, t.transform.translation.y,
+        t.transform.translation.z));
+    return true;
+  } catch (const tf2::TransformException & e) {
+    RCLCPP_WARN_THROTTLE(
+      logger_, steady_clock_, 2000,
+      "SE: no transform %s -> %s (%s); entrapment detection holds its state",
+      robot_pose.header.frame_id.c_str(), plan_frame.c_str(), e.what());
+    return false;
   }
 }
 
@@ -519,35 +600,21 @@ SafeEscapeController::PlanFrameState SafeEscapeController::robotInPlanFrame(
   out.plan_y = state.y;
   out.goal_xy = Eigen::Vector2d(state.x, state.y);
   out.ok = true;
-  if (!global_plan_.poses.empty()) {
-    const auto & g = global_plan_.poses.back().pose.position;
-    out.goal_xy = Eigen::Vector2d(g.x, g.y);
-    const std::string & plan_frame = global_plan_.header.frame_id;
-    if (!plan_frame.empty() && plan_frame != robot_pose.header.frame_id) {
-      try {
-        const auto t = tf_buffer_->lookupTransform(
-          plan_frame, robot_pose.header.frame_id, tf2::TimePointZero);
-        const tf2::Transform plan_from_robot(
-          tf2::Quaternion(
-            t.transform.rotation.x, t.transform.rotation.y,
-            t.transform.rotation.z, t.transform.rotation.w),
-          tf2::Vector3(
-            t.transform.translation.x, t.transform.translation.y,
-            t.transform.translation.z));
-        const tf2::Vector3 r = plan_from_robot * tf2::Vector3(state.x, state.y, 0.0);
-        out.plan_x = r.x();
-        out.plan_y = r.y();
-        const tf2::Vector3 gr = plan_from_robot.inverse() * tf2::Vector3(g.x, g.y, 0.0);
-        out.goal_xy = Eigen::Vector2d(gr.x(), gr.y());
-      } catch (const tf2::TransformException & e) {
-        out.ok = false;
-        RCLCPP_WARN_THROTTLE(
-          logger_, steady_clock_, 2000,
-          "SE: no transform %s -> %s (%s); entrapment detection holds its state",
-          robot_pose.header.frame_id.c_str(), plan_frame.c_str(), e.what());
-      }
-    }
+  if (global_plan_.poses.empty()) {
+    return out;
   }
+  const auto & g = global_plan_.poses.back().pose.position;
+  out.goal_xy = Eigen::Vector2d(g.x, g.y);
+  tf2::Transform plan_from_robot;
+  if (!planFromRobot(robot_pose, plan_from_robot)) {
+    out.ok = false;
+    return out;
+  }
+  const tf2::Vector3 r = plan_from_robot * tf2::Vector3(state.x, state.y, 0.0);
+  out.plan_x = r.x();
+  out.plan_y = r.y();
+  const tf2::Vector3 gr = plan_from_robot.inverse() * tf2::Vector3(g.x, g.y, 0.0);
+  out.goal_xy = Eigen::Vector2d(gr.x(), gr.y());
   return out;
 }
 
@@ -587,11 +654,201 @@ bool SafeEscapeController::updateEntrapment(
     prev_entrapped_ = entrapped;
     if (entrapped) {
       counters_.escape_entries.fetch_add(1);
+      escape_.has_stall = true;  // costmap frame: the pose passed by the caller
+      escape_.stall_x = state.x;
+      escape_.stall_y = state.y;
     }
   }
   counters_.entrapped.store(entrapped);
   counters_.cycles.fetch_add(1);
   return entrapped;
+}
+
+void SafeEscapeController::manageEscapePath(const geometry_msgs::msg::PoseStamped & robot_pose)
+{
+  nav_msgs::msg::Path to_hand;
+  nav_msgs::msg::Path to_publish;
+  bool hand = false;
+  bool publish = false;
+  {
+    std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+    const bool want = se_enabled_ && escape_substitution_ && prev_entrapped_ &&
+      !global_plan_.poses.empty();
+    if (!want) {
+      if (escape_.active) {
+        // The escape ended (or was switched off): MPPI gets the BT path back.
+        escape_ = EscapeState{};
+        if (!global_plan_.poses.empty()) {
+          to_hand = global_plan_;
+          hand = true;
+        }
+        to_publish.header.frame_id = global_plan_.header.frame_id;
+        to_publish.header.stamp = parent_.lock() ? parent_.lock()->now() : rclcpp::Time();
+        publish = true;
+      }
+    } else {
+      const double x = robot_pose.pose.position.x;
+      const double y = robot_pose.pose.position.y;
+      bool need = !escape_.active;
+      std::string why = "entrapped";
+      if (escape_.active) {
+        ++escape_.cycles;
+        const int cycle_limit =
+          std::max(1, static_cast<int>(std::lround(escape_reselect_period_ * controller_frequency_)));
+        if (std::hypot(escape_.wx - x, escape_.wy - y) <= escape_reselect_radius_) {
+          need = true;
+          why = "waypoint reached";
+        } else if (escape_.cycles >= cycle_limit) {
+          need = true;
+          why = "waypoint timeout";
+        } else {
+          // Movement watchdog: the optimizer may not squeeze along the path.
+          if (std::hypot(x - escape_.ref_x, y - escape_.ref_y) >= escape_stall_distance_) {
+            escape_.ref_x = x;
+            escape_.ref_y = y;
+            escape_.ref_cycles = 0;
+          } else {
+            ++escape_.ref_cycles;
+          }
+          const int stall_limit = std::max(
+            1, static_cast<int>(std::lround(escape_stall_time_ * controller_frequency_)));
+          if (escape_.ref_cycles >= stall_limit) {
+            need = true;
+            why = "no movement";
+          } else {
+            nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+            std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(
+              *(costmap->getMutex()));
+            if (segmentBlocked(*costmap, x, y, escape_.wx, escape_.wy)) {
+              need = true;
+              why = "waypoint blocked";
+            }
+          }
+        }
+        if (need && why != "waypoint reached") {
+          // This waypoint did not work: later hops must not lead to it again.
+          escape_.failed.emplace_back(escape_.wx, escape_.wy);
+          while (escape_.failed.size() > 6) {
+            escape_.failed.erase(escape_.failed.begin());
+          }
+        }
+      }
+      if (need) {
+        RobotState state;
+        state.x = x;
+        state.y = y;
+        const PlanFrameState plan_frame = robotInPlanFrame(robot_pose, state);
+        tf2::Transform plan_from_robot;
+        if (plan_frame.ok && planFromRobot(robot_pose, plan_from_robot)) {
+          const double goal_bearing =
+            std::atan2(plan_frame.goal_xy.y() - y, plan_frame.goal_xy.x() - x);
+          std::vector<AvoidPoint> avoid;
+          if (escape_.has_stall) {
+            AvoidPoint a;
+            a.bearing = std::atan2(escape_.stall_y - y, escape_.stall_x - x);
+            a.distance = std::hypot(escape_.stall_x - x, escape_.stall_y - y);
+            a.radius = escape_avoid_radius_;
+            avoid.push_back(a);
+          }
+          for (const auto & f : escape_.failed) {
+            AvoidPoint a;
+            a.bearing = std::atan2(f.second - y, f.first - x);
+            a.distance = std::hypot(f.second - y, f.first - x);
+            a.radius = escape_avoid_hop_radius_;
+            avoid.push_back(a);
+          }
+          for (const auto & o : escape_.origins) {
+            AvoidPoint a;
+            a.bearing = std::atan2(o.second - y, o.first - x);
+            a.distance = std::hypot(o.second - y, o.first - x);
+            a.radius = escape_avoid_hop_radius_;
+            avoid.push_back(a);
+          }
+          std::optional<double> previous;
+          if (escape_.has_prev) {
+            previous = escape_.prev_bearing;
+          }
+          HorizonGap gap;
+          {
+            nav2_costmap_2d::Costmap2D * costmap = costmap_ros_->getCostmap();
+            std::unique_lock<nav2_costmap_2d::Costmap2D::mutex_t> costmap_lock(
+              *(costmap->getMutex()));
+            gap = findHorizonGap(
+              *costmap, x, y, goal_bearing, gap_num_rays_, gap_max_range_,
+              gap_min_clearance_, previous, escape_hysteresis_, avoid);
+          }
+          const double dist = std::min(gap.clearance - robot_radius_ - 0.05, escape_waypoint_cap_);
+          if (gap.found && dist >= 0.2) {
+            EscapeState next = escape_;
+            next.active = true;
+            next.wx = x + dist * std::cos(gap.bearing);
+            next.wy = y + dist * std::sin(gap.bearing);
+            next.bearing = gap.bearing;
+            next.clearance = gap.clearance;
+            next.cycles = 0;
+            next.ref_x = x;
+            next.ref_y = y;
+            next.ref_cycles = 0;
+            next.hop = escape_.hop + 1;
+            next.has_prev = true;
+            next.prev_bearing = gap.bearing;
+            // This hop starts here: later hops must not lead back to it.
+            next.origins.emplace_back(x, y);
+            while (static_cast<int>(next.origins.size()) > std::max(escape_avoid_hops_, 0)) {
+              next.origins.erase(next.origins.begin());
+            }
+            // The path, in the plan frame: from the robot to the waypoint.
+            const tf2::Vector3 p0 = plan_from_robot * tf2::Vector3(x, y, 0.0);
+            const tf2::Vector3 p1 = plan_from_robot * tf2::Vector3(next.wx, next.wy, 0.0);
+            const double yaw = std::atan2(p1.y() - p0.y(), p1.x() - p0.x());
+            to_hand.header.frame_id = global_plan_.header.frame_id.empty() ?
+              robot_pose.header.frame_id : global_plan_.header.frame_id;
+            if (auto node = parent_.lock()) {
+              to_hand.header.stamp = node->now();
+            }
+            const int n = std::max(1, static_cast<int>(std::ceil(dist / 0.05)));
+            for (int i = 0; i <= n; ++i) {
+              geometry_msgs::msg::PoseStamped pose;
+              pose.header = to_hand.header;
+              pose.pose.position.x = p0.x() + (p1.x() - p0.x()) * i / n;
+              pose.pose.position.y = p0.y() + (p1.y() - p0.y()) * i / n;
+              pose.pose.orientation.z = std::sin(0.5 * yaw);
+              pose.pose.orientation.w = std::cos(0.5 * yaw);
+              to_hand.poses.push_back(pose);
+            }
+            escape_ = next;
+            hand = true;
+            to_publish = to_hand;
+            publish = true;
+            counters_.escape_hops.fetch_add(1);
+            counters_.escape_bearing.store(gap.bearing);
+            counters_.escape_clearance.store(gap.clearance);
+            RCLCPP_INFO(
+              logger_,
+              "SE escape waypoint %d (%s): from (%.2f, %.2f) to (%.2f, %.2f); bearing %.0f deg, "
+              "clearance %.2f m, %s%s; goal bearing %.0f deg",
+              escape_.hop, why.c_str(), x, y, escape_.wx, escape_.wy, gap.bearing * 180.0 / M_PI,
+              gap.clearance, gap.horizon ? "horizon ray" : "longest ray (no horizon ray)",
+              gap.kept_previous ? ", previous bearing kept" : "", goal_bearing * 180.0 / M_PI);
+          }
+        }
+      } else {
+        RCLCPP_INFO_THROTTLE(
+          logger_, steady_clock_, 2000,
+          "SE escape heading: waypoint %d at (%.2f, %.2f), bearing %.0f deg, clearance %.2f m; "
+          "robot at (%.2f, %.2f)",
+          escape_.hop, escape_.wx, escape_.wy, escape_.bearing * 180.0 / M_PI, escape_.clearance,
+          x, y);
+      }
+    }
+  }
+  // MPPI's setPlan takes no lock of ours; the escape path is handed outside ours.
+  if (hand) {
+    handNominalPath(to_hand);
+  }
+  if (publish && escape_path_pub_ && escape_path_pub_->is_activated()) {
+    escape_path_pub_->publish(to_publish);
+  }
 }
 
 geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
@@ -613,6 +870,7 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   // (the robot did not progress), then rethrow, so Nav2's failure handling
   // sees the same exception as before. Only NoValidControl takes this path: a
   // TF failure or another error is not evidence of a stall.
+  manageEscapePath(robot_pose);
   geometry_msgs::msg::TwistStamped cmd;
   try {
     cmd = nominalCommand(robot_pose, robot_speed, goal_checker);
@@ -812,6 +1070,9 @@ void SafeEscapeController::publishDiagnostics()
     st.message = "CBF QP failing continuously for more than " +
       std::to_string(kQpFailureErrorAfterSec).substr(0, 3) +
       " s; forward velocity held at 0";
+  } else if (vxMinBlocksReversal()) {
+    st.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
+    st.message = "vx_min > 0: the robot cannot stop or reverse; escape cannot act";
   } else if (new_qp_failed > 0) {
     st.level = diagnostic_msgs::msg::DiagnosticStatus::WARN;
     st.message = "CBF QP failed in the last second; forward velocity forced to 0";
@@ -837,6 +1098,10 @@ void SafeEscapeController::publishDiagnostics()
   kv("tracks_dropped", std::to_string(counters_.tracks_dropped.load()));
   kv("escape_entries", std::to_string(counters_.escape_entries.load()));
   kv("base_failures", std::to_string(counters_.base_failures.load()));
+  kv("escape_hops", std::to_string(counters_.escape_hops.load()));
+  kv("escape_bearing_deg", std::to_string(counters_.escape_bearing.load() * 180.0 / M_PI));
+  kv("escape_clearance", std::to_string(counters_.escape_clearance.load()));
+  kv("vx_min", std::to_string(vx_min_param_.load()));
   kv("entrapped", counters_.entrapped.load() ? "true" : "false");
   kv("cbf_obstacles", std::to_string(counters_.cbf_obstacles.load()));
   kv("alpha", std::to_string(counters_.alpha.load()));

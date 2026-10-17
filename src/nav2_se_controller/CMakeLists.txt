@@ -146,7 +146,8 @@ add_library(se_mppi_core SHARED
   src/static_occupancy_filter.cpp
   src/trajectory_predictor.cpp
   src/dynamic_obstacle_tracker.cpp
-  src/path_progress.cpp)
+  src/path_progress.cpp
+  src/opening_search.cpp)
 target_include_directories(se_mppi_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

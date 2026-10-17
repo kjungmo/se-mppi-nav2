@@ -15,6 +15,7 @@
 #include "nav2_se_controller/escape_critic.hpp"
 
 #include <cmath>
+#include <optional>
 
 #include "nav2_se_controller/gap_search.hpp"
 #include "nav2_se_controller/repulsion.hpp"
@@ -46,7 +47,7 @@ void EscapeCritic::initialize()
   getParam(apf_eta_, "apf_eta", 1.0f);
 
   getParam(use_gap_search_, "use_gap_search", true);
-  getParam(gap_weight_, "gap_weight", 4.0f);
+  getParam(gap_weight_, "gap_weight", 0.0f);
   getParam(gap_power_, "gap_power", 1);
   getParam(gap_num_rays_, "gap_num_rays", 36);
   getParam(gap_max_range_, "gap_max_range", 2.0f);
@@ -78,6 +79,7 @@ void EscapeCritic::score(mppi::CriticData & data)
   // --- Conditional repulsive augmentation (detect-and-switch). ---
   // always_on_ (ablation baseline) injects the escape cost every cycle.
   const bool injecting = entrapped || always_on_;
+  const bool log_begin = injecting && !prev_injecting_;
   if (injecting != prev_injecting_) {
     // Runtime evidence for the live A/B: prove the escape cost actually enters
     // the MPPI objective (and when it stops).
@@ -100,8 +102,9 @@ void EscapeCritic::score(mppi::CriticData & data)
       repulsion_weight_, repulsion_power_);
   }
 
-  // --- Free-space gap attraction: steer toward an opening that still heads
-  //     roughly toward the goal (U-shaped / non-convex trap escape). ---
+  // --- Free-space gap: log the opening the horizon-ray rule selects (BEGIN and
+  //     every 2 s while injecting), and, for ablation only (gap_weight > 0), add
+  //     the legacy gap bearing cost. ---
   if (use_gap_search_ && data.trajectories.x.shape(1) > 0) {
     const double rx = static_cast<double>(data.trajectories.x(0, 0));
     const double ry = static_cast<double>(data.trajectories.y(0, 0));
@@ -115,13 +118,34 @@ void EscapeCritic::score(mppi::CriticData & data)
     const double goal_y = data.goal.position.y;
 #endif
     const double goal_bearing = std::atan2(goal_y - ry, goal_x - rx);
-    const nav2_se_controller::EscapeGap gap = nav2_se_controller::findEscapeGap(
-      *costmap_, rx, ry, goal_bearing,
-      gap_num_rays_, gap_max_range_, gap_min_clearance_);
-    if (gap.found) {
-      data.costs += nav2_se_controller::computeGapAttractionCosts(
-        data.trajectories.x, data.trajectories.y, rx, ry, gap.bearing,
-        gap_weight_, gap_power_);
+    const double now_s = steady_clock_.now().seconds();
+    if (log_begin || now_s - last_gap_log_s_ >= 2.0) {
+      last_gap_log_s_ = now_s;
+      const nav2_se_controller::HorizonGap hg = nav2_se_controller::findHorizonGap(
+        *costmap_, rx, ry, goal_bearing, gap_num_rays_, gap_max_range_, gap_min_clearance_,
+        std::nullopt, 0.0);
+      if (hg.found) {
+        RCLCPP_INFO(
+          logger_,
+          "EscapeCritic[%s] selected opening: bearing %.0f deg, clearance %.2f m, %s "
+          "(%zu horizon rays) from (%.2f, %.2f); goal bearing %.0f deg",
+          name_.c_str(), hg.bearing * 180.0 / M_PI, hg.clearance,
+          hg.horizon ? "horizon ray" : "longest ray", hg.candidates, rx, ry,
+          goal_bearing * 180.0 / M_PI);
+      } else {
+        RCLCPP_INFO(
+          logger_, "EscapeCritic[%s] no opening found from (%.2f, %.2f)", name_.c_str(), rx, ry);
+      }
+    }
+    if (gap_weight_ > 0.0f) {
+      const nav2_se_controller::EscapeGap gap = nav2_se_controller::findEscapeGap(
+        *costmap_, rx, ry, goal_bearing,
+        gap_num_rays_, gap_max_range_, gap_min_clearance_);
+      if (gap.found) {
+        data.costs += nav2_se_controller::computeGapAttractionCosts(
+          data.trajectories.x, data.trajectories.y, rx, ry, gap.bearing,
+          gap_weight_, gap_power_);
+      }
     }
   }
 }

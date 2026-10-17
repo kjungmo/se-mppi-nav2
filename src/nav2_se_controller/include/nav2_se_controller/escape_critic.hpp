@@ -72,15 +72,22 @@ protected:
   float apf_influence_dist_{0.6f};  // APF d0 (m)
   float apf_eta_{1.0f};             // APF gain
 
-  // free-space gap search (temporary escape subgoal toward an opening)
+  // free-space gap search. The gap bearing cost (C_gap) is OFF by default
+  // (gap_weight 0): with the legacy "closest viable ray to the goal" rule it
+  // steered a trapped robot toward a back corner (campaign 1, ROOT_CAUSE.md
+  // section 4). The escape now routes through the controller's escape path
+  // (SafeEscapeController, horizon-ray selection); C_gap stays for ablation.
+  // The critic still logs the horizon-ray selection when it injects.
   bool use_gap_search_{true};
-  float gap_weight_{4.0f};
+  float gap_weight_{0.0f};
   int gap_power_{1};
   int gap_num_rays_{36};
   float gap_max_range_{2.0f};
   float gap_min_clearance_{0.6f};
 
   bool prev_injecting_{false};  // for BEGIN/END injection transition logs
+  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  double last_gap_log_s_{-1.0e9};  // steady seconds of the last selection log
 };
 
 }  // namespace critics

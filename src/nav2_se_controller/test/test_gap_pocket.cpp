@@ -353,7 +353,7 @@ TEST(GapPocket, AtTheMouthTheRayBackToTheStallPoseIsExcluded)
     avoid.bearing = std::atan2(sy - ry, sx - rx);
     avoid.distance = std::hypot(sx - rx, sy - ry);
     avoid.radius = 0.6;
-    const HorizonGap with = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, avoid);
+    const HorizonGap with = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid});
     ASSERT_TRUE(with.found);
     std::printf(
       "GAP at the mouth (%.1f, 0.0) avoiding the stall pose: bearing %.0f deg, clearance "
@@ -384,13 +384,13 @@ TEST(GapSelection, AvoidedPlaceExcludesTheRaysThatPassNearIt)
   avoid.bearing = 0.0;
   avoid.distance = 1.0;
   avoid.radius = 0.5;
-  auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, avoid);
+  auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid});
   ASSERT_TRUE(g.found);
   EXPECT_NEAR(std::abs(g.bearing), kPi / 4.0, 1e-9) << "0 deg excluded; 45 deg passes at 0.707 m";
   EXPECT_EQ(g.candidates, 7u);
   // A larger radius also excludes 45 deg (1.0 * sin 45 = 0.707 < 0.8).
   avoid.radius = 0.8;
-  g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, avoid);
+  g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid});
   EXPECT_NEAR(std::abs(g.bearing), kPi / 2.0, 1e-9);
   EXPECT_EQ(g.candidates, 5u);
 }
@@ -402,19 +402,19 @@ TEST(GapSelection, AvoidedPlaceBehindTheRobotOrBeyondTheRayDoesNotExclude)
   avoid.bearing = kPi;  // behind: the ray at 180 deg would lead to it, but the goal is at 0
   avoid.distance = 1.0;
   avoid.radius = 0.5;
-  auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, avoid);
+  auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid});
   EXPECT_NEAR(g.bearing, 0.0, 1e-9) << "rays toward the goal are untouched";
   // The place at 1.0 m with rays of 0.3 m: beyond the ray plus the radius.
   auto short_rays = ring(
     {{0.3, true}, {0.3, true}, {0.3, true}, {0.3, true}, {0.3, true}, {0.3, true},
       {0.3, true}, {0.3, true}});
   avoid.bearing = 0.0;
-  g = selectHorizonGap(short_rays, 0.0, 0.2, std::nullopt, 0.5, avoid);
+  g = selectHorizonGap(short_rays, 0.0, 0.2, std::nullopt, 0.5, {avoid});
   EXPECT_NEAR(g.bearing, 0.0, 1e-9) << "the ray ends before the place";
   // Within the radius of the place the exclusion is not applied.
   avoid.distance = 0.4;
   avoid.radius = 0.6;
-  g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, avoid);
+  g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid});
   EXPECT_NEAR(g.bearing, 0.0, 1e-9) << "the robot is at the stall pose";
 }
 
@@ -428,7 +428,7 @@ TEST(GapSelection, AvoidedPlaceIsIgnoredWhenItLeavesNothing)
   avoid.bearing = 0.0;
   avoid.distance = 1.0;
   avoid.radius = 0.5;
-  const auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, avoid);
+  const auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid});
   ASSERT_TRUE(g.found);
   EXPECT_NEAR(g.bearing, 0.0, 1e-9);
 }
@@ -441,14 +441,33 @@ TEST(GapSelection, AvoidedPlaceAlsoGuardsThePreviousBearingAndTheLongestRayFallb
   avoid.bearing = 0.0;
   avoid.distance = 1.0;
   avoid.radius = 0.5;
-  auto g = selectHorizonGap(rays, 0.0, 0.6, 0.0, 10.0, avoid);
+  auto g = selectHorizonGap(rays, 0.0, 0.6, 0.0, 10.0, {avoid});
   EXPECT_FALSE(g.kept_previous);
   EXPECT_NEAR(std::abs(g.bearing), kPi / 4.0, 1e-9);
   // No horizon rays: the longest ray is taken, but not the one toward the place.
   auto blocked = ring(
     {{0.7, false}, {0.8, false}, {0.9, false}, {1.0, false}, {1.9, false}, {1.1, false},
       {0.9, false}, {0.8, false}});
-  g = selectHorizonGap(blocked, 0.0, 0.6, std::nullopt, 0.5, avoid);
+  g = selectHorizonGap(blocked, 0.0, 0.6, std::nullopt, 0.5, {avoid});
   ASSERT_TRUE(g.found);
   EXPECT_NEAR(g.clearance, 1.1, 1e-9) << "the 1.9 m ray at 0 deg leads to the place";
+}
+
+TEST(GapSelection, SeveralAvoidedPlacesAreAllApplied)
+{
+  const auto rays = allHorizon8();
+  AvoidPoint a;
+  a.bearing = 0.0;
+  a.distance = 1.0;
+  a.radius = 0.5;
+  AvoidPoint b;
+  b.bearing = kPi / 4.0;
+  b.distance = 1.0;
+  b.radius = 0.5;
+  const auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {a, b});
+  ASSERT_TRUE(g.found);
+  // 0 deg (a), 45 deg (b: passes at 0), and -45 deg (a: 0.707 > 0.5 ok) -> -45 deg is
+  // the closest to the goal that is left; 90 deg passes b at 0.707 (not excluded).
+  EXPECT_NEAR(g.bearing, -kPi / 4.0, 1e-9);
+  EXPECT_EQ(g.candidates, 6u);
 }

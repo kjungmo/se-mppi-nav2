@@ -308,3 +308,16 @@ TEST(PathProgressTracker, ThresholdsAreInclusiveAtExactlyRepresentableValues)
   EXPECT_EQ(t.update(1.25, 1.0), 2u) << "exactly the adoption distance adopts";
   EXPECT_EQ(t.adoptions(), 1u);
 }
+
+TEST(PathProgressTracker, TheCandidateBaseIsTheRobotsArcAtTheFirstUpdate)
+{
+  // A replan that does not start at the robot: it starts 0.3 m below it.
+  auto t = makeTracker(polyline({{0, 0}, {5, 0}}));
+  t.update(1.0, 0.0);
+  t.offerReplan(polyline({{1.0, -0.3}, {1.0, 2.0}, {5.0, 2.0}, {5.0, 0.0}}));
+  t.update(1.0, 0.0);  // the robot is 0.3 m along the candidate: that is the base
+  t.update(1.0, 0.45);
+  EXPECT_EQ(t.adoptions(), 0u) << "0.45 m since the replan arrived, not 0.75 m";
+  t.update(1.0, 0.55);
+  EXPECT_EQ(t.adoptions(), 1u);
+}
