@@ -300,6 +300,12 @@ if(BUILD_TESTING)
   ament_target_dependencies(test_closed_loop_utrap
     nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
 
+  # The held-out campaign world name must not appear outside experiments/campaign2/.
+  get_filename_component(SE_SOURCE_REAL "${CMAKE_CURRENT_SOURCE_DIR}" REALPATH)
+  get_filename_component(SE_REPO_ROOT "${SE_SOURCE_REAL}/../.." ABSOLUTE)
+  ament_add_gtest(test_heldout_guard test/deployment/test_heldout_guard.cpp)
+  target_compile_definitions(test_heldout_guard PRIVATE SE_REPO_ROOT="${SE_REPO_ROOT}")
+
   ament_add_gtest(test_task_boundary test/deployment/test_task_boundary.cpp)
   target_include_directories(test_task_boundary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
