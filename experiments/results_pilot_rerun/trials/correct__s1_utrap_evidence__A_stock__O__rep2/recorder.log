@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/results_pilot_rerun/recorder.py", line 130, in <module>
+    main()
+  File "/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/results_pilot_rerun/recorder.py", line 121, in main
+    rclpy.spin(node)
+  File "/home/cona/micromamba/envs/semppi_rerun/lib/python3.12/site-packages/rclpy/__init__.py", line 247, in spin
+    executor.spin_once()
+  File "/home/cona/micromamba/envs/semppi_rerun/lib/python3.12/site-packages/rclpy/executors.py", line 926, in spin_once
+    self._spin_once_impl(timeout_sec)
+  File "/home/cona/micromamba/envs/semppi_rerun/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cona/micromamba/envs/semppi_rerun/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/cona/micromamba/envs/semppi_rerun/lib/python3.12/site-packages/rclpy/executors.py", line 757, in _wait_for_ready_callbacks
+    wait_set = _rclpy.WaitSet(
+               ^^^^^^^^^^^^^^^
+rclpy._rclpy_pybind11.RCLError: failed to initialize wait set: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at /home/runner/conda-bld/bld/rattler-build_ros2-rcl_1791433044/work/ros2-rcl/src/work/src/rcl/wait.c:130

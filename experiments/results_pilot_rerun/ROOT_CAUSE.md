@@ -16,7 +16,7 @@ the same log strings; its exact source revision was not compared).
 |---|---|---|---|---|
 | `P` (pilot's parameters, `vx_min: 0.1`) | — | 20 | 0 | robot cannot stop, creeps into the back wall, MPPI's optimizer then fails every cycle and the controller outputs zero for the rest of the run |
 | `V` (`vx_min: -0.35`) | reversing allowed | 12 | 0 | robot stops 0.3–0.45 m before the back wall; stock MPPI stands still there (a true local minimum, no optimizer failure); SE-MPPI enters escape 9–25 times per run but never leaves the pocket |
-| `O` (first committed MPPI block) | see `PREREG.md` | 12 | see §6 | see §6 |
+| `O` (first committed MPPI block: 20 Hz, 56 steps, 2,000 rollouts, `vx_min: -0.35`, inflation 0.70 m) | see `PREREG.md` | 12 | 0 | robot stops 0.48–0.63 m before the back wall; stock stands still; SE-MPPI enters escape 18–31 times per run, never leaves the pocket |
 | affected binary, `P` | the pilot's build | 4 | 0 | in `s1_utrap` reproduces the pilot: creeps at `vx_min` from the start, never enters the pocket |
 
 Four defects, in the order in which they act:
@@ -117,8 +117,11 @@ An exception from line 506 therefore leaves the function before line 571: the
 stall counter does not move, entrapment is never declared, the critic never
 injects escape costs, and the coordinator never raises the gain.
 
-Unit test (scratch, `test_root_cause.cpp`, built against this commit; not part
-of the branch): `RootCause.WhenTheBaseControllerThrowsTheDetectorNeverAdvances`
+Unit test (scratch file
+`/home/cona/.claude/jobs/c7546c85/tmp/subM/rc_test/test_root_cause.cpp`, built
+on 2026-10-18 against commit be44115 of this branch in a copy of the package;
+not added to the branch, because the registered trials ran on this commit and
+the test belongs with a fix): `RootCause.WhenTheBaseControllerThrowsTheDetectorNeverAdvances`
 fills the costmap with lethal cells, steps the controller 60 times at a fixed
 pose with a stall window of 5, and checks that every cycle throws and that the
 controller is not entrapped; the control test on free ground declares
@@ -136,7 +139,19 @@ ON 17.0 s, OFF 18.5 s: the reconstruction matches the log.
 
 ### 2.1 Scratch unit test results
 
-See the end of this file (filled in after the build).
+Built and run on 2026-10-18 in the `correct` environment
+(`nav2_mppi_controller` 1.3.13 `_25`), stall window 5, stock critics
+`ConstraintCritic, CostCritic, GoalCritic, PathFollowCritic`:
+
+| Test | Result |
+|---|---|
+| `ControlStationaryRobotOnFreeGroundIsDeclaredEntrapped` | passes: no cycle throws, entrapment declared |
+| `WhenTheBaseControllerThrowsTheDetectorNeverAdvances` | passes: 60 of 60 cycles threw `Optimizer fail to compute path`, and the controller was not entrapped after 60 stalled cycles |
+| `ReplanFromTheRobotPoseLetsOneCellOfMotionClearEntrapment` | passes: robot reached x = 1.0 m, backed to 0.6 m and stalled (entrapped); after a replan from 0.6 m, moving to 0.65 m cleared entrapment although 0.65 < 1.0 |
+| `WithoutReplanTheSameMotionDoesNotClearEntrapment` | passes: the same motion without the replan leaves the robot entrapped |
+
+So both mechanisms (defects 2 and 3) are reproduced in isolation, without
+Gazebo.
 
 ## 3. Why the 2D Python mirror does not show this
 
@@ -199,4 +214,38 @@ about 1.2 h). Success criterion fixed in advance: ground-truth arrival within
 
 ## 6. Set `O` (first committed MPPI block)
 
-Filled in after the `O` part finished (below).
+Set `O` restores the MPPI block of the first committed parameter file
+(20 Hz, 56 steps of 0.05 s, 2,000 rollouts, `vx_min: -0.35`, angle-critic
+thresholds 0.5, inflation 0.70 m local and global). 12 valid trials, all on
+2026-10-14 and 2026-10-18, kernel 6.18.54.1.
+
+* **Outcome.** 0 of 12 reached the goal. No chassis contact (closest
+  0.48–0.63 m), no optimizer failure in any trial. With the wider inflation the
+  robot stops further from the back wall (ground-truth x = 0.07–0.23 m) than in
+  `V` (0.18–0.29 m).
+* **Stock MPPI** stands still: a true local minimum, as in `V`.
+* **SE-MPPI** enters escape 18–31 times per trial (147 ENTER events in the 6
+  F trials; 132 closed episodes, median 2.4 s, longest 51 s). Every EXIT is at
+  `progress_idx` 1 or 2: defect 3 again. The robot never gets further than
+  x = 0.23 m and never turns back towards the mouth.
+* **Compute budget.** The 20 Hz, 2,000-rollout budget that the June notes said
+  this host could not sustain ran at a real-time factor of 0.93–0.97, with 0 to
+  9 `Control loop missed its desired rate` warnings per trial (26 in 12 trials;
+  `P` had 23 in 20 trials at 10 Hz). One trial (`correct__s1_utrap__F_se_full__O__rep1`)
+  had a 10 s window at real-time factor 0.80 and 9 missed cycles; its outcome
+  matched the others. Under the registered rule ("kept only if `O` shows missed
+  control cycles and a worse outcome than `P`") the paper's "compute budget"
+  lesson is not supported by these trials and is withdrawn.
+
+## 7. Per-set counts (valid registered trials)
+
+| Environment | Set | Trials | Reached | Contact | Optimizer failures | Escape ENTER (F trials with any) |
+|---|---|---|---|---|---|---|
+| correct (1.3.13 `_25`) | `P` | 20 | 0 | 14 | in all 20 | 1 of 10 |
+| correct | `V` | 12 | 0 | 0 | none | 6 of 6 |
+| correct | `O` | 12 | 0 | 0 | none | 6 of 6 |
+| affected (1.3.11 `_16`, guard overridden) | `P` | 4 | 0 | 4 | in all 4 (9 and 73 in `s1_utrap`, about 2,940 in `s1_utrap_evidence`) | 0 of 2 |
+
+Real-time factor 0.93–0.97 over every valid drive. `RESULTS.md` has every
+trial, the invalid and interrupted attempts, and the shakedown and calibration
+runs.
