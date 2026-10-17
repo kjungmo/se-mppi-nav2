@@ -113,6 +113,34 @@ def test_rocking_in_place_never_adopts():
     assert tr.adoptions == 0
 
 
+def test_adoption_and_carry_thresholds_are_inclusive():
+    # dyadic numbers: every arc length below is exact in floating point
+    tr = v2m.AnchorProgress((0.0, 0.0), (2.0, 0.0), 0.125, 0.5)
+    tr.replan((0.0, 0.0), (2.0, 0.0))
+    tr.update((0.125, 0.0))                                   # advance == min_advance
+    tr.replan((0.125, 0.0), (2.125, 0.0))                     # carried: 0.125 >= 0.125
+    tr.update((0.5, 0.0))                                     # 0.125 + 0.375 == adopt
+    assert tr.adoptions == 1
+    # just under the carry gate: nothing is carried, 0.375 alone does not adopt
+    tr = v2m.AnchorProgress((0.0, 0.0), (2.0, 0.0), 0.125, 0.5)
+    tr.replan((0.0, 0.0), (2.0, 0.0))
+    tr.update((0.0625, 0.0))
+    tr.replan((0.0625, 0.0), (2.0625, 0.0))
+    tr.update((0.4375, 0.0))                                  # 0.375 + 0 carried
+    assert tr.adoptions == 0
+
+
+def test_backing_off_and_returning_earns_no_advance():
+    tr = v2m.AnchorProgress((0.0, 0.0), (6.0, 0.0), 0.10, 0.5)
+    tr.update((1.0, 0.0))
+    tr.replan((1.0, 0.0), (6.0, 0.0))
+    for x in (1.45, 1.0):                                     # forward 0.45, back to 0
+        tr.update((x, 0.0))
+    tr.replan((1.0, 0.0), (6.0, 0.0))
+    tr.update((1.06, 0.0))
+    assert tr.adoptions == 0
+
+
 def test_polyline_nearest_arc_and_degenerate_path():
     path = v2m.PolylinePath([(0, 0), (1, 0), (1, 1)])
     assert path.length == pytest.approx(2.0)
@@ -158,6 +186,26 @@ def test_open_world_takes_the_ray_closest_to_the_goal():
     world = se.World([], goal=(3.0, 0.0))
     b, free, reached = v2m.select_opening((0, 0), 0.3, world, P)
     assert reached and _angdiff(b, 0.3) <= STEP / 2 + 1e-9
+
+
+def test_hysteresis_equal_to_the_improvement_keeps_the_previous_ray():
+    world = se.World([], goal=(3.0, 0.0))
+    kp = 21                                                   # 3 steps off the goal ray
+    prev = -np.pi + 2 * np.pi * kp / P['gap_num_rays']
+    gain = abs(float(v2m.wrap(prev - 0.0)))                   # a_prev - a_best exactly
+    p = v2m.v2_params(hysteresis=gain)
+    b, _, _ = v2m.select_opening((0, 0), 0.0, world, p, prev_bearing=prev)
+    assert b == pytest.approx(v2m.wrap(prev))                 # equal: keep
+    p = v2m.v2_params(hysteresis=np.nextafter(gain, -np.inf))
+    b, _, _ = v2m.select_opening((0, 0), 0.0, world, p, prev_bearing=prev)
+    assert b == pytest.approx(0.0)                            # just better: switch
+
+
+def test_ray_stops_only_when_clearance_is_below_the_robot_radius():
+    # clearance == robot radius at r = 0.5 is still free; blocked from r = 0.55
+    world = se.World([se.Obstacle(1.0, 0.0, 0.25)], goal=(3.0, 0.0), robot_radius=0.25)
+    _, free, reached = v2m.scan_rays((0.0, 0.0), world, 36, 2.0, 1.5)
+    assert free[18] == pytest.approx(0.55) and not reached[18]
 
 
 def test_hysteresis_boundary():
@@ -281,6 +329,38 @@ def test_release_forgets_the_waypoint_and_the_previous_bearing():
     assert hop.hops == 2 and hop.log[-1][4] == 'first'
 
 
+def test_reselect_radius_boundary_is_exclusive():
+    world = se.World([], goal=(5.0, 0.0))
+    probe = v2m.WaypointHopper(P, 0.1)
+    wp = probe.update(0, np.zeros(2), 0.0, world).copy()
+    d = float(np.hypot(*(wp - np.zeros(2))))
+    hop = v2m.WaypointHopper(v2m.v2_params(reselect_radius=d), 0.1)
+    hop.update(0, np.zeros(2), 0.0, world)
+    hop.update(1, np.zeros(2), 0.0, world)                    # distance == radius
+    assert hop.hops == 1
+    hop = v2m.WaypointHopper(v2m.v2_params(reselect_radius=np.nextafter(d, np.inf)), 0.1)
+    hop.update(0, np.zeros(2), 0.0, world)
+    hop.update(1, np.zeros(2), 0.0, world)                    # distance < radius
+    assert hop.hops == 2
+
+
+def test_waypoint_distance_is_capped():
+    world = se.World([], goal=(5.0, 0.0))
+    hop = v2m.WaypointHopper(v2m.v2_params(gap_max_range=6.0, window_half=6.0), 0.1)
+    wp = hop.update(0, np.zeros(2), 0.0, world)
+    assert np.hypot(*wp) == pytest.approx(2.5)                # min(6 - 0.27, 2.5)
+
+
+def test_waypoint_distance_floor_is_zero():
+    # a ray blocked at 0.1 m: free - 0.22 - 0.05 < 0 is clipped to 0, not negative
+    ring = [se.Obstacle(0.45 * np.cos(a), 0.45 * np.sin(a), 0.2)
+            for a in np.linspace(0, 2 * np.pi, 30, endpoint=False)]
+    world = se.World(ring, goal=(5.0, 0.0))
+    hop = v2m.WaypointHopper(P, 0.1)
+    wp = hop.update(0, np.zeros(2), 0.0, world)
+    assert np.hypot(*wp) == pytest.approx(0.0)
+
+
 def test_hop_off_reselects_every_step():
     world = se.World([], goal=(5.0, 0.0))
     hop = v2m.WaypointHopper(v2m.v2_params(hop=False), 0.1)
@@ -307,6 +387,40 @@ def test_flag_off_keeps_the_v1_behaviour_when_all_rollouts_collide():
     u = m.step(np.array([0.0, 0.0, 0.0]), world)
     assert not m.last_all_collide
     assert np.any(u != 0.0)
+
+
+class _Crafted(se.MPPI):
+    """MPPI whose sampled rollouts are fixed: K trajectories given by the caller."""
+
+    def __init__(self, pts, **kw):
+        super().__init__(batch=pts.shape[0], horizon=pts.shape[1], **kw)
+        self._pts = pts
+
+    def rollout(self, state, noise):
+        return self._pts.copy(), np.zeros((self.K, self.T, 2))
+
+
+def _crafted_pts(K=8, T=5, collide_last_only=True):
+    pts = np.full((K, T, 2), 9.0)                             # far from the obstacle
+    pts[:, -1, :] = 0.0                                       # last point on the obstacle
+    return pts
+
+
+def test_collision_at_any_time_counts_for_every_rollout():
+    # every rollout collides, but only at its last time step
+    world = se.World([se.Obstacle(0.0, 0.0, 0.3)], goal=(3.0, 0.0))
+    m = _Crafted(_crafted_pts())
+    u = m.step(np.array([5.0, 5.0, 0.0]), world, zero_on_all_collide=True)
+    assert m.last_all_collide and np.all(u == 0.0)
+
+
+def test_one_surviving_rollout_prevents_the_zero_command():
+    world = se.World([se.Obstacle(0.0, 0.0, 0.3)], goal=(3.0, 0.0))
+    pts = _crafted_pts()
+    pts[3, -1, :] = 9.0                                       # rollout 3 never collides
+    m = _Crafted(pts)
+    m.step(np.array([5.0, 5.0, 0.0]), world, zero_on_all_collide=True)
+    assert not m.last_all_collide
 
 
 def test_one_free_rollout_is_not_all_colliding():

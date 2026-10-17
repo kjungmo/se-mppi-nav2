@@ -22,6 +22,17 @@ experiments/
 > 마지막 ulp 수준에서 달라질 수 있다 (인용된 값 전부는 버전과 무관하게 정확히
 > 재현됨 — 2026-07-03 검수에서 확인).
 
+## SE-MPPI v2 미러 (선택 기능, 기본값은 논문 v1)
+
+`benchmark2d`와 `prototype`에 v2 탈출 논리가 선택 기능으로 들어 있습니다.
+기본값(`CONFIGS`, `--variant v1`)은 논문 v1 그대로이며, 커밋된 `results_2d/`를 비트 단위로 재현합니다.
+
+- `prototype/se_mppi_v2.py`: 앵커 경로 진행(1 Hz 직선 재계획 모사), 지평선 광선 선택(36개, 2.0 m, 이력 0.5 rad), 고정 경유점 이동(hop), 모든 롤아웃 충돌 시 영 명령.
+- 네 기능은 `configs.make_v2_configs(progress=..., gap_rule=..., hop=..., zero_on_all_collide=...)`로 각각 끕니다.
+- 실행: `python3 -m experiments.benchmark2d.runner --variant v2 --out <새 파일>`. v2는 `results_2d/trials.csv`에 쓰지 못합니다.
+- 스모크 결과와 전체 재실행 명령: `results_2d_v2_smoke/SMOKE.md`. 스모크는 결과가 아닙니다.
+- 시험: `benchmark2d/tests/test_v2_mirror.py`, `test_v2_gap_parity.py`(C++ 지평선 규칙과 광선 한 칸 이내 일치), `test_v1_unchanged.py`.
+
 ## Ablation 구성 → 실제 파라미터 override
 
 기준: `controller_server.FollowPath`. 베이스는

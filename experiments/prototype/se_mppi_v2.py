@@ -105,8 +105,10 @@ class AnchorProgress:
       arc length at the nearest anchor point exceeds the best so far by
       ``min_advance``. A same-goal replan does not touch the anchor.
     * Each replan is a candidate. The tracker measures the advance of the robot
-      along it from its arrival pose; at ``adopt_advance`` the candidate becomes
-      the anchor and a progress event fires.
+      along it from its arrival pose (its arc length at the nearest point, so a
+      robot that backs off and returns has advanced by its net displacement); at
+      ``adopt_advance`` the candidate becomes the anchor and a progress event
+      fires.
     * Mirror reading of "within seconds" for a detour: the BT replans every
       second and a robot cannot move 0.5 m in one second, so a replan inherits
       the advance already made along the previous candidate when that advance
@@ -146,7 +148,9 @@ class AnchorProgress:
             self.best = arc
             self.events += 1
         if self._cand is not None:
-            self._cand_adv = max(self._cand_adv, self._cand.nearest_arc(pose_xy))
+            # displacement along the candidate since its arrival (current, not
+            # the best so far: backing off and returning earns nothing)
+            self._cand_adv = self._cand.nearest_arc(pose_xy)
             if self._carried + self._cand_adv >= self.adopt_advance:
                 self.anchor = self._cand
                 self.best = self.anchor.nearest_arc(pose_xy)
