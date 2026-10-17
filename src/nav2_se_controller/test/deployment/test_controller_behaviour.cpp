@@ -927,6 +927,41 @@ protected:
     controller_->setPlan(bt_path_);
   }
 
+  // The costmap (and the robot pose) in "odom", the plan in "map":
+  // p_map = R(yaw) * p_odom + (tx, 0).
+  void beginInOdom(double tx, double yaw)
+  {
+    Options opt;
+    opt.costmap_frame = "odom";
+    opt.overrides = {rclcpp::Parameter("FollowPath.se_progress_stall_window", 5)};
+    start(opt);
+    drawPocket();
+    geometry_msgs::msg::TransformStamped t;
+    t.header.frame_id = "map";
+    t.header.stamp = node_->now();
+    t.child_frame_id = "odom";
+    t.transform.translation.x = tx;
+    t.transform.rotation.z = std::sin(0.5 * yaw);
+    t.transform.rotation.w = std::cos(0.5 * yaw);
+    tf_->setTransform(t, "test", true);
+    // The BT path in map: odom (-2.6, 0) -> (3, 0).
+    nav_msgs::msg::Path path;
+    path.header.frame_id = "map";
+    path.header.stamp = node_->now();
+    for (int i = 0; i <= 112; ++i) {
+      const double ox = -2.6 + 0.05 * i;
+      geometry_msgs::msg::PoseStamped pose;
+      pose.header = path.header;
+      pose.pose.position.x = tx + std::cos(yaw) * ox;
+      pose.pose.position.y = std::sin(yaw) * ox;
+      pose.pose.orientation.z = std::sin(0.5 * yaw);
+      pose.pose.orientation.w = std::cos(0.5 * yaw);
+      path.poses.push_back(pose);
+    }
+    bt_path_ = path;
+    controller_->setPlan(bt_path_);
+  }
+
   // A pocket of the development family (rotation 0): back face at x = 0.9. The
   // default w13_d18 has its mouth at x = -0.9 and a narrow cone of rays that
   // reach the horizon; the wide w22_d11 has a wide cone.
@@ -1030,6 +1065,49 @@ TEST_F(ControllerEscapePath, TheEscapePathGivenToMppiPointsAtTheMouth)
   EXPECT_NEAR(2.0 * std::atan2(q.z, q.w), bearing, 1e-6);
   EXPECT_EQ(controller_->hops(), 1u);
   EXPECT_EQ(controller_->escapeHop(), 1);
+}
+
+// Frames: the costmap and the robot are in odom, the plan in map. The escape
+// path is given to MPPI in the plan frame, and its bearing is rotated with the
+// transform.
+TEST_F(ControllerEscapePath, TheEscapePathIsInThePlanFrame)
+{
+  const double yaw = M_PI / 2.0;
+  beginInOdom(10.0, yaw);
+  stallUntilEscapePath();
+  const auto & path = controller_->handed.back();
+  EXPECT_EQ(path.header.frame_id, "map");
+  // The robot at odom (0.35, 0) is at map (10, 0.35).
+  EXPECT_NEAR(path.poses.front().pose.position.x, 10.0, 1e-6);
+  EXPECT_NEAR(path.poses.front().pose.position.y, kStallX, 1e-6);
+  // The mouth is toward odom -x, which is map -y.
+  EXPECT_LE(angleBetween(bearingOf(path), -M_PI / 2.0), 20.5 * M_PI / 180.0);
+  EXPECT_NEAR(lengthOf(path), 2.0 - controller_->robotRadius() - 0.05, 0.03);
+}
+
+TEST_F(ControllerEscapePath, TheEscapePathIsInThePlanFrameWithATranslationOnly)
+{
+  beginInOdom(10.0, 0.0);
+  stallUntilEscapePath();
+  const auto & path = controller_->handed.back();
+  EXPECT_NEAR(path.poses.front().pose.position.x, 10.0 + kStallX, 1e-6);
+  EXPECT_NEAR(path.poses.front().pose.position.y, 0.0, 1e-6);
+  EXPECT_LE(angleBetween(bearingOf(path), M_PI), 20.5 * M_PI / 180.0);
+}
+
+// A plan to the same goal after the loop was idle is a new task: the escape
+// path is replaced at once.
+TEST_F(ControllerEscapePath, ASameGoalPlanAfterAnIdleLoopReplacesTheEscapePath)
+{
+  begin({rclcpp::Parameter("FollowPath.se_task_idle_threshold", 0.3)});
+  stallUntilEscapePath();
+  const std::size_t before = controller_->handed.size();
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  const auto retry = straightPath("map", kStallX, 3.0, 0.0);
+  controller_->setPlan(retry);
+  ASSERT_EQ(controller_->handed.size(), before + 1);
+  EXPECT_TRUE(samePath(controller_->handed.back(), retry));
+  EXPECT_FALSE(controller_->escapeActive());
 }
 
 // The waypoint is capped at se_escape_waypoint_cap.
