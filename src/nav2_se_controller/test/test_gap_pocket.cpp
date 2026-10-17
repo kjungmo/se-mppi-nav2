@@ -471,3 +471,87 @@ TEST(GapSelection, SeveralAvoidedPlacesAreAllApplied)
   EXPECT_NEAR(g.bearing, -kPi / 4.0, 1e-9);
   EXPECT_EQ(g.candidates, 6u);
 }
+
+// ---------------------------------------------------------------------------
+// Boundaries of the ray rules
+// ---------------------------------------------------------------------------
+TEST(GapSelection, AvoidedPlaceOnlyExcludesRaysAheadOfTheRobot)
+{
+  // A radius of 0.9 m at 1.0 m excludes the rays within 64 degrees of the place
+  // (0, +-45 deg); the rays at 135 deg pass it at 0.71 m but head away from it
+  // (90 degrees or more off is not ahead), so they stay.
+  const auto rays = allHorizon8();
+  AvoidPoint avoid;
+  avoid.bearing = 0.0;
+  avoid.distance = 1.0;
+  avoid.radius = 0.9;
+  const auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid});
+  ASSERT_TRUE(g.found);
+  EXPECT_EQ(g.candidates, 5u) << "-180, -135, -90, 90, 135 deg remain";
+  EXPECT_NEAR(std::abs(g.bearing), kPi / 2.0, 1e-9) << "90 deg is not ahead";
+}
+
+TEST(GapSelection, AvoidedPlaceIsIgnoredWhileTheRobotIsWithinItsRadius)
+{
+  const auto rays = allHorizon8();
+  AvoidPoint avoid;
+  avoid.bearing = 0.0;
+  avoid.radius = 0.5;
+  avoid.distance = 0.5;  // exactly at the radius: the robot is at the place
+  EXPECT_NEAR(selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid}).bearing, 0.0, 1e-9);
+  avoid.distance = 0.5000001;  // just outside: the ray toward it is excluded
+  EXPECT_GT(std::abs(selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5, {avoid}).bearing), 0.1);
+}
+
+TEST(GapSelection, AvoidedPlaceBeyondTheRayPlusRadiusDoesNotCount)
+{
+  // Rays of 0.5 m; the place at 1.0 m with radius 0.5: the place is exactly
+  // ray + radius away: still counted (the ray ends within the radius of it).
+  auto rays = ring(
+    {{0.5, true}, {0.5, true}, {0.5, true}, {0.5, true}, {0.5, true}, {0.5, true},
+      {0.5, true}, {0.5, true}});
+  AvoidPoint avoid;
+  avoid.bearing = 0.0;
+  avoid.radius = 0.5;
+  avoid.distance = 1.0;
+  EXPECT_GT(std::abs(selectHorizonGap(rays, 0.0, 0.4, std::nullopt, 0.5, {avoid}).bearing), 0.1);
+  avoid.distance = 1.0000001;  // just beyond: the ray does not reach it
+  EXPECT_NEAR(selectHorizonGap(rays, 0.0, 0.4, std::nullopt, 0.5, {avoid}).bearing, 0.0, 1e-9);
+}
+
+TEST(GapPocket, ARayThatRunsToMaxRangeInsideTheMapIsAHorizonRay)
+{
+  nav2_costmap_2d::Costmap2D cm(120, 120, 0.05, -3.0, -3.0, 0);  // 6 m, all free
+  const auto rays = castGapRays(cm, 0.0, 0.0, 8, 2.0);
+  for (const auto & r : rays) {
+    EXPECT_TRUE(r.horizon) << r.bearing;
+    EXPECT_NEAR(r.clearance, 2.0, 1e-9);
+  }
+  // A wall at x = 1.0 (one cell column): the ray east is blocked and not a horizon ray.
+  for (int j = 0; j < 120; ++j) {
+    cm.setCost(80, j, 254);
+  }
+  const auto blocked = castGapRays(cm, 0.0, 0.0, 8, 2.0);
+  for (const auto & r : blocked) {
+    if (std::abs(r.bearing) < 1e-9) {
+      EXPECT_FALSE(r.horizon);
+      EXPECT_LT(r.clearance, 1.1);
+    }
+  }
+}
+
+TEST(GapPocket, SegmentBlockedUsesTheInscribedThresholdInclusively)
+{
+  nav2_costmap_2d::Costmap2D cm(40, 40, 0.1, -2.0, -2.0, 0);
+  unsigned int mx = 0;
+  unsigned int my = 0;
+  ASSERT_TRUE(cm.worldToMap(1.0, 0.0, mx, my));
+  cm.setCost(mx, my, 252);
+  EXPECT_FALSE(segmentBlocked(cm, 0.0, 0.0, 1.5, 0.0)) << "252 is below the threshold";
+  cm.setCost(mx, my, 253);
+  EXPECT_TRUE(segmentBlocked(cm, 0.0, 0.0, 1.5, 0.0)) << "253 blocks";
+  cm.setCost(mx, my, 255);
+  EXPECT_TRUE(segmentBlocked(cm, 0.0, 0.0, 1.5, 0.0)) << "unknown cells block";
+  // Beyond the end of the segment does not count.
+  EXPECT_FALSE(segmentBlocked(cm, 0.0, 0.0, 0.5, 0.0));
+}
