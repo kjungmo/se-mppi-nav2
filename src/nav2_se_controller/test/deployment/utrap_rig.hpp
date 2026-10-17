@@ -32,7 +32,6 @@
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/twist.hpp"
-#include "nav2_core/controller_exceptions.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav_msgs/msg/path.hpp"
@@ -40,6 +39,7 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 
+#include "nav2_se_controller/no_valid_control.hpp"
 #include "nav2_se_controller/safe_escape_controller.hpp"
 #include "utrap_dev_geometries.hpp"
 
@@ -245,7 +245,10 @@ public:
         const auto cmd = controller_->computeVelocityCommands(pose, speed, nullptr);
         cv = cmd.twist.linear.x;
         cw = cmd.twist.angular.z;
-      } catch (const nav2_core::NoValidControl &) {
+      } catch (const std::exception & e) {
+        if (!nav2_se_controller::isNoValidControl(e)) {
+          throw;
+        }
         ++r.throws;  // controller_server publishes zero velocity
       }
       if (verbose_ && k % 5 == 0) {

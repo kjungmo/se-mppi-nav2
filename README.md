@@ -80,7 +80,7 @@ What is measured and what is not:
 
 The `SafeEscapeController` subclasses the stock MPPI controller and post-processes
 its nominal command each cycle. A **shared entrapment signal** (derived from
-furthest-reached global-path progress) drives both the sampling-time
+progress along the task's anchor path) drives the escape path, the sampling-time
 `EscapeCritic` and the output-time escape–safety coordinator; the coordinator
 resolves the CBF gain α (with a time-to-collision override), and the CBF safety
 filter — fed by the `DynamicObstacleTracker` — projects the command onto the
@@ -95,10 +95,15 @@ coordinated gain.
    `nav2_core::Controller` plus a pluginlib MPPI critic (`EscapeCritic` in the
    `mppi::critics` namespace), reusing the stock MPPI optimizer for the nominal
    command.
-2. **Detect-and-switch local-minima escape.** Entrapment is declared when the
-   furthest-reached path index stalls; the `EscapeCritic` then injects
-   distance-field APF and free-space gap-attraction costs **only while trapped**,
-   so free-space behavior is unchanged.
+2. **Detect-and-switch local-minima escape.** Entrapment is declared when
+   progress along the task's anchor path (its first plan) stalls. A replan from
+   the behaviour tree is only a candidate anchor, so replanning every second does
+   not count as progress. While trapped, the `EscapeCritic` injects
+   distance-field APF costs, and the controller hands MPPI a short escape path
+   from the robot to a waypoint along the opening chosen by the horizon-ray rule;
+   the behaviour tree's path comes back when the escape ends. Free-space behavior
+   is unchanged. The free-space gap bearing cost of the critic is off by default
+   (`gap_weight: 0`), kept for ablation.
 3. **Look-ahead-point CBF safety filter (OSQP).** A per-cycle CBF-QP on tracked
    dynamic obstacles (static structure is left to MPPI's cost critic) filters the
    nominal `(v, ω)`; on a failed or relaxed barrier it brakes forward velocity.
@@ -162,10 +167,12 @@ on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
   `se_task_idle_threshold`, starts a new task and resets the per-task state, so
   a new task still starts clean; `reset()`'s own clearing (on goal end or
   cancel) does not happen.
-- The escape critic's gap search needs a goal bearing. Humble's `CriticData` has
-  no goal, so it uses the end of the pruned local path (MPPI's path window), not
-  the navigation goal. On a curved or long path the two can point in different directions, so
-  the gap choice is not equivalent to Jazzy's.
+- The escape critic's legacy gap bearing cost (`gap_weight` > 0, ablation only) and
+  its opening log line need a goal bearing. Humble's `CriticData` has no goal, so
+  they use the end of the pruned local path (MPPI's path window), not the
+  navigation goal. On a curved or long path the two can point in different
+  directions. The escape path of the controller uses the end of the behaviour
+  tree's path on both distributions.
 - **SE-MPPI's control performance on Humble's MPPI 1.1.x has not been
   evaluated**: every reported result comes from the Jazzy stack or the 2D
   benchmark.
@@ -440,6 +447,15 @@ the new value reaches its consumer before the next control cycle:
 - controller: `se_enabled`, `se_goal_reached_tolerance`,
   `se_dynamic_speed_threshold`, `se_max_obstacle_radius`, `se_task_idle_threshold`;
 - entrapment detector: `se_progress_stall_window`;
+- path progress: `se_progress_min_advance` (0.10 m: arc length past the best so far
+  that counts as progress), `se_progress_adopt_advance` (0.5 m: advance along the
+  replans after which a replan becomes the anchor path);
+- escape path: `se_escape_path_substitution` (false keeps the behaviour tree's
+  path), `se_escape_waypoint_cap`, `se_escape_reselect_radius`,
+  `se_escape_reselect_period`, `se_escape_stall_time`, `se_escape_stall_distance`,
+  `se_escape_hysteresis`, `se_escape_avoid_radius`, `se_escape_avoid_hop_radius`,
+  `se_escape_avoid_hops`, `se_gap_num_rays`, `se_gap_max_range`,
+  `se_gap_min_clearance`;
 - coordinator: `se_alpha_base` (also the CBF filter's default gain),
   `se_alpha_escape`, `se_ttc_override_threshold`, `se_q_trust_threshold`;
 - CBF filter: `se_cbf_lookahead`, `se_cbf_safety_margin`, `se_cbf_slack_weight`,
@@ -486,13 +502,42 @@ over-estimated (measured mean 0.17 m/s, max 0.33 m/s against a true 0.11 m/s;
 `ControllerCostmapRate.SlowMoverIsInTheCbfMoreOftenThanBefore`). That is
 conservative but can cause extra braking.
 
+**Escape path.** While entrapped, the controller replaces the path that MPPI
+follows. It casts `se_gap_num_rays` rays over the local costmap and takes the ray
+that reaches the sensing horizon (`se_gap_max_range` or the costmap edge) and is
+closest to the goal bearing; if no ray reaches the horizon it takes the longest
+ray. It keeps the previous bearing unless a new one is closer to the goal bearing
+by `se_escape_hysteresis`, and it does not choose a ray that leads back to the
+pose where entrapment was declared, to a recent hop origin or to a waypoint that
+failed. The waypoint lies `min(clearance - robot radius - 0.05 m,
+se_escape_waypoint_cap)` along the ray and stays frozen until the robot is within
+`se_escape_reselect_radius` of it, the straight line to it is blocked,
+`se_escape_reselect_period` has passed, or the robot has moved less than
+`se_escape_stall_distance` in `se_escape_stall_time`. Each selection is a hop and
+is logged (`SE escape waypoint ...`) with the bearing and clearance. The path
+(in the plan frame) is published on `<plugin name>/se_escape_path`. The
+behaviour tree's path stays in the controller for progress and for the
+near-goal test and is not forwarded to MPPI while the escape path is active; it
+goes back to MPPI when the escape ends, on `reset()`, on a new task and when
+`se_enabled` becomes false. `controller_server` checks goal arrival against its
+own copy of the behaviour tree's path, so the escape path cannot fake a goal.
+Tests: `test/deployment/test_closed_loop_utrap.cpp` (headless closed loop in the
+pocket geometries of `test/deployment/UTRAP_DEV_GEOMETRIES.md`).
+
+With `se_enabled` and `vx_min` > 0 the robot cannot stop or reverse, so the escape
+cannot act: the controller logs a WARN at configure and on every change, and the
+`/diagnostics` status is WARN.
+
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
 forced the forward velocity to zero in the last second (QP failure or barrier
 slack), and ERROR when the QP has failed on every cycle for more than 2 s (40
 cycles at Nav2's default 20 Hz, inside the default 10 s progress-checker
-allowance). It carries counters for those events, dropped obstacle tracks, escape
-entries and the current alpha. The same events are logged as throttled warnings.
+allowance). It turns WARN while `vx_min` > 0 with `se_enabled` (the escape cannot
+act). It carries counters for those events, dropped obstacle tracks, escape
+entries, cycles in which the optimizer found no valid control (`base_failures`),
+escape hops with the last selected bearing and clearance, `vx_min`, and the
+current alpha. The same events are logged as throttled warnings.
 The key `mppi_rollout_check` is `ok`, or `failed` when the loaded
 `nav2_mppi_controller` library failed the configure-time rollout check and
 `se_enforce_rollout_check` is `false`; the status is then ERROR for as long as the

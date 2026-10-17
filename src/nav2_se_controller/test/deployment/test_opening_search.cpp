@@ -279,7 +279,10 @@ TEST(GapSelection, NothingUsableIsNotFound)
 TEST(GapSelection, ClearanceAtTheMinimumCounts)
 {
   auto rays = ring({{0.6, true}, {0.1, false}, {0.1, false}, {0.1, false}});
-  EXPECT_TRUE(selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5).found);
+  auto g = selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5);
+  EXPECT_TRUE(g.found);
+  EXPECT_TRUE(g.horizon) << "a horizon ray of exactly the minimum clearance is a candidate";
+  EXPECT_EQ(g.candidates, 1u);
   rays = ring({{0.59, true}, {0.1, false}, {0.1, false}, {0.1, false}});
   EXPECT_FALSE(selectHorizonGap(rays, 0.0, 0.6, std::nullopt, 0.5).found);
 }

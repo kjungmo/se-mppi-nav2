@@ -32,7 +32,6 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav2_costmap_2d/costmap_2d.hpp"
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
-#include "nav2_core/controller_exceptions.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rcl/time.h"
 #include "rclcpp/rclcpp.hpp"
@@ -41,6 +40,7 @@
 
 #include "diagnostic_msgs/msg/diagnostic_array.hpp"
 #include "nav2_se_controller/dynamic_obstacle_tracker.hpp"
+#include "nav2_se_controller/no_valid_control.hpp"
 #include "utrap_dev_geometries.hpp"
 #include "nav2_se_controller/safe_escape_controller.hpp"
 
@@ -80,7 +80,7 @@ public:
     nav2_core::GoalChecker * goal_checker) override
   {
     if (throw_mode == Throw::kNoValidControl) {
-      throw nav2_core::NoValidControl("scripted: no valid control");
+      nav2_se_controller::throwNoValidControl();
     }
     if (throw_mode == Throw::kRuntimeError) {
       throw std::runtime_error("scripted: another failure");
@@ -595,6 +595,12 @@ TEST_F(ControllerCostmapRate, SlowMoverIsInTheCbfMoreOftenThanBefore)
 // when every rollout collides, and the entrapment detector, which ran after the
 // base call, never saw the stall.
 // ---------------------------------------------------------------------------
+#ifdef NAV2_SE_CONTROLLER_HUMBLE_API
+using NoValidControlError = std::runtime_error;
+#else
+using NoValidControlError = nav2_core::NoValidControl;
+#endif
+
 class ControllerNoValidControl : public ControllerBehaviour
 {
 protected:
@@ -610,7 +616,10 @@ protected:
   {
     try {
       step(x, y);
-    } catch (const nav2_core::NoValidControl &) {
+    } catch (const std::exception & e) {
+      if (!nav2_se_controller::isNoValidControl(e)) {
+        throw;
+      }
       return true;
     }
     return false;
@@ -643,11 +652,11 @@ TEST_F(ControllerNoValidControl, HookThrowingNoValidControlFeedsTheDetectorAndRe
 {
   controller_->throw_mode = ProbeController::Throw::kNoValidControl;
   for (int k = 0; k < 4; ++k) {
-    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+    EXPECT_THROW(step(0.5, 0.0), NoValidControlError);
     EXPECT_FALSE(controller_->entrapped()) << "cycle " << k << " is inside the window";
   }
   for (int k = 4; k < 12; ++k) {
-    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+    EXPECT_THROW(step(0.5, 0.0), NoValidControlError);
   }
   EXPECT_TRUE(controller_->entrapped());
   EXPECT_EQ(controller_->baseFailures(), 12u);
@@ -659,7 +668,7 @@ TEST_F(ControllerNoValidControl, AdvancingWhileTheOptimizerFailsIsNotEntrapment)
 {
   controller_->throw_mode = ProbeController::Throw::kNoValidControl;
   for (int k = 0; k < 30; ++k) {
-    EXPECT_THROW(step(0.05 * k, 0.0), nav2_core::NoValidControl);
+    EXPECT_THROW(step(0.05 * k, 0.0), NoValidControlError);
     EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
   }
 }
@@ -668,10 +677,10 @@ TEST_F(ControllerNoValidControl, EntrapmentFromFailingCyclesClearsOnProgress)
 {
   controller_->throw_mode = ProbeController::Throw::kNoValidControl;
   for (int k = 0; k < 10; ++k) {
-    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+    EXPECT_THROW(step(0.5, 0.0), NoValidControlError);
   }
   ASSERT_TRUE(controller_->entrapped());
-  EXPECT_THROW(step(0.65, 0.0), nav2_core::NoValidControl);  // 0.15 m further along
+  EXPECT_THROW(step(0.65, 0.0), NoValidControlError);  // 0.15 m further along
   EXPECT_FALSE(controller_->entrapped());
 }
 
@@ -692,7 +701,7 @@ TEST_F(ControllerNoValidControl, WithTheSeLayerDisabledTheExceptionPassesThrough
   ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.se_enabled", false)).successful);
   controller_->throw_mode = ProbeController::Throw::kNoValidControl;
   for (int k = 0; k < 20; ++k) {
-    EXPECT_THROW(step(0.5, 0.0), nav2_core::NoValidControl);
+    EXPECT_THROW(step(0.5, 0.0), NoValidControlError);
   }
   EXPECT_FALSE(controller_->entrapped());
 }
@@ -702,7 +711,7 @@ TEST_F(ControllerNoValidControl, FailingCyclesAtTheGoalAreNotEntrapment)
 {
   controller_->throw_mode = ProbeController::Throw::kNoValidControl;
   for (int k = 0; k < 20; ++k) {
-    EXPECT_THROW(step(2.0, 0.0), nav2_core::NoValidControl);
+    EXPECT_THROW(step(2.0, 0.0), NoValidControlError);
   }
   EXPECT_FALSE(controller_->entrapped());
 }

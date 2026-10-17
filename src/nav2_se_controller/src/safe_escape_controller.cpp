@@ -26,8 +26,8 @@
 #include "tf2/LinearMath/Transform.h"
 #include "tf2/utils.hpp"
 
-#include "nav2_core/controller_exceptions.hpp"
 
+#include "nav2_se_controller/no_valid_control.hpp"
 #include "nav2_se_controller/path_progress.hpp"
 
 namespace nav2_se_controller
@@ -882,13 +882,16 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   // When the optimizer finds no valid control it throws NoValidControl, which
   // is itself a stall signal: update the entrapment detector from the pose
   // (the robot did not progress), then rethrow, so Nav2's failure handling
-  // sees the same exception as before. Only NoValidControl takes this path: a
+  // sees the same exception as before. Only "no valid control" takes this path: a
   // TF failure or another error is not evidence of a stall.
   manageEscapePath(robot_pose);
   geometry_msgs::msg::TwistStamped cmd;
   try {
     cmd = nominalCommand(robot_pose, robot_speed, goal_checker);
-  } catch (const nav2_core::NoValidControl &) {
+  } catch (const std::exception & e) {
+    if (!isNoValidControl(e)) {
+      throw;
+    }
     std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
     counters_.base_failures.fetch_add(1);
     if (se_enabled_) {
