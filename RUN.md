@@ -110,7 +110,7 @@ cd se-mppi-nav2
 colcon build --packages-select nav2_se_controller
 source install/setup.bash
 colcon test --packages-select nav2_se_controller   # (선택) 테스트·린터 실행
-colcon test-result --verbose                         # 2026-10-05 기준 결과 321건, 실패 0, 건너뜀 0
+colcon test-result --verbose                         # 2026-10-18 기준 결과 520건, 실패 0, 건너뜀 2건(SE_UTRAP_SWEEP/SE_UTRAP_GEOMETRY 환경변수가 있어야 도는 선택 시험 2개)
 # cppcheck는 AMENT_CPPCHECK_ALLOW_SLOW_VERSIONS=1 이 있어야 실제로 돈다(없으면 cppcheck 2.x를 건너뛰고 그 사례를 모두 skipped로 보고).
 ```
 
