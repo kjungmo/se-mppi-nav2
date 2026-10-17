@@ -690,6 +690,135 @@ TEST_F(ControllerNoValidControl, FailingCyclesAtTheGoalAreNotEntrapment)
   EXPECT_FALSE(controller_->entrapped());
 }
 
+// ---------------------------------------------------------------------------
+// Defect 3 (campaign 1, ROOT_CAUSE.md): Nav2's behaviour tree replans a path
+// that starts at the robot every second. Progress used to be re-anchored on
+// each new path, so one path cell (0.025 m) of motion counted as progress and
+// ended the escape. Progress is now measured on the task's first plan (the
+// anchor); a replan becomes the anchor only after the robot has advanced
+// se_progress_adopt_advance (0.5 m) along it.
+// ---------------------------------------------------------------------------
+class ControllerReplan : public ControllerBehaviour
+{
+protected:
+  void begin(int stall_window)
+  {
+    Options opt;
+    opt.overrides = {rclcpp::Parameter("FollowPath.se_progress_stall_window", stall_window)};
+    start(opt);
+    controller_->setPlan(straightPath("map", 0.0, 2.0, 0.0));
+  }
+  // A 1 Hz replan: a fresh straight path from the robot to the same goal.
+  void replanFrom(double x) {controller_->setPlan(straightPath("map", x, 2.0, 0.0));}
+
+  // A path from (x, 0) that leaves the original line: up to y = 1.5, across,
+  // and back down to the same goal (2, 0). Poses every 0.05 m.
+  nav_msgs::msg::Path detourPath(double x)
+  {
+    nav_msgs::msg::Path path;
+    path.header.frame_id = "map";
+    path.header.stamp = node_->now();
+    auto add = [&](double px, double py) {
+        geometry_msgs::msg::PoseStamped p;
+        p.header = path.header;
+        p.pose.position.x = px;
+        p.pose.position.y = py;
+        p.pose.orientation.w = 1.0;
+        path.poses.push_back(p);
+      };
+    for (double y = 0.0; y < 1.5; y += 0.05) {add(x, y);}
+    for (double px = x; px < 2.0; px += 0.05) {add(px, 1.5);}
+    for (double y = 1.5; y > 0.0; y -= 0.05) {add(2.0, y);}
+    add(2.0, 0.0);
+    return path;
+  }
+};
+
+// (i) A robot that does not move, with the path replaced every 10 cycles by a
+// new path that starts at the robot: entrapped after the window, and still
+// entrapped 50 cycles later.
+TEST_F(ControllerReplan, ReplansFromAStationaryRobotDoNotCancelEntrapment)
+{
+  begin(5);
+  int first_entrapped = -1;
+  for (int k = 0; k < 70; ++k) {
+    if (k % 10 == 0 && k > 0) {replanFrom(0.5);}
+    step(0.5, 0.0);
+    if (first_entrapped < 0 && controller_->entrapped()) {first_entrapped = k;}
+    if (k >= 5) {EXPECT_TRUE(controller_->entrapped()) << "cycle " << k;}
+  }
+  EXPECT_EQ(first_entrapped, 5);
+}
+
+// (ii) After entrapment, motion along the new paths that adds up to less than
+// se_progress_min_advance (0.10 m) past the furthest point does not clear it;
+// 0.15 m does.
+TEST_F(ControllerReplan, ThreeCentimetresAfterAReplanDoNotClearEntrapmentFifteenDo)
+{
+  begin(5);
+  for (int k = 0; k < 10; ++k) {step(0.5, 0.0);}
+  ASSERT_TRUE(controller_->entrapped());
+  replanFrom(0.5);
+  step(0.5, 0.0);
+  step(0.53, 0.0);
+  EXPECT_TRUE(controller_->entrapped()) << "0.03 m along +x";
+  replanFrom(0.53);
+  step(0.53, 0.0);
+  step(0.59, 0.0);
+  EXPECT_TRUE(controller_->entrapped()) << "0.09 m past the furthest point (0.5)";
+  step(0.65, 0.0);
+  EXPECT_FALSE(controller_->entrapped()) << "0.15 m past the furthest point (0.5)";
+}
+
+// ROOT_CAUSE.md section 2.1: the robot reached x = 1.0, backed to 0.6 and
+// stalled; one cell of motion after a replan must not clear entrapment.
+TEST_F(ControllerReplan, BackedOffRobotStaysEntrappedAfterAReplanAndOneCell)
+{
+  begin(5);
+  for (int k = 0; k <= 20; ++k) {step(0.05 * k, 0.0);}
+  for (int k = 0; k < 10; ++k) {step(0.6, 0.0);}
+  ASSERT_TRUE(controller_->entrapped());
+  replanFrom(0.6);
+  step(0.6, 0.0);
+  step(0.65, 0.0);
+  EXPECT_TRUE(controller_->entrapped()) << "x = 0.65 is behind the furthest point 1.0";
+  // Past the furthest point by the minimum advance: cleared.
+  step(1.12, 0.0);
+  EXPECT_FALSE(controller_->entrapped());
+}
+
+// (iii) Driving 0.03 m per cycle with a replan every 10 cycles is progress:
+// never entrapped, although each replan restarts at the robot.
+TEST_F(ControllerReplan, SteadyMotionWithReplansEveryTenCyclesIsNeverEntrapped)
+{
+  begin(5);
+  for (int k = 0; k < 70; ++k) {
+    const double x = 0.03 * k;
+    if (k % 10 == 0 && k > 0) {replanFrom(x);}
+    step(x, 0.0);
+    EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
+  }
+}
+
+// (iv) A legitimate detour: the replan leaves the original line and the robot
+// follows it for 0.6 m. The new path is adopted as the anchor (0.5 m), so no
+// entrapment is declared at any cycle (window 30 cycles, 0.03 m per cycle).
+TEST_F(ControllerReplan, ADivergingReplanFollowedForSixDecimetresIsNotEntrapment)
+{
+  begin(30);
+  for (int k = 0; k < 3; ++k) {step(0.5, 0.0);}
+  controller_->setPlan(detourPath(0.5));
+  for (int k = 0; k <= 20; ++k) {
+    step(0.5, 0.03 * k);
+    EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
+  }
+  // The detour keeps going; still progress.
+  for (int k = 21; k < 60; ++k) {
+    step(0.5, std::min(0.03 * k, 1.5));
+    EXPECT_FALSE(controller_->entrapped()) << "cycle " << k;
+  }
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
