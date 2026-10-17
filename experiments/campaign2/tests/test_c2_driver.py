@@ -95,3 +95,22 @@ def test_unsafe_configuration_is_refused_before_any_launch():
     tree['controller_server']['ros__parameters']['FollowPath']['vx_min'] = 0.1
     with pytest.raises(SystemExit, match='vx_min = 0.1'):
         plan.refuse_unsafe(tree)
+
+
+def test_counted_blocks_are_refused_when_the_frozen_files_differ(monkeypatch, capsys):
+    import freeze_manifest
+    monkeypatch.setattr(freeze_manifest, 'check', lambda *a, **k: ['changed: experiments/campaign2/plan.py'])
+    monkeypatch.setattr(sys, 'argv', ['run_campaign2.py', '--block', 'A'])
+    assert drv.main() == drv.EXIT_REFUSED
+    out = capsys.readouterr().out
+    assert 'REFUSED' in out and 'changed: experiments/campaign2/plan.py' in out
+
+
+def test_missing_manifest_refuses_a_counted_block(monkeypatch, capsys, tmp_path):
+    import freeze_manifest
+    real_check = freeze_manifest.check
+    absent = str(tmp_path / 'absent.json')
+    monkeypatch.setattr(freeze_manifest, 'check', lambda: real_check(absent))
+    monkeypatch.setattr(sys, 'argv', ['run_campaign2.py', '--block', 'all'])
+    assert drv.main() == drv.EXIT_REFUSED
+    assert 'not frozen' in capsys.readouterr().out

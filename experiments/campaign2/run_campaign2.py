@@ -22,7 +22,8 @@ New in campaign 2:
   controller at or below 4 of 6 on s0_open, more than 6 invalid attempts on a cell, a stack
   that does not become active.
 * Raw data go to ``/mnt/d/wsl/se-mppi/campaign2/`` (``trials/``, ``shakedown/``).
-* Refusal to run ``se_enabled`` with ``vx_min > 0`` (DESIGN_ADVICE D1).
+* Refusal to run ``se_enabled`` with ``vx_min > 0`` (DESIGN_ADVICE D1), and refusal to run a
+  counted block unless ``freeze_manifest.py --check`` passes.
 
 Run from the repository root inside the ``semppi_rerun`` environment with the workspace
 (nav2_se_controller, se_mppi_utrap) sourced:
@@ -265,6 +266,8 @@ def main():
     ap.add_argument('--block', default='all', choices=('A', 'B', 'all', 'shakedown'))
     ap.add_argument('--raw', default=plan_mod.RAW_ROOT, help='raw data root (outside the repository)')
     ap.add_argument('--list', action='store_true', help='print the plan and exit')
+    ap.add_argument('--allow-unfrozen', action='store_true',
+                    help='run a counted block without a passing freeze manifest (not for the campaign)')
     ap.add_argument('--max-trials', type=int, default=None,
                     help='stop after this many trials have run in this session (resume later)')
     args = ap.parse_args()
@@ -281,6 +284,13 @@ def main():
     from experiments.runner import scenario as scenario_mod
     import yaml
 
+    if args.block != 'shakedown' and not args.allow_unfrozen:
+        import freeze_manifest
+        diffs = freeze_manifest.check()
+        if diffs:
+            print('[campaign2] REFUSED: the frozen files differ from FREEZE_MANIFEST.json '
+                  '(PREREG.md, "Frozen files"):\n  ' + '\n  '.join(diffs[:20]), flush=True)
+            return EXIT_REFUSED
     if not rr.rl.ros_available():
         raise SystemExit('no ros2 on PATH: activate the environment and source the workspace')
     # Refuse every configuration whose parameter tree cannot let the escape act.
