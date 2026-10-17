@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdarg>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -34,6 +35,7 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "rcl/time.h"
+#include "rcutils/logging.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
@@ -1266,6 +1268,45 @@ TEST_F(ControllerEscapePath, TheWaypointRadiusIsInclusive)
   EXPECT_EQ(controller_->hops(), 2u) << "distance equal to the radius re-selects";
 }
 
+// The default watchdog is 3 s (60 cycles at 20 Hz).
+TEST_F(ControllerEscapePath, TheDefaultWatchdogIsThreeSeconds)
+{
+  begin({rclcpp::Parameter("FollowPath.se_escape_reselect_period", 100.0)});
+  stallUntilEscapePath();
+  ASSERT_EQ(controller_->hops(), 1u);
+  for (int k = 0; k < 59; ++k) {
+    step(kStallX, 0.0);
+  }
+  EXPECT_EQ(controller_->hops(), 1u) << "59 cycles";
+  step(kStallX, 0.0);
+  EXPECT_EQ(controller_->hops(), 2u) << "60 cycles = 3 s";
+}
+
+// The period counts from the latest selection, not from the first.
+TEST_F(ControllerEscapePath, ThePeriodRestartsAtEachSelection)
+{
+  begin(
+    {rclcpp::Parameter("FollowPath.se_escape_stall_time", 100.0),
+      rclcpp::Parameter("FollowPath.se_escape_reselect_period", 1.0)});
+  stallUntilEscapePath();
+  for (int k = 0; k < 10; ++k) {
+    step(kStallX, 0.0);
+  }
+  ASSERT_EQ(controller_->hops(), 1u);
+  const auto wp = controller_->handed.back().poses.back().pose.position;
+  step(wp.x, wp.y);  // reached: hop 2 after 11 cycles
+  ASSERT_EQ(controller_->hops(), 2u);
+  const auto wp2 = controller_->handed.back().poses.back().pose.position;
+  // Stay put away from the new waypoint: 19 cycles, then the 20th re-selects.
+  for (int k = 0; k < 19; ++k) {
+    step(wp.x, wp.y);
+  }
+  EXPECT_EQ(controller_->hops(), 2u) << "19 cycles after the second selection";
+  step(wp.x, wp.y);
+  EXPECT_EQ(controller_->hops(), 3u) << "20 cycles after the second selection";
+  (void)wp2;
+}
+
 // The straight line to the waypoint is blocked: re-select.
 TEST_F(ControllerEscapePath, ABlockedWaypointLineSelectsAnotherHop)
 {
@@ -1407,6 +1448,68 @@ TEST_F(ControllerBehaviour, ForwardOnlyVxMinWithSeEnabledIsFlagged)
   EXPECT_TRUE(controller_->vxMinBlocks());
   ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.se_enabled", false)).successful);
   EXPECT_FALSE(controller_->vxMinBlocks()) << "no SE layer, nothing to block";
+}
+
+namespace
+{
+std::vector<std::string> g_warn_lines;
+rcutils_logging_output_handler_t g_prev_log_handler = nullptr;
+
+void captureWarn(
+  const rcutils_log_location_t * location, int severity, const char * name,
+  rcutils_time_point_value_t timestamp, const char * format, va_list * args)
+{
+  va_list copy;
+  va_copy(copy, *args);
+  char buffer[1024];
+  std::vsnprintf(buffer, sizeof(buffer), format, copy);
+  va_end(copy);
+  g_warn_lines.push_back(buffer);
+  if (g_prev_log_handler != nullptr) {
+    g_prev_log_handler(location, severity, name, timestamp, format, args);
+  }
+}
+
+bool sawVxMinWarning()
+{
+  for (const auto & line : g_warn_lines) {
+    if (line.find("cannot stop or reverse") != std::string::npos) {
+      return true;
+    }
+  }
+  return false;
+}
+}  // namespace
+
+TEST_F(ControllerBehaviour, TheVxMinWarningIsLoggedAtConfigureOnlyForForwardOnlyLimits)
+{
+  for (const double vx_min : {-0.35, 0.0, 0.1}) {
+    g_warn_lines.clear();
+    g_prev_log_handler = rcutils_logging_get_output_handler();
+    rcutils_logging_set_output_handler(captureWarn);
+    Options opt;
+    opt.overrides = {rclcpp::Parameter("FollowPath.vx_min", vx_min)};
+    start(opt);
+    rcutils_logging_set_output_handler(g_prev_log_handler);
+    EXPECT_EQ(sawVxMinWarning(), vx_min > 0.0) << "vx_min " << vx_min;
+    TearDown();
+    active_ = false;
+  }
+}
+
+TEST_F(ControllerBehaviour, TheVxMinWarningIsLoggedOnARuntimeChange)
+{
+  Options opt;
+  opt.overrides = {rclcpp::Parameter("FollowPath.vx_min", -0.35)};
+  start(opt);
+  g_warn_lines.clear();
+  g_prev_log_handler = rcutils_logging_get_output_handler();
+  rcutils_logging_set_output_handler(captureWarn);
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.vx_min", 0.0)).successful);
+  EXPECT_FALSE(sawVxMinWarning());
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.vx_min", 0.2)).successful);
+  EXPECT_TRUE(sawVxMinWarning());
+  rcutils_logging_set_output_handler(g_prev_log_handler);
 }
 
 TEST_F(ControllerBehaviour, ReversibleVxMinIsNotFlagged)
