@@ -113,6 +113,22 @@ protected:
   bool rollout_check_failed_{false};
   std::string rollout_failure_;  // describeRolloutFailure(); empty when the check passed
 
+  /// The robot in the plan frame (progress, goal distance) and the goal in the
+  /// robot frame. `ok` is false when the transform is missing.
+  struct PlanFrameState
+  {
+    double plan_x{0.0};
+    double plan_y{0.0};
+    Eigen::Vector2d goal_xy{0.0, 0.0};
+    bool ok{true};
+  };
+  PlanFrameState robotInPlanFrame(
+    const geometry_msgs::msg::PoseStamped & robot_pose, const RobotState & state);
+  /// Progress along the plan -> detector -> shared flag, ENTER/EXIT log and the
+  /// cycle counters. Called with the parameter lock held, once per cycle, also
+  /// in a cycle in which the optimizer found no valid control.
+  bool updateEntrapment(const RobotState & state, const PlanFrameState & plan_frame);
+
   bool se_enabled_{true};
   double robot_radius_{0.22};
   double goal_reached_tolerance_{0.5};  // suppress entrapment within this of the goal (m)

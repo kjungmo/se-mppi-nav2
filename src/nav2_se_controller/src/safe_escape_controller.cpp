@@ -25,6 +25,8 @@
 #include "tf2/LinearMath/Transform.h"
 #include "tf2/utils.hpp"
 
+#include "nav2_core/controller_exceptions.hpp"
+
 #include "nav2_se_controller/path_progress.hpp"
 
 namespace nav2_se_controller
@@ -502,47 +504,21 @@ void SafeEscapeController::reset()
   }
 }
 
-geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
-  const geometry_msgs::msg::PoseStamped & robot_pose,
-  const geometry_msgs::msg::Twist & robot_speed,
-  nav2_core::GoalChecker * goal_checker)
+SafeEscapeController::PlanFrameState SafeEscapeController::robotInPlanFrame(
+  const geometry_msgs::msg::PoseStamped & robot_pose, const RobotState & state)
 {
-  // Stamp the task boundary when this call returns or throws (every exit).
-  struct ReturnStamp
-  {
-    TaskBoundary & boundary;
-    rclcpp::Clock & clock;
-    ~ReturnStamp() {boundary.controlReturned(clock.now().seconds());}
-  } return_stamp{task_boundary_, steady_clock_};
-
-  // Nominal command from the stock MPPI optimizer (incl. EscapeCritic if listed).
-  geometry_msgs::msg::TwistStamped cmd =
-    nominalCommand(robot_pose, robot_speed, goal_checker);
-
-  // MPPI released its parameter lock on return; hold it for the SE part so a
-  // runtime parameter set (and the config re-apply) cannot land mid-cycle.
-  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
-
-  if (!se_enabled_) {
-    return cmd;
-  }
-
-  RobotState state;
-  state.x = robot_pose.pose.position.x;
-  state.y = robot_pose.pose.position.y;
-  state.yaw = tf2::getYaw(robot_pose.pose.orientation);
-
-  // 0. Frames: the global plan is in the planner's frame (e.g. map), the pose
-  //    in the local costmap's frame (e.g. odom). Express the robot in the plan
-  //    frame for progress and goal distance, and the goal in the robot frame
-  //    for the multi-robot coordinator.
-  double plan_x = state.x;
-  double plan_y = state.y;
-  Eigen::Vector2d goal_xy(state.x, state.y);
-  bool plan_frame_ok = true;
+  // The global plan is in the planner's frame (e.g. map), the pose in the
+  // local costmap's frame (e.g. odom). Express the robot in the plan frame for
+  // progress and goal distance, and the goal in the robot frame for the
+  // multi-robot coordinator.
+  PlanFrameState out;
+  out.plan_x = state.x;
+  out.plan_y = state.y;
+  out.goal_xy = Eigen::Vector2d(state.x, state.y);
+  out.ok = true;
   if (!global_plan_.poses.empty()) {
     const auto & g = global_plan_.poses.back().pose.position;
-    goal_xy = Eigen::Vector2d(g.x, g.y);
+    out.goal_xy = Eigen::Vector2d(g.x, g.y);
     const std::string & plan_frame = global_plan_.header.frame_id;
     if (!plan_frame.empty() && plan_frame != robot_pose.header.frame_id) {
       try {
@@ -556,12 +532,12 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
             t.transform.translation.x, t.transform.translation.y,
             t.transform.translation.z));
         const tf2::Vector3 r = plan_from_robot * tf2::Vector3(state.x, state.y, 0.0);
-        plan_x = r.x();
-        plan_y = r.y();
+        out.plan_x = r.x();
+        out.plan_y = r.y();
         const tf2::Vector3 gr = plan_from_robot.inverse() * tf2::Vector3(g.x, g.y, 0.0);
-        goal_xy = Eigen::Vector2d(gr.x(), gr.y());
+        out.goal_xy = Eigen::Vector2d(gr.x(), gr.y());
       } catch (const tf2::TransformException & e) {
-        plan_frame_ok = false;
+        out.ok = false;
         RCLCPP_WARN_THROTTLE(
           logger_, steady_clock_, 2000,
           "SE: no transform %s -> %s (%s); entrapment detection holds its state",
@@ -569,12 +545,18 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
       }
     }
   }
+  return out;
+}
 
-  // 1. Entrapment from MONOTONIC global-path progress (single source of truth).
-  //    nearestPathIndex is non-monotonic, so track the furthest reached index.
+bool SafeEscapeController::updateEntrapment(
+  const RobotState & state, const PlanFrameState & plan_frame)
+{
+  // Entrapment from MONOTONIC global-path progress (single source of truth).
+  // nearestPathIndex is non-monotonic, so track the furthest reached index.
   bool entrapped = prev_entrapped_;
-  if (plan_frame_ok) {
-    const std::size_t nearest = nearestPathIndex(global_plan_, plan_x, plan_y);
+  if (plan_frame.ok) {
+    const std::size_t nearest =
+      nearestPathIndex(global_plan_, plan_frame.plan_x, plan_frame.plan_y);
     if (rebase_progress_) {
       furthest_progress_ = nearest;
       detector_.rebase(nearest);
@@ -587,7 +569,8 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
     // otherwise stall the progress signal and trigger a false escape.
     if (!global_plan_.poses.empty()) {
       const auto & goal = global_plan_.poses.back().pose.position;
-      const double dist_to_goal = std::hypot(goal.x - plan_x, goal.y - plan_y);
+      const double dist_to_goal =
+        std::hypot(goal.x - plan_frame.plan_x, goal.y - plan_frame.plan_y);
       if (dist_to_goal <= goal_reached_tolerance_) {
         entrapped = false;
         detector_.reset();
@@ -614,6 +597,61 @@ geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
   }
   counters_.entrapped.store(entrapped);
   counters_.cycles.fetch_add(1);
+  return entrapped;
+}
+
+geometry_msgs::msg::TwistStamped SafeEscapeController::computeVelocityCommands(
+  const geometry_msgs::msg::PoseStamped & robot_pose,
+  const geometry_msgs::msg::Twist & robot_speed,
+  nav2_core::GoalChecker * goal_checker)
+{
+  // Stamp the task boundary when this call returns or throws (every exit).
+  struct ReturnStamp
+  {
+    TaskBoundary & boundary;
+    rclcpp::Clock & clock;
+    ~ReturnStamp() {boundary.controlReturned(clock.now().seconds());}
+  } return_stamp{task_boundary_, steady_clock_};
+
+  // Nominal command from the stock MPPI optimizer (incl. EscapeCritic if listed).
+  // When the optimizer finds no valid control it throws NoValidControl, which
+  // is itself a stall signal: update the entrapment detector from the pose
+  // (the robot did not progress), then rethrow, so Nav2's failure handling
+  // sees the same exception as before. Only NoValidControl takes this path: a
+  // TF failure or another error is not evidence of a stall.
+  geometry_msgs::msg::TwistStamped cmd;
+  try {
+    cmd = nominalCommand(robot_pose, robot_speed, goal_checker);
+  } catch (const nav2_core::NoValidControl &) {
+    std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+    counters_.base_failures.fetch_add(1);
+    if (se_enabled_) {
+      RobotState failed_state;
+      failed_state.x = robot_pose.pose.position.x;
+      failed_state.y = robot_pose.pose.position.y;
+      failed_state.yaw = tf2::getYaw(robot_pose.pose.orientation);
+      updateEntrapment(failed_state, robotInPlanFrame(robot_pose, failed_state));
+    }
+    throw;
+  }
+
+  // MPPI released its parameter lock on return; hold it for the SE part so a
+  // runtime parameter set (and the config re-apply) cannot land mid-cycle.
+  std::lock_guard<std::mutex> param_lock(*parameters_handler_->getLock());
+
+  if (!se_enabled_) {
+    return cmd;
+  }
+
+  RobotState state;
+  state.x = robot_pose.pose.position.x;
+  state.y = robot_pose.pose.position.y;
+  state.yaw = tf2::getYaw(robot_pose.pose.orientation);
+
+  // 0. Frames, 1. entrapment from monotonic global-path progress.
+  const PlanFrameState plan_frame = robotInPlanFrame(robot_pose, state);
+  const Eigen::Vector2d goal_xy = plan_frame.goal_xy;
+  const bool entrapped = updateEntrapment(state, plan_frame);
 
   // 2. Dynamic obstacles from the local costmap. On a clock-lock failure reuse
   //    the previous stamp (dt ~ 0) rather than 0.0, which would make dt negative
@@ -804,6 +842,7 @@ void SafeEscapeController::publishDiagnostics()
   kv("slack_active", std::to_string(counters_.slack_active.load()));
   kv("tracks_dropped", std::to_string(counters_.tracks_dropped.load()));
   kv("escape_entries", std::to_string(counters_.escape_entries.load()));
+  kv("base_failures", std::to_string(counters_.base_failures.load()));
   kv("entrapped", counters_.entrapped.load() ? "true" : "false");
   kv("cbf_obstacles", std::to_string(counters_.cbf_obstacles.load()));
   kv("alpha", std::to_string(counters_.alpha.load()));
