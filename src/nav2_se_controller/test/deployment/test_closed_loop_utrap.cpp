@@ -21,10 +21,13 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <vector>
 
+#include "rcutils/logging.h"
 #include "rclcpp/rclcpp.hpp"
 
 #include "nav2_se_controller/safe_escape_controller.hpp"
@@ -138,6 +141,58 @@ TEST(ClosedLoopUtrap, SweepReportsEveryGeometry)
     ++n;
   }
   std::printf("UTRAP sweep passed %d of %d\n", ok, n);
+}
+
+namespace
+{
+std::vector<std::string> g_log_lines;
+rcutils_logging_output_handler_t g_previous_handler = nullptr;
+
+void captureLog(
+  const rcutils_log_location_t * location, int severity, const char * name,
+  rcutils_time_point_value_t timestamp, const char * format, va_list * args)
+{
+  va_list copy;
+  va_copy(copy, *args);
+  char buffer[1024];
+  std::vsnprintf(buffer, sizeof(buffer), format, copy);
+  va_end(copy);
+  g_log_lines.push_back(buffer);
+  if (g_previous_handler != nullptr) {
+    g_previous_handler(location, severity, name, timestamp, format, args);
+  }
+}
+}  // namespace
+
+// The selected bearing and clearance are logged: one line per hop from the
+// controller, and one from the critic at injection BEGIN and every 2 s.
+TEST(ClosedLoopUtrap, TheSelectedBearingAndClearanceAreLogged)
+{
+  g_log_lines.clear();
+  g_previous_handler = rcutils_logging_get_output_handler();
+  rcutils_logging_set_output_handler(captureLog);
+  utrap::Pocket p;
+  p.w = 1.3;
+  p.d = 1.8;  // w13_d18_r0_a10 of the family
+  const auto r = runOnce(p);
+  rcutils_logging_set_output_handler(g_previous_handler);
+  EXPECT_TRUE(r.reached);
+  int waypoint_lines = 0;
+  int critic_lines = 0;
+  for (const auto & line : g_log_lines) {
+    if (line.find("SE escape waypoint ") != std::string::npos &&
+      line.find("bearing ") != std::string::npos && line.find("clearance ") != std::string::npos)
+    {
+      ++waypoint_lines;
+    }
+    if (line.find("selected opening: bearing ") != std::string::npos &&
+      line.find("clearance ") != std::string::npos)
+    {
+      ++critic_lines;
+    }
+  }
+  EXPECT_EQ(waypoint_lines, r.hops) << "one log line per hop";
+  EXPECT_GE(critic_lines, 1) << "the critic logs at injection BEGIN";
 }
 
 // Debugging aid: run one named geometry of the family, SE_UTRAP_RUNS times.
