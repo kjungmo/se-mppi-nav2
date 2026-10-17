@@ -1,0 +1,2 @@
+[INFO] [1791943245.322814844] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/testbed/dynamic_pose/info (gz.msgs.Pose_V) -> /world/testbed/dynamic_pose/info (tf2_msgs/msg/TFMessage)] (Lazy 0)
+[INFO] [1791943555.599346799] [rclcpp]: signal_handler(SIGINT/SIGTERM)

@@ -1,0 +1,3 @@
+[INFO] [1791948441.461561570] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/testbed/dynamic_pose/info (gz.msgs.Pose_V) -> /world/testbed/dynamic_pose/info (tf2_msgs/msg/TFMessage)] (Lazy 0)
+[INFO] [1791948610.761826037] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+Failed to delete datawriter, at /home/runner/conda-bld/bld/rattler-build_ros2-rmw-fastrtps-shared-cpp_1791432787/work/ros2-rmw-fastrtps-shared-cpp/src/work/src/publisher.cpp:45 during '__function__'

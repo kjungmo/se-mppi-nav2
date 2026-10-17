@@ -391,3 +391,26 @@ the two days that cannot be excluded.
 
 **Order from here.** The fourth affected cell, then the `V` and `O` parts, as
 registered.
+
+## Amendment 9: second interruption (2026-10-14), continuation on 2026-10-18
+
+Committed on 2026-10-18 at about 03:15 KST, before any further trial.
+
+**What happened.** On 2026-10-14 the driver stopped with its work session at
+about 12:27 KST, an operational interruption, not a result. By then the
+affected block was complete (4 of 4 valid), the `V` part was complete (12 of 12
+valid) and the `O` part had 7 valid trials. The eighth `O` trial,
+`correct__s1_utrap__F_se_full__O__rep1`, was cut off before its record was
+closed; it is kept as `.aborted1` and repeated. The four trials of `O` rep2 had
+not started. No Gazebo or Nav2 process was left behind.
+
+**Continuation.** The 5 remaining registered trials run on 2026-10-18 on the
+same host under the same gate and validity rule (amendments 5 and 8) and in the
+registered order. Nothing completed is repeated or replaced.
+
+**Environment check.** Kernel `6.18.54.1-microsoft-standard-WSL2`, as on
+2026-10-14. Both micromamba environments are identical to the committed package
+lists. The workspaces are the builds of 2026-10-12. Nothing changed.
+
+**Outcomes seen so far.** No valid trial of any set has reached the goal
+(`RESULTS.md` at the commit of this amendment).

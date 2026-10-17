@@ -9,11 +9,20 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | affected | P | s1_utrap | A_stock | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.97 / 0.97 / 0.97 | 0.104..0.104 | NOT_REACHED_ABORTED 1 |
 | affected | P | s1_utrap | F_se_full | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.97 / 0.97 / 0.97 | 0.104..0.104 | NOT_REACHED_ABORTED 1 |
+| affected | P | s1_utrap_evidence | A_stock | 1 | 0 | 1 | 0 | 0 | 0 | 2 | 0.97 / 0.97 / 0.97 | 0.133..0.133 | NOT_REACHED_TIMEOUT 1 |
 | affected | P | s1_utrap_evidence | F_se_full | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0.96 / 0.96 / 0.96 | 0.144..0.144 | NOT_REACHED_TIMEOUT 1 |
+| correct | O | s1_utrap | A_stock | 2 | 0 | 0 | 0 | 0 | 0 | 4 | 0.96 / 0.97 / 0.97 | 0.451..0.453 | NOT_REACHED_TIMEOUT 2 |
+| correct | O | s1_utrap | F_se_full | 2 | 0 | 0 | 0 | 0 | 1 | 2 | 0.96 / 0.96 / 0.96 | 0.452..0.452 | INVALID 1, NOT_REACHED_TIMEOUT 1 |
+| correct | O | s1_utrap_evidence | A_stock | 2 | 0 | 0 | 0 | 0 | 0 | 3 | 0.97 / 0.97 / 0.97 | 0.014..0.014 | NOT_REACHED_TIMEOUT 2 |
+| correct | O | s1_utrap_evidence | F_se_full | 2 | 0 | 0 | 0 | 0 | 2 | 3 | 0.97 / 0.97 / 0.97 | 0.016..0.018 | NOT_REACHED_TIMEOUT 2 |
 | correct | P | s1_utrap | A_stock | 5 | 0 | 5 | 0 | 0 | 0 | 7 | 0.96 / 0.97 / 0.97 | 0.485..0.486 | NOT_REACHED_TIMEOUT 5 |
 | correct | P | s1_utrap | F_se_full | 5 | 0 | 4 | 1 | 1 | 1 | 5 | 0.96 / 0.97 / 0.97 | 0.485..0.485 | NOT_REACHED_ABORTED 1, NOT_REACHED_TIMEOUT 4 |
 | correct | P | s1_utrap_evidence | A_stock | 5 | 0 | 4 | 0 | 0 | 0 | 7 | 0.96 / 0.97 / 0.97 | 0.106..0.107 | NOT_REACHED_TIMEOUT 5 |
 | correct | P | s1_utrap_evidence | F_se_full | 5 | 0 | 1 | 1 | 1 | 0 | 4 | 0.96 / 0.97 / 0.97 | 0.106..0.107 | NOT_REACHED_ABORTED 1, NOT_REACHED_TIMEOUT 4 |
+| correct | V | s1_utrap | A_stock | 3 | 0 | 0 | 0 | 0 | 0 | 3 | 0.96 / 0.97 / 0.97 | 0.474..0.474 | NOT_REACHED_TIMEOUT 3 |
+| correct | V | s1_utrap | F_se_full | 3 | 0 | 0 | 0 | 0 | 3 | 1 | 0.96 / 0.96 / 0.97 | 0.474..0.474 | NOT_REACHED_TIMEOUT 3 |
+| correct | V | s1_utrap_evidence | A_stock | 3 | 0 | 0 | 0 | 0 | 0 | 2 | 0.97 / 0.97 / 0.97 | 0.048..0.048 | NOT_REACHED_TIMEOUT 3 |
+| correct | V | s1_utrap_evidence | F_se_full | 3 | 0 | 0 | 0 | 0 | 3 | 2 | 0.96 / 0.97 / 0.97 | 0.047..0.048 | NOT_REACHED_TIMEOUT 3 |
 
 ## Registered trials
 
@@ -21,27 +30,48 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | affected__s1_utrap__A_stock__P__rep0 | NOT_REACHED_ABORTED | FAILED | 4.63 | -0.25, -3.30 | 0.000 | 0.0 | 187.6 / 181.7 | 0.97 (0.97) | 0 | 9 (24.8); 187.7 | 0.104 [0.100, 0.109], 100% (vx_min 0.1) | 0 / 0 (--) | 8.18 / 7.71 | failed | 1.2 / 5.4; 0.60 / 0.85 / 3.88 |
 | affected__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_ABORTED | FAILED | 4.84 | -0.07, -3.75 | 0.000 | 0.0 | 209.3 / 202.4 | 0.97 (0.96) | 0 | 73 (26.0); 81.5 | 0.104 [0.100, 0.109], 100% (vx_min 0.1) | 0 / 0 (--) | 6.86 / 6.69 | failed | 1.1 / 6.3; 0.55 / 1.19 / 3.92 |
+| affected__s1_utrap_evidence__A_stock__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, -0.00 | 0.000 | 0.0 | 299.9 / 289.6 | 0.97 (0.96) | 2 | 2937 (4.5); 10.3 | 0.133 [0.000, 0.346], 60% (vx_min 0.1) | 0 / 0 (--) | 1.06 / 0.71 | failed | 1.4 / 5.1; 0.03 / 0.29 / 4.10 |
 | affected__s1_utrap_evidence__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, -0.00 | 0.000 | 0.0 | 299.9 / 289.1 | 0.96 (0.96) | 0 | 2946 (4.6); 10.0 | 0.144 [0.000, 0.343], 60% (vx_min 0.1) | 0 / 0 (--) | 0.81 / 0.71 | failed | 1.2 / 5.3; 0.33 / 0.88 / 4.07 |
+| correct__s1_utrap__A_stock__O__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.93 | 0.07, 0.01 | 0.620 | 0.0 | 300.0 / 289.4 | 0.96 (0.96) | 2 | 0 (--); 13.6 | 0.453 [0.141, 0.500], 0% (vx_min -0.35) | 0 / 0 (--) | 3.72 / 3.72 | ok | 1.1 / 6.4; -0.01 / 0.10 / 4.23 |
+| correct__s1_utrap__A_stock__O__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.93 | 0.07, 0.01 | 0.592 | 0.0 | 300.1 / 290.0 | 0.97 (0.96) | 2 | 0 (--); 264.5 | 0.451 [0.136, 0.500], 0% (vx_min -0.35) | 0 / 0 (--) | 3.84 / 3.85 | ok | 1.2 / 5.5; 0.11 / 0.34 / 4.02 |
 | correct__s1_utrap__A_stock__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.67, 0.05 | 0.000 | 0.0 | 300.0 / 289.5 | 0.97 (0.96) | 1 | 2862 (13.4); 18.6 | 0.486 [0.199, 0.515], 0% (vx_min 0.1) | 0 / 0 (--) | 3.68 / 3.67 | ok | 1.1 / 5.3; 0.75 / 1.27 / 3.90 |
 | correct__s1_utrap__A_stock__P__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.05 | 0.001 | 0.0 | 300.0 / 289.5 | 0.96 (0.96) | 2 | 2863 (13.5); 18.4 | 0.485 [0.199, 0.516], 0% (vx_min 0.1) | 0 / 0 (--) | 3.66 / 3.66 | ok | 1.0 / 6.0; 0.37 / 0.48 / 4.11 |
 | correct__s1_utrap__A_stock__P__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.05 | 0.000 | 0.0 | 300.0 / 290.4 | 0.97 (0.97) | 1 | 2865 (13.4); 18.3 | 0.486 [0.199, 0.515], 0% (vx_min 0.1) | 0 / 0 (--) | 3.66 / 3.66 | ok | 1.1 / 4.1; -0.12 / 0.07 / 3.89 |
 | correct__s1_utrap__A_stock__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.66, 0.05 | 0.000 | 0.0 | 299.9 / 290.4 | 0.97 (0.96) | 2 | 2862 (13.4); 18.5 | 0.485 [0.199, 0.516], 0% (vx_min 0.1) | 0 / 0 (--) | 3.68 / 3.67 | ok | 1.2 / 5.2; 0.18 / 0.38 / 4.00 |
 | correct__s1_utrap__A_stock__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.34 | 0.66, 0.06 | 0.000 | 0.0 | 300.1 / 290.4 | 0.97 (0.96) | 1 | 2863 (13.4); 18.6 | 0.485 [0.194, 0.516], 0% (vx_min 0.1) | 0 / 0 (--) | 3.68 / 3.67 | ok | 1.1 / 5.9; 0.15 / 0.32 / 3.90 |
+| correct__s1_utrap__A_stock__V__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.72 | 0.28, 0.01 | 0.397 | 0.0 | 300.0 / 290.0 | 0.97 (0.96) | 1 | 0 (--); 15.8 | 0.474 [0.140, 0.504], 0% (vx_min -0.35) | 0 / 0 (--) | 4.27 / 4.28 | ok | 1.1 / 6.1; -0.03 / 0.24 / 4.06 |
+| correct__s1_utrap__A_stock__V__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.72 | 0.28, 0.01 | 0.396 | 0.0 | 299.9 / 289.7 | 0.97 (0.96) | 0 | 0 (--); 141.8 | 0.474 [0.139, 0.504], 0% (vx_min -0.35) | 0 / 0 (--) | 4.29 / 4.30 | ok | 1.3 / 5.4; 0.05 / 0.29 / 4.13 |
+| correct__s1_utrap__A_stock__V__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.72 | 0.28, 0.01 | 0.389 | 0.0 | 300.1 / 289.7 | 0.96 (0.96) | 2 | 0 (--); 15.7 | 0.474 [0.140, 0.505], 0% (vx_min -0.35) | 0 / 0 (--) | 4.29 / 4.28 | ok | 1.1 / 5.0; 0.19 / 0.49 / 4.14 |
+| correct__s1_utrap__F_se_full__O__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.89 | 0.11, -0.01 | 0.541 | 0.0 | 300.1 / 289.4 | 0.96 (0.96) | 2 | 0 (--); 299.7 | 0.452 [0.142, 0.499], 0% (vx_min -0.35) | 18 / 18 (10.4) | 6.17 / 6.14 | ok | 1.4 / 6.4; 0.31 / 0.63 / 4.43 |
+| correct__s1_utrap__F_se_full__O__rep1 | INVALID (driver did not finish the trial) | -- | -- | -- | -- | -- | -- / -- | -- (--) | -- | -- (--); -- | -- | -- / -- (--) | -- / -- | -- | 1.2 / --; -- / -- / -- |
 | correct__s1_utrap__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.36 | 0.65, 0.27 | 0.000 | 0.0 | 300.0 / 289.6 | 0.97 (0.94) | 1 | 2834 (14.0); 22.4 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.99 / 3.86 | ok | 0.4 / 5.0; 0.50 / 1.98 / 3.92 |
 | correct__s1_utrap__F_se_full__P__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.15 | 0.006 | 0.0 | 300.0 / 289.2 | 0.96 (0.96) | 1 | 2859 (13.1); 143.2 | 0.485 [0.194, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.71 / 3.70 | ok | 1.3 / 5.7; 0.23 / 0.32 / 4.18 |
 | correct__s1_utrap__F_se_full__P__rep2 | NOT_REACHED_ABORTED | SUCCEEDED | 2.29 | 0.71, 0.04 | 0.000 | 0.0 | 22.2 / 21.6 | 0.97 (0.97) | 0 | 20 (13.4); 19.0 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 5.80 / 3.71 | ok | 1.0 / 2.3; 0.11 / 0.11 / 3.71 |
 | correct__s1_utrap__F_se_full__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.49 | 0.60, 0.66 | 0.001 | 0.0 | 300.1 / 289.7 | 0.97 (0.94) | 2 | 2816 (17.0); 23.4 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 1 / 1 (16.7) | 4.20 / 4.18 | ok | 1.4 / 5.3; 0.22 / 0.52 / 3.96 |
 | correct__s1_utrap__F_se_full__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.03 | 0.023 | 0.0 | 300.0 / 290.8 | 0.97 (0.96) | 1 | 2866 (13.4); 18.1 | 0.485 [0.199, 0.500], 0% (vx_min 0.1) | 0 / 0 (--) | 3.66 / 3.66 | ok | 1.1 / 5.3; 0.22 / 0.44 / 3.88 |
+| correct__s1_utrap__F_se_full__V__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.81 | 0.20, 0.17 | 0.317 | 0.0 | 300.0 / 290.1 | 0.97 (0.96) | 0 | 0 (--); 241.7 | 0.474 [0.140, 0.500], 0% (vx_min -0.35) | 12 / 12 (14.2) | 7.21 / 7.19 | ok | 1.2 / 5.8; 0.15 / 0.38 / 4.10 |
+| correct__s1_utrap__F_se_full__V__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.80 | 0.20, 0.08 | 0.338 | 0.0 | 300.0 / 289.7 | 0.96 (0.96) | 0 | 0 (--); 293.2 | 0.474 [0.140, 0.500], 0% (vx_min -0.35) | 25 / 25 (14.3) | 11.59 / 11.47 | ok | 1.1 / 4.2; 0.08 / 0.37 / 4.14 |
+| correct__s1_utrap__F_se_full__V__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.82 | 0.18, 0.16 | 0.311 | 0.0 | 300.0 / 289.5 | 0.96 (0.96) | 1 | 0 (--); 300.1 | 0.474 [0.140, 0.500], 0% (vx_min -0.35) | 9 / 9 (14.3) | 8.80 / 8.75 | ok | 1.1 / 5.8; 0.29 / 0.39 / 4.16 |
+| correct__s1_utrap_evidence__A_stock__O__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.93 | 0.07, -0.00 | 0.612 | 0.0 | 300.0 / 290.2 | 0.97 (0.96) | 1 | 0 (--); 254.3 | 0.014 [-0.007, 0.092], 0% (vx_min -0.35) | 0 / 0 (--) | 0.75 / 0.76 | ok | 1.1 / 5.6; 0.21 / 0.41 / 4.00 |
+| correct__s1_utrap_evidence__A_stock__O__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.93 | 0.07, 0.00 | 0.623 | 0.0 | 300.1 / 290.3 | 0.97 (0.97) | 2 | 0 (--); 5.6 | 0.014 [-0.007, 0.095], 0% (vx_min -0.35) | 0 / 0 (--) | 0.74 / 0.74 | ok | 1.2 / 4.9; 0.25 / 0.39 / 4.03 |
 | correct__s1_utrap_evidence__A_stock__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, 0.13 | 0.000 | 0.0 | 300.0 / 290.0 | 0.97 (0.96) | 1 | 2900 (6.0); 13.9 | 0.107 [0.100, 0.163], 84% (vx_min 0.1) | 0 / 0 (--) | 0.98 / 0.74 | ok | 1.2 / 6.3; 0.78 / 1.28 / 4.07 |
 | correct__s1_utrap_evidence__A_stock__P__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.32 | 0.68, 0.11 | 0.000 | 0.0 | 300.0 / 287.8 | 0.96 (0.95) | 2 | 2929 (6.0); 11.8 | 0.106 [0.100, 0.160], 84% (vx_min 0.1) | 0 / 0 (--) | 0.72 / 0.70 | ok | 1.1 / 6.1; 0.41 / 0.67 / 4.19 |
 | correct__s1_utrap_evidence__A_stock__P__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, 0.07 | 0.000 | 0.0 | 300.0 / 289.8 | 0.97 (0.96) | 1 | 2873 (5.9); 136.3 | 0.106 [0.100, 0.160], 84% (vx_min 0.1) | 0 / 0 (--) | 2.63 / 0.71 | ok | 1.4 / 5.4; 0.55 / 0.65 / 3.96 |
 | correct__s1_utrap_evidence__A_stock__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.059 | 0.0 | 300.0 / 290.0 | 0.97 (0.96) | 1 | 2940 (5.9); 10.7 | 0.106 [0.100, 0.161], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.2 / 4.7; 0.11 / 0.20 / 4.03 |
 | correct__s1_utrap_evidence__A_stock__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.29 | 0.71, 0.07 | 0.000 | 0.0 | 300.1 / 290.3 | 0.97 (0.96) | 2 | 2880 (5.9); 136.5 | 0.107 [0.100, 0.162], 84% (vx_min 0.1) | 0 / 0 (--) | 1.95 / 0.72 | ok | 1.1 / 4.8; 0.14 / 0.34 / 3.91 |
+| correct__s1_utrap_evidence__A_stock__V__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.76 | 0.23, 0.00 | 0.448 | 0.0 | 300.0 / 289.8 | 0.97 (0.96) | 0 | 0 (--); 8.4 | 0.048 [-0.002, 0.151], 0% (vx_min -0.35) | 0 / 0 (--) | 1.26 / 1.27 | ok | 1.2 / 5.4; 0.16 / 0.27 / 4.11 |
+| correct__s1_utrap_evidence__A_stock__V__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.76 | 0.24, 0.00 | 0.450 | 0.0 | 300.1 / 290.0 | 0.97 (0.96) | 1 | 0 (--); 8.3 | 0.048 [-0.002, 0.151], 0% (vx_min -0.35) | 0 / 0 (--) | 1.26 / 1.27 | ok | 1.2 / 6.0; -0.10 / 0.03 / 4.13 |
+| correct__s1_utrap_evidence__A_stock__V__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.76 | 0.24, 0.00 | 0.450 | 0.0 | 300.0 / 289.9 | 0.97 (0.97) | 1 | 0 (--); 8.4 | 0.048 [-0.003, 0.151], 0% (vx_min -0.35) | 0 / 0 (--) | 1.26 / 1.26 | ok | 1.1 / 5.6; 0.24 / 0.48 / 4.08 |
+| correct__s1_utrap_evidence__F_se_full__O__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.90 | 0.10, 0.03 | 0.477 | 0.0 | 300.1 / 290.2 | 0.97 (0.96) | 2 | 0 (--); 297.7 | 0.018 [-0.012, 0.092], 0% (vx_min -0.35) | 26 / 26 (2.0) | 3.84 / 3.83 | ok | 1.1 / 5.4; 0.15 / 0.48 / 4.22 |
+| correct__s1_utrap_evidence__F_se_full__O__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.90 | 0.10, 0.03 | 0.530 | 0.0 | 300.0 / 290.1 | 0.97 (0.96) | 1 | 0 (--); 169.2 | 0.016 [-0.014, 0.094], 0% (vx_min -0.35) | 31 / 31 (2.0) | 3.09 / 3.08 | ok | 1.1 / 5.9; 0.36 / 0.43 / 4.20 |
 | correct__s1_utrap_evidence__F_se_full__P__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.38 | 0.62, 0.05 | 0.053 | 0.0 | 300.1 / 288.3 | 0.96 (0.93) | 1 | 2939 (6.0); 11.0 | 0.107 [0.100, 0.163], 84% (vx_min 0.1) | 0 / 0 (--) | 0.62 / 0.62 | ok | 1.1 / 5.8; 0.95 / 2.27 / 4.04 |
 | correct__s1_utrap_evidence__F_se_full__P__rep1 | NOT_REACHED_ABORTED | SUCCEEDED | 2.29 | 0.71, 0.07 | 0.000 | 0.0 | 138.2 / 133.7 | 0.97 (0.97) | 0 | 1252 (5.9); 136.5 | 0.106 [0.100, 0.160], 84% (vx_min 0.1) | 0 / 0 (--) | 2.86 / 0.72 | ok | 1.1 / 3.7; 0.09 / 0.27 / 4.05 |
 | correct__s1_utrap_evidence__F_se_full__P__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.063 | 0.0 | 300.0 / 288.1 | 0.96 (0.94) | 2 | 2939 (6.0); 10.8 | 0.107 [0.100, 0.166], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.4 / 5.7; 0.42 / 0.79 / 4.23 |
 | correct__s1_utrap_evidence__F_se_full__P__rep3 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.35 | 0.65, 0.04 | 0.036 | 0.0 | 299.9 / 290.5 | 0.97 (0.97) | 1 | 2936 (5.9); 11.4 | 0.107 [0.100, 0.165], 84% (vx_min 0.1) | 0 / 0 (--) | 0.65 / 0.65 | ok | 1.3 / 4.8; 0.08 / 0.18 / 3.91 |
 | correct__s1_utrap_evidence__F_se_full__P__rep4 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.39 | 0.61, 0.05 | 0.060 | 0.0 | 300.1 / 290.2 | 0.97 (0.96) | 0 | 2941 (6.0); 10.9 | 0.106 [0.100, 0.161], 84% (vx_min 0.1) | 0 / 0 (--) | 0.61 / 0.61 | ok | 1.0 / 4.9; 0.53 / 0.66 / 3.99 |
+| correct__s1_utrap_evidence__F_se_full__V__rep0 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.75 | 0.25, -0.17 | 0.356 | 0.0 | 300.1 / 290.1 | 0.97 (0.96) | 1 | 0 (--); 300.3 | 0.047 [-0.003, 0.151], 0% (vx_min -0.35) | 12 / 12 (6.8) | 5.41 / 5.36 | ok | 1.3 / 6.9; 0.26 / 0.33 / 4.21 |
+| correct__s1_utrap_evidence__F_se_full__V__rep1 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.71 | 0.29, -0.12 | 0.310 | 0.0 | 300.0 / 289.4 | 0.96 (0.96) | 0 | 0 (--); 300.1 | 0.048 [-0.002, 0.151], 0% (vx_min -0.35) | 9 / 9 (6.8) | 3.96 / 3.95 | ok | 1.0 / 5.9; 0.16 / 0.22 / 4.20 |
+| correct__s1_utrap_evidence__F_se_full__V__rep2 | NOT_REACHED_TIMEOUT | UNKNOWN | 2.79 | 0.21, -0.12 | 0.335 | 0.0 | 300.0 / 289.7 | 0.97 (0.96) | 1 | 0 (--); 300.1 | 0.048 [-0.002, 0.150], 0% (vx_min -0.35) | 12 / 12 (6.9) | 6.07 / 5.98 | ok | 1.3 / 5.3; 0.35 / 0.65 / 4.14 |
 
 ## Attempts invalidated by host load or interrupted, and repeated (not counted above)
 
@@ -89,67 +119,68 @@ Definitions and design: `PREREG.md`. Do not edit by hand.
 ```json
 {
  "affected": {
-  "contact": 3,
+  "contact": 4,
   "first5s_vx_mean_max": 0.14356000000000002,
   "first5s_vx_mean_min": 0.10396000000000002,
   "foreign_cores_mean_max": 0.598,
   "foreign_cores_worst_window_max": 1.193,
-  "load1_at_start_max": 1.21,
+  "load1_at_start_max": 1.41,
   "load1_mean_max": 6.272578796561566,
-  "load1_mean_min": 5.277314228590501,
-  "missed_control_cycles_total": 0,
-  "n_driven": 3,
+  "load1_mean_min": 5.108253915361499,
+  "missed_control_cycles_total": 2,
+  "n_driven": 4,
   "nav2_false_success": 0,
   "nav2_succeeded": 0,
-  "not_reached": 3,
-  "not_reached_with_optimizer_failures": 3,
-  "not_reached_without_escape_enter": 3,
-  "own_cores_mean_max": 4.073,
+  "not_reached": 4,
+  "not_reached_with_optimizer_failures": 4,
+  "not_reached_without_escape_enter": 4,
+  "own_cores_mean_max": 4.096,
   "own_cores_mean_min": 3.876,
   "reached": 0,
   "rtf_max": 0.9679158581210476,
-  "rtf_median": 0.9669173752056438,
+  "rtf_median": 0.9661271816605559,
   "rtf_min": 0.9635333333333334,
   "trials_with_escape_enter": 0,
-  "trials_with_missed_cycles": 0,
-  "trials_with_optimizer_failures": 3
+  "trials_with_missed_cycles": 1,
+  "trials_with_optimizer_failures": 4
  },
  "correct": {
   "contact": 14,
   "first5s_vx_mean_max": 0.48560000000000003,
-  "first5s_vx_mean_min": 0.10628000000000005,
+  "first5s_vx_mean_min": 0.013879999999999998,
   "foreign_cores_mean_max": 0.948,
   "foreign_cores_worst_window_max": 2.27,
   "load1_at_start_max": 1.44,
-  "load1_mean_max": 6.251655011654918,
+  "load1_mean_max": 6.883576423576475,
   "load1_mean_min": 2.3338839285714266,
-  "missed_control_cycles_total": 23,
-  "n_driven": 20,
+  "missed_control_cycles_total": 43,
+  "n_driven": 39,
   "nav2_false_success": 2,
   "nav2_succeeded": 2,
-  "not_reached": 20,
+  "not_reached": 39,
   "not_reached_with_optimizer_failures": 20,
-  "not_reached_without_escape_enter": 19,
-  "own_cores_mean_max": 4.231,
+  "not_reached_without_escape_enter": 29,
+  "own_cores_mean_max": 4.431,
   "own_cores_mean_min": 3.707,
   "reached": 0,
   "rtf_max": 0.9689150776246512,
-  "rtf_median": 0.9660718273067259,
+  "rtf_median": 0.9659257277164794,
   "rtf_min": 0.9588533957876989,
-  "trials_with_escape_enter": 1,
-  "trials_with_missed_cycles": 17,
+  "trials_with_escape_enter": 10,
+  "trials_with_missed_cycles": 31,
   "trials_with_optimizer_failures": 20
  },
- "n_affected": 3,
- "n_correct": 20,
- "n_registered_trials": 23,
+ "n_affected": 4,
+ "n_correct": 40,
+ "n_registered_trials": 44,
  "outcomes_affected": {
   "NOT_REACHED_ABORTED": 2,
-  "NOT_REACHED_TIMEOUT": 1
+  "NOT_REACHED_TIMEOUT": 2
  },
  "outcomes_correct": {
+  "INVALID": 1,
   "NOT_REACHED_ABORTED": 2,
-  "NOT_REACHED_TIMEOUT": 18
+  "NOT_REACHED_TIMEOUT": 37
  }
 }
 ```
