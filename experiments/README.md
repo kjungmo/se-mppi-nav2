@@ -27,11 +27,25 @@ experiments/
 `benchmark2d`와 `prototype`에 v2 탈출 논리가 선택 기능으로 들어 있습니다.
 기본값(`CONFIGS`, `--variant v1`)은 논문 v1 그대로이며, 커밋된 `results_2d/`를 비트 단위로 재현합니다.
 
-- `prototype/se_mppi_v2.py`: 앵커 경로 진행(1 Hz 직선 재계획 모사), 지평선 광선 선택(36개, 2.0 m, 이력 0.5 rad), 고정 경유점 이동(hop), 모든 롤아웃 충돌 시 영 명령.
-- 네 기능은 `configs.make_v2_configs(progress=..., gap_rule=..., hop=..., zero_on_all_collide=...)`로 각각 끕니다.
+- `prototype/se_mppi_v2.py`는 플러그인의 C++ 코드를 옮겨 쓴 파일입니다. 설계 문서를 옮긴 파일이 아닙니다.
+  - 앵커 경로 진행: 1 Hz 직선 재계획을 흉내 냅니다. 후보 경로의 부호 있는 전진량을 사슬로 잇습니다 (`path_progress.cpp`).
+  - 지평선 광선 선택: 광선 36개, 2.0 m, 이력 0.5 rad. 최소 여유 0.6 m와 회피 목록을 씁니다 (`opening_search.cpp`).
+  - 고정 경유점 이동(hop): 도달·시간 초과·이동 감시·막힘 규칙으로 다시 고릅니다 (`manageEscapePath`).
+  - 모든 롤아웃이 충돌하면 영 명령을 냅니다.
+  - 탐지에서 탈출까지 한 주기 지연이 있습니다. 플러그인과 같습니다.
+- 설계 문서에 없는 추가 규칙 네 개는 `escape_extras` 하나로 켜고 끕니다. 기본값은 켜짐입니다 (출하 알고리즘).
+  - (a) 정지 자세·이전 hop 출발점·실패한 경유점으로 가는 광선을 뺍니다.
+  - (b) 3 s 동안 0.15 m 미만으로 움직이면 다시 고릅니다.
+  - (c) 0.2 m보다 가까운 경유점은 쓰지 않습니다.
+  - (d) 지평선 후보에 0.6 m 최소 여유를 요구합니다.
+- `escape_extras=False`는 설계 문서대로 만든 알고리즘입니다.
+- 나머지 기능은 `configs.make_v2_configs(progress=..., gap_rule=..., hop=..., zero_on_all_collide=..., act_on_previous_cycle=..., escape_extras=...)`로 각각 끕니다.
 - 실행: `python3 -m experiments.benchmark2d.runner --variant v2 --out <새 파일>`. v2는 `results_2d/trials.csv`에 쓰지 못합니다.
-- 스모크 결과와 전체 재실행 명령: `results_2d_v2_smoke/SMOKE.md`. 스모크는 결과가 아닙니다.
-- 시험: `benchmark2d/tests/test_v2_mirror.py`, `test_v2_gap_parity.py`(C++ 지평선 규칙과 광선 한 칸 이내 일치), `test_v1_unchanged.py`.
+- 스모크 결과와 전체 재실행 명령: `results_2d_v2_smoke/SMOKE.md`. 스모크는 결과가 아닙니다. 1,200회 전체 재실행(D-2)은 아직 돌리지 않았습니다.
+- 시험: `benchmark2d/tests/test_v2_mirror.py`, `test_v2_cxx_parity.py`, `test_v1_unchanged.py`.
+  - `test_v2_cxx_parity.py`는 C++ 코드를 직접 부릅니다 (`parity_shim`). 선택 규칙·광선 쏘기·진행 사슬을 비교합니다.
+  - 실행 전에 `colcon build`로 `parity_shim`을 만드세요. `SE_PARITY_SHIM=<빌드>/nav2_se_controller/parity_shim`을 지정하세요.
+  - `SE_REQUIRE_PARITY=1`이면 shim이 없을 때 시험이 실패합니다. 미러가 C++와 같다고 주장할 때는 꼭 켜세요.
 
 ## Ablation 구성 → 실제 파라미터 override
 
