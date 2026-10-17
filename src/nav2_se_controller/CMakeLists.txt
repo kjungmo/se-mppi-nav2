@@ -250,6 +250,7 @@ if(BUILD_TESTING)
     test/test_multi_robot_coordinator.cpp
     test/test_path_progress.cpp
     test/test_gap_search.cpp
+    test/test_gap_pocket.cpp
     test/test_escape_injection_live_shapes.cpp)
   target_include_directories(test_nav2_se_controller PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
