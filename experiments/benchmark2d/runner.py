@@ -19,7 +19,7 @@ import time
 from multiprocessing import Pool
 
 from . import scenarios as sc
-from .configs import CONFIGS, ORDER
+from .configs import CONFIGS, ORDER, VARIANTS  # noqa: F401
 from .rollout import rollout
 
 _CSV_FIELDS = [
@@ -29,15 +29,19 @@ _CSV_FIELDS = [
     'cbf_active_steps', 'entrapped_frac',
     'n_obstacles', 'n_dynamic', 'feasible',
 ]
+# Extra columns written only by the opt-in v2 variant (the v1 file is unchanged).
+_V2_FIELDS = ['v2_zero_cmd_steps', 'v2_progress_events', 'v2_adoptions', 'v2_hops']
 
 
 def run_one_scenario(task):
     """Run all configs for one (family, seed) scenario. Returns list of rows."""
-    family, seed, config_names, max_steps = task
+    family, seed, config_names, max_steps, *rest = task
+    variant = rest[0] if rest else 'v1'
+    configs = VARIANTS[variant]
     rows = []
     for name in config_names:
         scn = sc.make(family, seed)  # fresh world per config (movers mutate it)
-        r = rollout(scn.world, CONFIGS[name], scn.start,
+        r = rollout(scn.world, configs[name], scn.start,
                     goal_tol=0.25, max_steps=max_steps, seed=seed)
         rows.append({
             'family': family, 'seed': seed, 'config': name,
@@ -56,6 +60,7 @@ def run_one_scenario(task):
             'n_obstacles': scn.meta.get('n_obstacles'),
             'n_dynamic': scn.meta.get('n_dynamic', 0),
             'feasible': int(scn.meta.get('feasible', True)),
+            **({k: r[k] for k in _V2_FIELDS} if variant == 'v2' else {}),
         })
     return rows
 
@@ -78,7 +83,8 @@ def _done_scenarios(out_csv, config_names):
 
 
 def run_benchmark(families, n, out_csv, *, config_names=None, max_steps=350,
-                  workers=6, chunksize=1, progress=True, resume=True):
+                  workers=6, chunksize=1, progress=True, resume=True,
+                  variant='v1'):
     """Run the full matrix, appending to ``out_csv`` incrementally.
 
     Rows are flushed after every completed scenario so an interrupted run keeps
@@ -89,7 +95,8 @@ def run_benchmark(families, n, out_csv, *, config_names=None, max_steps=350,
     done = _done_scenarios(out_csv, config_names) if resume else set()
     # Interleave families by seed (seed0 all families, seed1 all families, ...)
     # so an early stop still leaves a balanced N across families.
-    tasks = [(fam, seed, config_names, max_steps)
+    tasks = [(fam, seed, config_names, max_steps) +
+             (() if variant == 'v1' else (variant,))
              for seed in range(n) for fam in families
              if (fam, seed) not in done]
     os.makedirs(os.path.dirname(os.path.abspath(out_csv)), exist_ok=True)
@@ -102,7 +109,8 @@ def run_benchmark(families, n, out_csv, *, config_names=None, max_steps=350,
               f'{len(tasks)} remaining', flush=True)
 
     with open(out_csv, 'a', newline='') as fout:
-        writer = csv.DictWriter(fout, fieldnames=_CSV_FIELDS)
+        writer = csv.DictWriter(
+            fout, fieldnames=_CSV_FIELDS + (_V2_FIELDS if variant == 'v2' else []))
         if new_file:
             writer.writeheader()
             fout.flush()
@@ -155,13 +163,21 @@ def main():
     ap.add_argument('--max-steps', type=int, default=300)
     ap.add_argument('--workers', type=int, default=6)
     ap.add_argument('--no-resume', action='store_true')
+    ap.add_argument('--variant', choices=sorted(VARIANTS), default='v1',
+                    help="v1 = paper results (default); v2 = SE-MPPI v2 escape "
+                         "logic (smoke / re-run; write to a separate --out)")
     ap.add_argument('--out', default=os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         'experiments', 'results_2d', 'trials.csv'))
     args = ap.parse_args()
+    paper_v1 = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__)))), 'experiments', 'results_2d', 'trials.csv')
+    if args.variant != 'v1' and os.path.abspath(args.out) == paper_v1:
+        ap.error('--variant v2 must not write the committed paper-v1 file; '
+                 'pass --out')
     run_benchmark(args.families, args.n, args.out,
                   max_steps=args.max_steps, workers=args.workers,
-                  resume=not args.no_resume)
+                  resume=not args.no_resume, variant=args.variant)
 
 
 if __name__ == '__main__':

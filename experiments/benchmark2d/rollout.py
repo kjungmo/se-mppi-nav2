@@ -36,6 +36,7 @@ _PROTO = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 if _PROTO not in sys.path:
     sys.path.insert(0, _PROTO)
 import se_mppi_proto as se  # noqa: E402
+import se_mppi_v2 as v2m  # noqa: E402
 
 ALPHA_BASE = 2.0
 ALPHA_ESCAPE = 6.0
@@ -59,40 +60,73 @@ def rollout(world, cfg, start, *, goal_tol=0.25, max_steps=400, seed=0):
 
     Mirrors ``run_validation.run`` exactly except the CBF/TTC obstacle scope
     (see module docstring).
+
+    SE-MPPI v2 (opt-in): a config that carries a ``'v2'`` dict (see
+    ``configs.CONFIGS_V2`` and ``se_mppi_v2.V2_PARAMS``) switches four things
+    independently; a config without it runs the paper-v1 loop unchanged.
     """
     mppi = se.MPPI(seed=seed)
     detector = se.EntrapmentDetector(stall_window=cfg.get('stall', 15))
     state = np.array(start, float)
     dyn = _dynamic_view(world)
+    v2 = cfg.get('v2')
+    tracker = hopper = None
+    zero_cmd_steps = 0
+    if v2 is not None and cfg['use_escape']:
+        if v2['progress'] == 'anchor':
+            tracker = v2m.AnchorProgress(state[:2], world.goal,
+                                         v2['progress_min_advance'],
+                                         v2['progress_adopt_advance'])
+            replan_every = max(1, int(round(v2['replan_period_s'] / mppi.dt)))
+        hopper = v2m.WaypointHopper(v2, mppi.dt)
 
     traj = [state[:2].copy()]
     alphas, slacks, clears, ent_flags = [], [], [], []
     reached = collided = False
     prev_gap = None
 
-    for _ in range(max_steps):
+    for step_i in range(max_steps):
         dist = np.linalg.norm(state[:2] - world.goal)
-        entrapped = detector.update(dist) if cfg['use_escape'] else False
+        if tracker is not None:
+            # v2: progress on the anchor path; the BT replans a straight path
+            # from the robot pose every second (the mirror's planner is blind
+            # to the pocket, like the planner of the live runs).
+            if step_i > 0 and step_i % replan_every == 0:
+                tracker.replan(state[:2], world.goal)
+            entrapped = detector.update(-float(tracker.update(state[:2])))
+        else:
+            entrapped = detector.update(dist) if cfg['use_escape'] else False
         ent_flags.append(entrapped)
 
         escape_costs = None
         eff_goal = None
         if not entrapped:
             prev_gap = None
+            if hopper is not None:
+                hopper.release()
         if cfg['use_escape'] and entrapped:
             pos = state[:2].copy()
             gb = np.arctan2(world.goal[1] - pos[1], world.goal[0] - pos[0])
-            gap = (se.find_escape_gap(pos, gb, world, min_clearance=2.4,
-                                      prev_bearing=prev_gap)
-                   if cfg['use_gap'] else None)
-            prev_gap = gap
-            if gap is not None:
-                eff_goal = pos + 2.5 * np.array([np.cos(gap), np.sin(gap)])
+            if hopper is not None:
+                eff_goal = (hopper.update(step_i, pos, gb, world)
+                            if cfg['use_gap'] else None)
+            else:
+                gap = (se.find_escape_gap(pos, gb, world, min_clearance=2.4,
+                                          prev_bearing=prev_gap)
+                       if cfg['use_gap'] else None)
+                prev_gap = gap
+                if gap is not None:
+                    eff_goal = pos + 2.5 * np.array([np.cos(gap), np.sin(gap)])
 
             def escape_costs(pts):
                 return se.apf_repulsion(pts, world)
 
-        u = mppi.step(state, world, escape_costs, eff_goal=eff_goal)
+        if v2 is not None and v2['zero_on_all_collide']:
+            u = mppi.step(state, world, escape_costs, eff_goal=eff_goal,
+                          zero_on_all_collide=True)
+            zero_cmd_steps += int(mppi.last_all_collide)
+        else:
+            u = mppi.step(state, world, escape_costs, eff_goal=eff_goal)
 
         alpha = ALPHA_BASE
         if cfg['use_cbf']:
@@ -133,7 +167,7 @@ def rollout(world, cfg, start, *, goal_tol=0.25, max_steps=400, seed=0):
     else:
         outcome = 'TIMEOUT'
 
-    return {
+    out = {
         'success': success,
         'collided': collided,
         'reached': reached,
@@ -152,3 +186,11 @@ def rollout(world, cfg, start, *, goal_tol=0.25, max_steps=400, seed=0):
         # kept out of the CSV but handy for the trajectory montage:
         '_traj': traj,
     }
+    if v2 is not None:
+        out.update({
+            'v2_zero_cmd_steps': zero_cmd_steps,
+            'v2_progress_events': tracker.events if tracker else 0,
+            'v2_adoptions': tracker.adoptions if tracker else 0,
+            'v2_hops': hopper.hops if hopper else 0,
+        })
+    return out
