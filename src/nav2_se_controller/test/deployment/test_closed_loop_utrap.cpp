@@ -149,7 +149,11 @@ TEST(ClosedLoopUtrap, NamedGeometryFromTheEnvironment)
   const char * runs_env = std::getenv("SE_UTRAP_RUNS");
   const int runs = runs_env != nullptr ? std::atoi(runs_env) : 1;
   bool found = false;
-  for (const auto & p : utrap::family()) {
+  auto all = utrap::family();
+  for (const auto & p : utrap::primary()) {
+    all.push_back(p);
+  }
+  for (const auto & p : all) {
     if (utrap::name(p) != want) {
       continue;
     }
@@ -159,7 +163,7 @@ TEST(ClosedLoopUtrap, NamedGeometryFromTheEnvironment)
       report(r, run);
     }
   }
-  EXPECT_TRUE(found) << want << " is not in the family";
+  EXPECT_TRUE(found) << want << " is neither in the family nor a primary geometry";
 }
 
 int main(int argc, char ** argv)
