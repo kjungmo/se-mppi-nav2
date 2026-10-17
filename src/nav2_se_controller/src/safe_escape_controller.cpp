@@ -551,12 +551,25 @@ void SafeEscapeController::reset()
   last_tracked_.clear();
   multi_.reset();
   progress_.reset();
+  // MPPI may hold the escape path: give it the behaviour tree's path back.
+  const bool restore_path = escape_.active && !global_plan_.poses.empty();
   escape_ = EscapeState{};
   prev_entrapped_ = false;
   has_stamp_ = false;
   has_goal_ = false;
   if (shared_) {
     shared_->entrapped.store(false, std::memory_order_relaxed);
+  }
+  if (restore_path) {
+    handNominalPath(global_plan_);
+    if (escape_path_pub_ && escape_path_pub_->is_activated()) {
+      nav_msgs::msg::Path cleared;
+      cleared.header.frame_id = global_plan_.header.frame_id;
+      if (auto node = parent_.lock()) {
+        cleared.header.stamp = node->now();
+      }
+      escape_path_pub_->publish(cleared);
+    }
   }
 }
 

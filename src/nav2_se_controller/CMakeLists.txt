@@ -274,9 +274,11 @@ if(BUILD_TESTING)
 
   ament_add_gtest(test_controller_behaviour test/deployment/test_controller_behaviour.cpp
     TIMEOUT 120)
+  target_include_directories(test_controller_behaviour PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/deployment)
   target_link_libraries(test_controller_behaviour safe_escape_controller)
   ament_target_dependencies(test_controller_behaviour
-    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros diagnostic_msgs)
 
   # Rollout direction of the installed libmppi_controller, the sign of the
   # controller's command, and the configure-time guard. Fails on a

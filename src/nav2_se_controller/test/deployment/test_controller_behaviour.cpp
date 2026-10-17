@@ -39,7 +39,10 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "tf2_ros/buffer.h"
 
+#include "diagnostic_msgs/msg/diagnostic_array.hpp"
+#include "nav_msgs/msg/path.hpp"
 #include "nav2_se_controller/dynamic_obstacle_tracker.hpp"
+#include "utrap_dev_geometries.hpp"
 #include "nav2_se_controller/safe_escape_controller.hpp"
 
 namespace
@@ -58,6 +61,18 @@ public:
   std::size_t progressEvents() const {return progress_.events();}
   std::size_t adoptions() const {return progress_.adoptions();}
   bool hasAnchor() const {return progress_.hasAnchor();}
+  // Escape path substitution.
+  std::vector<nav_msgs::msg::Path> handed;  // every path given to MPPI
+  void handNominalPath(const nav_msgs::msg::Path & path) override
+  {
+    handed.push_back(path);
+    nav2_se_controller::SafeEscapeController::handNominalPath(path);
+  }
+  bool escapeActive() const {return escape_.active;}
+  int escapeHop() const {return escape_.hop;}
+  std::uint64_t hops() const {return counters_.escape_hops.load();}
+  double escapeBearing() const {return escape_.bearing;}
+  bool vxMinBlocks() const {return vxMinBlocksReversal();}
   // Scripted nominal command: throw instead of calling the optimizer.
   enum class Throw { kNone, kNoValidControl, kRuntimeError };
   Throw throw_mode{Throw::kNone};
@@ -869,6 +884,409 @@ TEST_F(ControllerReplan, ProgressDistancesCanBeSetAtRuntime)
   step(0.85, 0.0);
   step(0.85, 0.25);
   EXPECT_EQ(controller_->adoptions(), 1u) << "0.25 m is above the new adoption distance 0.2 m";
+}
+
+// ---------------------------------------------------------------------------
+// Defect 4 (campaign 1, ROOT_CAUSE.md section 4): the escape did not route out
+// of the pocket. While entrapped, MPPI is handed a short path from the robot to
+// a waypoint along the bearing of the opening chosen by the horizon-ray rule.
+// The pocket is drawn from a development geometry (never the live scenarios).
+// ---------------------------------------------------------------------------
+class ControllerEscapePath : public ControllerBehaviour
+{
+protected:
+  void begin(const std::vector<rclcpp::Parameter> & extra = {}, int stall_window = 5)
+  {
+    Options opt;
+    opt.overrides = {rclcpp::Parameter("FollowPath.se_progress_stall_window", stall_window)};
+    opt.overrides.insert(opt.overrides.end(), extra.begin(), extra.end());
+    start(opt);
+    drawPocket();
+    bt_path_ = straightPath("map", -2.6, 3.0, 0.0);
+    controller_->setPlan(bt_path_);
+  }
+
+  // A pocket of the development family (rotation 0): back face at x = 0.9. The
+  // default w13_d18 has its mouth at x = -0.9 and a narrow cone of rays that
+  // reach the horizon; the wide w22_d11 has a wide cone.
+  double pocket_w_{1.3};
+  double pocket_d_{1.8};
+  void drawPocket()
+  {
+    utrap::Pocket p;
+    p.w = pocket_w_;
+    p.d = pocket_d_;
+    p.theta = 0.0;
+    p.ft = 1.0;
+    p.fb = 1.0;
+    const auto ws = utrap::walls(p);
+    auto * cm = costmap_ros_->getCostmap();
+    for (unsigned int j = 0; j < cm->getSizeInCellsY(); ++j) {
+      for (unsigned int i = 0; i < cm->getSizeInCellsX(); ++i) {
+        double wx, wy;
+        cm->mapToWorld(i, j, wx, wy);
+        const unsigned char c = utrap::cellCost(utrap::surfaceDistance(ws, wx, wy));
+        if (c != 0) {
+          cm->setCost(i, j, c);
+        }
+      }
+    }
+  }
+
+  // The robot sits at the stall pose until entrapment is declared and the
+  // escape path has been handed to MPPI (one more cycle).
+  void stallUntilEscapePath()
+  {
+    // Entrapment is declared after the stall window (the sixth call); the cycle
+    // after it selects the waypoint. Returns right after the selection.
+    for (int k = 0; k < 30 && !controller_->escapeActive(); ++k) {step(kStallX, 0.0);}
+    ASSERT_TRUE(controller_->entrapped());
+    ASSERT_TRUE(controller_->escapeActive());
+  }
+
+  static double bearingOf(const nav_msgs::msg::Path & path)
+  {
+    const auto & a = path.poses.front().pose.position;
+    const auto & b = path.poses.back().pose.position;
+    return std::atan2(b.y - a.y, b.x - a.x);
+  }
+  static double lengthOf(const nav_msgs::msg::Path & path)
+  {
+    const auto & a = path.poses.front().pose.position;
+    const auto & b = path.poses.back().pose.position;
+    return std::hypot(b.x - a.x, b.y - a.y);
+  }
+  static double angleBetween(double a, double b)
+  {
+    return std::abs(std::atan2(std::sin(a - b), std::cos(a - b)));
+  }
+  static bool samePath(const nav_msgs::msg::Path & a, const nav_msgs::msg::Path & b)
+  {
+    if (a.poses.size() != b.poses.size() || a.header.frame_id != b.header.frame_id) {
+      return false;
+    }
+    for (std::size_t i = 0; i < a.poses.size(); ++i) {
+      if (a.poses[i].pose.position.x != b.poses[i].pose.position.x ||
+        a.poses[i].pose.position.y != b.poses[i].pose.position.y)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static constexpr double kStallX = 0.35;  // 0.34 m in front of the inflated back wall
+  nav_msgs::msg::Path bt_path_;
+};
+
+// Path capture: when entrapped in the pocket, the path given to MPPI starts at
+// the robot, points within 20 degrees of the mouth bearing (180 degrees), and
+// ends (robot radius + 0.05 m) short of the end of the free ray (2.0 m).
+TEST_F(ControllerEscapePath, TheEscapePathGivenToMppiPointsAtTheMouth)
+{
+  begin();
+  ASSERT_EQ(controller_->handed.size(), 1u) << "the BT path";
+  stallUntilEscapePath();
+  ASSERT_EQ(controller_->handed.size(), 2u);
+  const auto & path = controller_->handed.back();
+  ASSERT_GE(path.poses.size(), 10u);
+  EXPECT_EQ(path.header.frame_id, "map");
+  EXPECT_NEAR(path.poses.front().pose.position.x, kStallX, 1e-9);
+  EXPECT_NEAR(path.poses.front().pose.position.y, 0.0, 1e-9);
+  const double bearing = bearingOf(path);
+  std::printf(
+    "escape path: %zu poses, bearing %.0f deg, length %.2f m\n", path.poses.size(),
+    bearing * 180.0 / M_PI, lengthOf(path));
+  EXPECT_LE(angleBetween(bearing, M_PI), 20.5 * M_PI / 180.0);
+  EXPECT_NEAR(lengthOf(path), 2.0 - controller_->robotRadius() - 0.05, 0.03);
+  // Poses every 0.05 m, oriented along the bearing.
+  for (std::size_t i = 1; i < path.poses.size(); ++i) {
+    const auto & a = path.poses[i - 1].pose.position;
+    const auto & b = path.poses[i].pose.position;
+    EXPECT_NEAR(std::hypot(b.x - a.x, b.y - a.y), 0.05, 0.005) << i;
+  }
+  const auto & q = path.poses.back().pose.orientation;
+  EXPECT_NEAR(2.0 * std::atan2(q.z, q.w), bearing, 1e-6);
+  EXPECT_EQ(controller_->hops(), 1u);
+  EXPECT_EQ(controller_->escapeHop(), 1);
+}
+
+// The waypoint is capped at se_escape_waypoint_cap.
+TEST_F(ControllerEscapePath, TheWaypointDistanceIsCapped)
+{
+  begin({rclcpp::Parameter("FollowPath.se_escape_waypoint_cap", 0.8)});
+  stallUntilEscapePath();
+  EXPECT_NEAR(lengthOf(controller_->handed.back()), 0.8, 0.03);
+}
+
+// The BT keeps replanning while the escape path is substituted: the new path
+// is kept for progress and the near-goal test but is not given to MPPI.
+TEST_F(ControllerEscapePath, ABtReplanDuringTheEscapeIsNotGivenToMppi)
+{
+  begin();
+  stallUntilEscapePath();
+  const std::size_t before = controller_->handed.size();
+  controller_->setPlan(straightPath("map", kStallX, 3.0, 0.0));
+  EXPECT_EQ(controller_->handed.size(), before);
+  EXPECT_TRUE(controller_->escapeActive());
+  step(kStallX, 0.0);
+  EXPECT_EQ(controller_->handed.size(), before) << "no re-hand while the waypoint stands";
+}
+
+// The escape ends when progress resumes: the latest BT path goes back to MPPI.
+TEST_F(ControllerEscapePath, TheLatestBtPathIsGivenBackWhenTheEscapeEnds)
+{
+  begin();
+  stallUntilEscapePath();
+  const auto replan = straightPath("map", kStallX, 3.0, 0.0);
+  controller_->setPlan(replan);
+  // Enough motion along the anchor path to clear entrapment (0.15 m past the best).
+  step(kStallX + 0.15, 0.0);
+  ASSERT_FALSE(controller_->entrapped());
+  const std::size_t before = controller_->handed.size();
+  step(kStallX + 0.15, 0.0);
+  ASSERT_EQ(controller_->handed.size(), before + 1);
+  EXPECT_TRUE(samePath(controller_->handed.back(), replan));
+  EXPECT_FALSE(controller_->escapeActive());
+  step(kStallX + 0.15, 0.0);
+  EXPECT_EQ(controller_->handed.size(), before + 1) << "given back once";
+}
+
+TEST_F(ControllerEscapePath, ResetGivesTheBtPathBack)
+{
+  begin();
+  stallUntilEscapePath();
+  const std::size_t before = controller_->handed.size();
+  controller_->reset();
+  ASSERT_EQ(controller_->handed.size(), before + 1);
+  EXPECT_TRUE(samePath(controller_->handed.back(), bt_path_));
+  EXPECT_FALSE(controller_->escapeActive());
+}
+
+TEST_F(ControllerEscapePath, ANewGoalReplacesTheEscapePathAtOnce)
+{
+  begin();
+  stallUntilEscapePath();
+  const std::size_t before = controller_->handed.size();
+  const auto other = straightPath("map", kStallX, 2.0, 1.5);  // another goal
+  controller_->setPlan(other);
+  ASSERT_EQ(controller_->handed.size(), before + 1);
+  EXPECT_TRUE(samePath(controller_->handed.back(), other));
+  EXPECT_FALSE(controller_->escapeActive());
+  EXPECT_FALSE(controller_->entrapped());
+}
+
+TEST_F(ControllerEscapePath, SwitchingTheSeLayerOffGivesTheBtPathBack)
+{
+  begin();
+  stallUntilEscapePath();
+  const std::size_t before = controller_->handed.size();
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.se_enabled", false)).successful);
+  step(kStallX, 0.0);
+  ASSERT_EQ(controller_->handed.size(), before + 1);
+  EXPECT_TRUE(samePath(controller_->handed.back(), bt_path_));
+  EXPECT_FALSE(controller_->escapeActive());
+  step(kStallX, 0.0);
+  EXPECT_EQ(controller_->handed.size(), before + 1);
+}
+
+TEST_F(ControllerEscapePath, SubstitutionCanBeSwitchedOff)
+{
+  begin({rclcpp::Parameter("FollowPath.se_escape_path_substitution", false)});
+  for (int k = 0; k < 20; ++k) {step(kStallX, 0.0);}
+  EXPECT_TRUE(controller_->entrapped());
+  EXPECT_EQ(controller_->handed.size(), 1u) << "only the BT path";
+  EXPECT_FALSE(controller_->escapeActive());
+}
+
+// Near the goal the entrapment is suppressed (the BT path still feeds this test),
+// so nothing is substituted.
+TEST_F(ControllerEscapePath, NothingIsSubstitutedNearTheGoal)
+{
+  begin();
+  for (int k = 0; k < 20; ++k) {step(2.8, 0.0);}
+  EXPECT_FALSE(controller_->entrapped());
+  EXPECT_EQ(controller_->handed.size(), 1u);
+}
+
+// Waypoint reached: a new hop, a new path from the new position.
+TEST_F(ControllerEscapePath, ReachingTheWaypointSelectsTheNextHop)
+{
+  begin();
+  stallUntilEscapePath();
+  const auto first = controller_->handed.back();
+  const auto & wp = first.poses.back().pose.position;
+  step(wp.x, wp.y);  // the robot is at the waypoint
+  EXPECT_EQ(controller_->hops(), 2u);
+  EXPECT_EQ(controller_->escapeHop(), 2);
+  ASSERT_EQ(controller_->handed.size(), 3u);
+  const auto & second = controller_->handed.back();
+  EXPECT_NEAR(second.poses.front().pose.position.x, wp.x, 1e-9);
+  // The next hop must not lead back to where the previous one started.
+  const double back = std::atan2(kStallX - wp.x, 0.0 - wp.y);
+  (void)back;
+  EXPECT_GT(
+    std::hypot(
+      second.poses.back().pose.position.x - kStallX,
+      second.poses.back().pose.position.y - 0.0), 0.6);
+}
+
+// Reselection radius: 0.39 m from the waypoint re-selects, 0.41 m does not.
+TEST_F(ControllerEscapePath, TheWaypointRadiusBoundary)
+{
+  begin();
+  stallUntilEscapePath();
+  const auto & wp = controller_->handed.back().poses.back().pose.position;
+  const auto & p0 = controller_->handed.back().poses.front().pose.position;
+  const double len = std::hypot(wp.x - p0.x, wp.y - p0.y);
+  const double ux = (wp.x - p0.x) / len;
+  const double uy = (wp.y - p0.y) / len;
+  step(wp.x - 0.41 * ux, wp.y - 0.41 * uy);
+  EXPECT_EQ(controller_->hops(), 1u) << "0.41 m from the waypoint";
+  step(wp.x - 0.39 * ux, wp.y - 0.39 * uy);
+  EXPECT_EQ(controller_->hops(), 2u) << "0.39 m from the waypoint";
+}
+
+// The straight line to the waypoint is blocked: re-select.
+TEST_F(ControllerEscapePath, ABlockedWaypointLineSelectsAnotherHop)
+{
+  begin({rclcpp::Parameter("FollowPath.se_escape_stall_time", 100.0)});
+  stallUntilEscapePath();
+  ASSERT_EQ(controller_->hops(), 1u);
+  const auto & wp = controller_->handed.back().poses.back().pose.position;
+  // A lethal block halfway between the robot and the waypoint.
+  auto * cm = costmap_ros_->getCostmap();
+  unsigned int mx = 0;
+  unsigned int my = 0;
+  ASSERT_TRUE(cm->worldToMap(0.5 * (kStallX + wp.x), 0.5 * wp.y, mx, my));
+  block(mx - 2, my - 2, 5);
+  step(kStallX, 0.0);
+  EXPECT_EQ(controller_->hops(), 2u);
+}
+
+// The timeout: a waypoint that stands for se_escape_reselect_period is re-selected.
+TEST_F(ControllerEscapePath, AStandingWaypointIsReselectedAfterThePeriod)
+{
+  begin({rclcpp::Parameter("FollowPath.se_escape_stall_time", 100.0),
+      rclcpp::Parameter("FollowPath.se_escape_reselect_period", 1.0)});
+  stallUntilEscapePath();
+  ASSERT_EQ(controller_->hops(), 1u);
+  // controller_frequency is 20 Hz: 20 cycles.
+  for (int k = 0; k < 19; ++k) {step(kStallX, 0.0);}
+  EXPECT_EQ(controller_->hops(), 1u) << "19 cycles";
+  step(kStallX, 0.0);
+  EXPECT_EQ(controller_->hops(), 2u) << "20 cycles";
+}
+
+// The movement watchdog: a robot that does not move 0.15 m in se_escape_stall_time
+// gets another waypoint, and the failed one is not chosen again.
+TEST_F(ControllerEscapePath, ARobotThatDoesNotMoveGetsAnotherWaypoint)
+{
+  pocket_w_ = 2.2;
+  pocket_d_ = 1.1;
+  begin({rclcpp::Parameter("FollowPath.se_escape_stall_time", 0.5)});
+  stallUntilEscapePath();
+  ASSERT_EQ(controller_->hops(), 1u);
+  const double first_bearing = controller_->escapeBearing();
+  const auto first_wp = controller_->handed.back().poses.back().pose.position;
+  for (int k = 0; k < 9; ++k) {step(kStallX, 0.0);}
+  EXPECT_EQ(controller_->hops(), 1u) << "9 cycles of 10";
+  step(kStallX, 0.0);
+  EXPECT_EQ(controller_->hops(), 2u) << "10 cycles at 20 Hz = 0.5 s";
+  const auto second_wp = controller_->handed.back().poses.back().pose.position;
+  std::printf(
+    "watchdog: first bearing %.0f deg (%.2f, %.2f), second %.0f deg (%.2f, %.2f)\n",
+    first_bearing * 180.0 / M_PI, first_wp.x, first_wp.y,
+    controller_->escapeBearing() * 180.0 / M_PI, second_wp.x, second_wp.y);
+  EXPECT_GT(std::hypot(second_wp.x - first_wp.x, second_wp.y - first_wp.y), 0.5)
+    << "the failed waypoint is excluded";
+}
+
+TEST_F(ControllerEscapePath, MovingRobotIsNotStalled)
+{
+  begin({rclcpp::Parameter("FollowPath.se_escape_stall_time", 0.5)});
+  stallUntilEscapePath();
+  double x = kStallX;
+  for (int round = 0; round < 4; ++round) {
+    for (int k = 0; k < 5; ++k) {step(x, 0.0);}
+    x -= 0.16;  // 0.16 m every 5 cycles (0.25 s)
+  }
+  EXPECT_EQ(controller_->hops(), 1u);
+}
+
+// A second episode starts from a clean memory.
+TEST_F(ControllerEscapePath, AnEscapeEpisodeStartsWithHopOne)
+{
+  begin();
+  stallUntilEscapePath();
+  const auto wp = controller_->handed.back().poses.back().pose.position;
+  step(wp.x, wp.y);
+  ASSERT_EQ(controller_->escapeHop(), 2);
+  // Progress ends the episode: 0.15 m past the furthest point (x = 0.35).
+  controller_->setPlan(straightPath("map", wp.x, 3.0, 0.0));
+  step(0.5, 0.0);
+  ASSERT_FALSE(controller_->entrapped());
+  step(0.5, 0.0);
+  ASSERT_FALSE(controller_->escapeActive());
+  // Stall again further on: hop 1 of the new episode.
+  for (int k = 0; k < 30 && !controller_->escapeActive(); ++k) {step(0.5, 0.0);}
+  EXPECT_TRUE(controller_->escapeActive());
+  EXPECT_EQ(controller_->escapeHop(), 1);
+}
+
+// The escape path is published for RViz and for the campaign recorder.
+TEST_F(ControllerEscapePath, TheEscapePathIsPublishedOnSeEscapePath)
+{
+  begin();
+  auto listener = std::make_shared<rclcpp::Node>("escape_path_listener");
+  std::vector<nav_msgs::msg::Path> received;
+  auto sub = listener->create_subscription<nav_msgs::msg::Path>(
+    "FollowPath/se_escape_path", rclcpp::QoS(10),
+    [&received](nav_msgs::msg::Path::ConstSharedPtr msg) {received.push_back(*msg);});
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(listener);
+  // Discovery.
+  for (int k = 0; k < 50; ++k) {
+    exec.spin_some(std::chrono::milliseconds(10));
+  }
+  stallUntilEscapePath();
+  for (int k = 0; k < 100 && received.empty(); ++k) {
+    exec.spin_some(std::chrono::milliseconds(10));
+  }
+  ASSERT_FALSE(received.empty());
+  EXPECT_TRUE(samePath(received.back(), controller_->handed.back()));
+  // An empty path clears it when the escape ends.
+  controller_->reset();
+  for (int k = 0; k < 100 && received.back().poses.size() != 0u; ++k) {
+    exec.spin_some(std::chrono::milliseconds(10));
+  }
+  EXPECT_TRUE(received.back().poses.empty());
+}
+
+// vx_min > 0 with the SE layer on: the robot cannot stop or reverse, so the
+// escape cannot act (campaign 1, set P).
+TEST_F(ControllerBehaviour, ForwardOnlyVxMinWithSeEnabledIsFlagged)
+{
+  Options opt;
+  opt.overrides = {rclcpp::Parameter("FollowPath.vx_min", 0.1)};
+  start(opt);
+  EXPECT_TRUE(controller_->vxMinBlocks());
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.vx_min", -0.35)).successful);
+  EXPECT_FALSE(controller_->vxMinBlocks());
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.vx_min", 0.0)).successful);
+  EXPECT_FALSE(controller_->vxMinBlocks()) << "0.0 can stop";
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.vx_min", 0.05)).successful);
+  EXPECT_TRUE(controller_->vxMinBlocks());
+  ASSERT_TRUE(node_->set_parameter(rclcpp::Parameter("FollowPath.se_enabled", false)).successful);
+  EXPECT_FALSE(controller_->vxMinBlocks()) << "no SE layer, nothing to block";
+}
+
+TEST_F(ControllerBehaviour, ReversibleVxMinIsNotFlagged)
+{
+  Options opt;
+  opt.overrides = {rclcpp::Parameter("FollowPath.vx_min", -0.35)};
+  start(opt);
+  EXPECT_FALSE(controller_->vxMinBlocks());
 }
 
 int main(int argc, char ** argv)

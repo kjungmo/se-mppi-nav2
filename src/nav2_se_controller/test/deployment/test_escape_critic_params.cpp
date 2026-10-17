@@ -66,6 +66,21 @@ TEST(EscapeCriticParams, StallWindowSetAtRuntimeReachesDetector)
   EXPECT_EQ(critic.stallWindow(), 7);
 }
 
+// The gap bearing cost (C_gap) is off by default: with the legacy rule it steered a
+// trapped robot toward a back corner (campaign 1). The escape routes through the
+// controller's escape path; C_gap stays for ablation.
+TEST(EscapeCriticParams, GapWeightIsZeroByDefault)
+{
+  auto node = std::make_shared<rclcpp_lifecycle::LifecycleNode>("controller_server");
+  auto costmap_ros = std::make_shared<nav2_costmap_2d::Costmap2DROS>("local_costmap");
+  costmap_ros->on_configure(rclcpp_lifecycle::State{});
+  auto handler = std::make_unique<mppi::ParametersHandler>(node);
+  ProbeCritic critic;
+  critic.on_configure(node, "FollowPath", "FollowPath.EscapeCritic", costmap_ros, handler.get());
+  handler->start();
+  EXPECT_DOUBLE_EQ(node->get_parameter("FollowPath.EscapeCritic.gap_weight").as_double(), 0.0);
+}
+
 int main(int argc, char ** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
