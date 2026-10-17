@@ -76,4 +76,7 @@ nearest wall surface (centre-line distance minus h):
 
 ## Amendments
 
-(none)
+2026-10-18, after the first run of the harness (a harness defect, no controller result used):
+the run starts outside the pocket, so "leaves the pocket" counts only after the robot centre
+has been inside the rectangle once. A run in which the robot never enters the pocket is a
+failed run (the geometry did not test a trap). The criteria and geometries are unchanged.

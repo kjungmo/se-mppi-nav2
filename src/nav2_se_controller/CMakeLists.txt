@@ -290,6 +290,16 @@ if(BUILD_TESTING)
     COMMAND "${CMAKE_CURRENT_BINARY_DIR}/check_mppi_rollout"
     GENERATE_RESULT_FOR_RETURN_CODE_ZERO)
 
+  # Headless closed-loop U-pocket test: the real optimizer and controller on a
+  # unicycle in development geometries (UTRAP_DEV_GEOMETRIES.md).
+  ament_add_gtest(test_closed_loop_utrap test/deployment/test_closed_loop_utrap.cpp
+    TIMEOUT 1200)
+  target_include_directories(test_closed_loop_utrap PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/deployment)
+  target_link_libraries(test_closed_loop_utrap safe_escape_controller)
+  ament_target_dependencies(test_closed_loop_utrap
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
+
   ament_add_gtest(test_task_boundary test/deployment/test_task_boundary.cpp)
   target_include_directories(test_task_boundary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
