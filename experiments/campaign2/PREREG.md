@@ -1,10 +1,12 @@
 # Pre-registration: campaign 2, the live U-pocket test of the fixed SE-MPPI controller
 
 **Status: DRAFT.** Written on 2026-10-18 from `DESIGN_ADVICE.md` section 4 with the lead
-decisions D-4 (a) to (c). It becomes the pre-registration when the lead commits it
-together with the tag `campaign2-controller` and `FREEZE_MANIFEST.json`, before the first
-trial of Phase A. No counted trial has run. One shakedown trial on `s0_open` ran and is
-recorded below; it counts for nothing.
+decisions D-4 (a) to (c). Revised on 2026-10-18 after the first Opus review (sections
+"Escape parameters and rules", "Held-out status of s3", "Decision rule", "Provenance",
+"Attempts, interruption and restart"). It becomes the pre-registration when the lead commits
+it together with `FREEZE_MANIFEST.json` and tags that commit `campaign2-controller`, before the
+first trial of Phase A (see "Before the freeze"). No counted trial has run. One shakedown trial
+on `s0_open` ran and is recorded below; it counts for nothing.
 
 Open items for the lead before the freeze are listed at the end ("Before the freeze").
 
@@ -30,19 +32,26 @@ campaign asks whether the fixed controller escapes live.
   MPPI with recoveries disabled (C3).
 - **H2 (deployable value).** With Nav2's default recovery tree on both, SE-MPPI (C2) reaches
   the goal at least as often as stock MPPI (C1), in less time, with fewer recovery
-  invocations.
+  invocations. **H2 is descriptive.** "At least as often" cannot be tested at n = 6; the
+  campaign reports counts, intervals and the Fisher p of the contrast, and decides nothing
+  from them (see "Decision rule").
 - **H3 (no harm).** On a trap-free course all four configurations reach the goal and
-  SE-MPPI logs no `SE escape ENTER`.
-- **H4 (transfer).** H1 holds on a geometry that was not used during development.
+  SE-MPPI logs no `SE escape ENTER`. Descriptive: counts on `s0_open`.
+- **H4 (transfer).** H1 holds on `s3_ctrap`, a pocket that was not driven live and not run in
+  the headless test, and whose size, depth, rotation and wall ratio lie inside the range of
+  the development family (it has a near mirror twin in that family; see "Held-out status of
+  s3"). H4 does not claim a geometry outside the development family.
 
 ## Fixed inputs
 
-**Commit.** The tag `campaign2-controller` marks the commit with the four fixes and the
-headless closed-loop test green on the development geometries. Every trial records the
-repository commit, `git describe`, the install prefixes of `nav2_se_controller` and
-`se_mppi_utrap`, and the output of `git status` for the tracked inputs in its `meta.json`.
-No source change after trial 1. A fix restarts the campaign, and both attempts are
-reported.
+**Commit.** The tag `campaign2-controller` marks the commit that holds the four fixes, the
+headless closed-loop test green on the development geometries, this file and
+`FREEZE_MANIFEST.json` (the order is in "Before the freeze"). Every trial records the
+repository commit, `git describe`, the sha256 of the freeze manifest, the commit of the tag,
+the install prefixes of `nav2_se_controller` and `se_mppi_utrap`, the sha256 of the installed
+controller libraries, the build stamp, and the output of `git status` for the tracked inputs in
+its `meta.json`. No source change after trial 1. A fix restarts the campaign as attempt 2 with
+its own raw root, and both attempts are reported ("Attempts, interruption and restart").
 
 **Parameters.** `experiments/sim/nav2_se_campaign2.yaml` is set V of campaign 1
 (`nav2_se_loopback.yaml` with `vx_min: -0.35`) plus these differences, which are listed in
@@ -56,29 +65,23 @@ the file header and checked by `tests/test_c2_plan.py`:
 | `progress_checker.movement_time_allowance` | 120.0 | 10.0 (Nav2 default); 30.0 in C3 and C4 |
 | `bt_navigator.default_nav_to_pose_bt_xml` | persistent tree | Nav2's default tree; replanning-only tree in C3 and C4 |
 | `FollowPath.EscapeCritic.gap_weight` | 4.0 | 0.0 |
-| escape parameters | compiled defaults, unwritten | written out, equal to the compiled defaults (below) |
+| escape parameters | compiled defaults, unwritten | written out, equal to the compiled defaults (next section) |
 
 The MPPI block is unchanged: 10 Hz, 28 steps, `model_dt` 0.1, batch 1500, inflation
-radius 0.45. Escape parameters, set from the mirror and the development-geometry test
-before any live trial and not changed after one on `s1_utrap` or `s3_ctrap`:
+radius 0.45.
 
-| Parameter | Value |
-|---|---|
-| `se_progress_min_advance` | 0.10 m |
-| `se_progress_adopt_advance` | 0.5 m |
-| `se_progress_stall_window` | 30 cycles (3 s at 10 Hz) |
-| `se_gap_num_rays` | 36 |
-| `se_gap_max_range` | 2.0 m |
-| `se_gap_min_clearance` | 0.6 m |
-| opening selection | horizon ray nearest the goal bearing; longest ray if none reaches the horizon |
-| `se_escape_hysteresis` | 0.5 rad |
-| `se_escape_waypoint_cap` | 2.5 m |
-| `se_escape_reselect_radius` | 0.4 m |
-| blocked segment | re-select |
-| `se_escape_reselect_period` | 15 s |
-| `se_escape_stall_time` / `se_escape_stall_distance` | 3 s / 0.15 m |
-| `EscapeCritic.gap_weight` | 0 |
-| APF term | unchanged (`use_apf` true, `repulsion_weight` 2.0, `apf_influence_dist` 0.6) |
+**`failure_tolerance` 0.0 and the detector update on a throw.** The fix of defect 2 updates the
+entrapment detector when MPPI throws `NoValidControl`, and rethrows. With `failure_tolerance`
+0.0, `controller_server` rethrows the exception, `computeControl` catches it and calls
+`publishZeroVelocity()`, which calls `reset()` on every controller. The detector state is gone in
+the same cycle, and in C3 and C4 the first throw ends the goal. **The detector update on a throw
+therefore cannot act in this campaign**; it acts only with `failure_tolerance` -1, as in campaign
+1. The headless test does not exercise it either: its pass rule requires zero throws
+(`test_closed_loop_utrap.cpp`, `passes()`), and a run with a throw is reported as "C4 would
+abort". All 56 geometries of the family pass with zero throws. A trial in which a throw occurs
+is a trial in which the escape did not prevent the all-collide state; it is counted as it ends.
+The fix of defect 2 is tested by the unit tests with the detector driven through the throw path
+(`ControllerNoValidControl`), not by this campaign.
 
 **Environment.** The micromamba environment `semppi_rerun` (`nav2_mppi_controller` 1.3.13
 `_25`). The driver refuses to run unless `check_mppi_rollout` prints OK. The package list is
@@ -88,18 +91,109 @@ before any live trial and not changed after one on `s1_utrap` or `s3_ctrap`:
 `se_enabled` and `vx_min > 0`. The controller also logs a warning at configure time.
 
 **Frozen files.** `FREEZE_MANIFEST.json` holds the sha256 of the parameter file, the
-behaviour trees, the worlds and scenarios, the plan, the driver, the recorder, the
-host-load module, the analyzer and its tests, the campaign-1 analyzer that it imports, and
-the controller sources. The driver refuses a counted trial when
+behaviour trees, the worlds and scenarios, the plan, the driver, the provenance module, the
+recorder, the host-load module, the analyzer and its tests, the campaign-1 analyzer that it
+imports, and the controller sources. The driver refuses a counted trial when
 `freeze_manifest.py --check` fails or the manifest is missing. Every trial also records the
 sha256 of the parameter file, its tree and its world (decision D-4b).
+
+## Escape parameters and rules
+
+The escape that ships is the one in this section. It is the design of `DESIGN_ADVICE.md`
+section 2 plus four additions that the design does not have. The additions are a departure from
+decision D-1 ("exactly as advised") and are listed here, with the reason and the place where
+each was developed, so that nobody reads this table as the advised design.
+
+**Where the values come from.** The values of the rows marked "advice" were fixed by
+`DESIGN_ADVICE.md` section 4.2 before any code existed. The additions were developed on two
+things only: the headless closed-loop test on the development family
+(`UTRAP_DEV_GEOMETRIES.md`; the additions were worked on until all 56 valid geometries passed,
+so the family is a development set, not a test set), and static gap tests at the stall pose of
+the live scenario `s1_utrap` (commits `6d0d9ce` and `5f17e19`; `test_opening_search.cpp`, the
+cases built with `s1Window`). The use of the `s1_utrap` stall pose is allowed, because `s1_utrap`
+is the development scenario, and is stated here because it is a use of a live scenario in the
+design of a parameter. The Python mirror was not the source of any addition. Before this revision
+the mirror did not have them; it now transcribes them (`prototype/se_mppi_v2.py`, flag
+`escape_extras`), and `benchmark2d/tests/test_v2_cxx_parity.py` compares the mirror with the C++
+through `parity_shim`. The architecture note `docs/architecture/2026-10_escape-v2.md` section 3
+gives the reason for each addition.
+
+| Key | Value | In DESIGN_ADVICE 4.2 | Origin |
+|---|---|---|---|
+| `se_enabled` | true | no (existing switch) | compiled default |
+| `se_enforce_rollout_check` | true | no (existing guard of campaign 1) | compiled default |
+| `se_progress_stall_window` | 30 cycles (3 s at 10 Hz) | advice | 4.2 |
+| `se_progress_min_advance` | 0.10 m | advice | 4.2 |
+| `se_progress_adopt_advance` | 0.5 m | advice | 4.2 |
+| `se_escape_path_substitution` | true | the mechanism is advice; the switch is new | 4.2 and defect 4b; the switch is for ablation |
+| `se_escape_waypoint_cap` | 2.5 m | advice | 4.2 |
+| `se_escape_reselect_radius` | 0.4 m | advice | 4.2 |
+| `se_escape_reselect_period` | 15 s | advice | 4.2 |
+| `se_escape_hysteresis` | 0.5 rad | advice | 4.2 |
+| `se_gap_num_rays` | 36 | advice | 4.2 |
+| `se_gap_max_range` | 2.0 m | advice | 4.2 |
+| `se_gap_min_clearance` | 0.6 m | the value is advice (section 1, the existing default); **its use on horizon candidates is not** (addition d) | closed-loop test |
+| `se_escape_stall_time` | 3 s | **no (addition b)** | closed-loop test, a geometry where MPPI stood before a gap that the binary threshold called free (note section 3, item 2) |
+| `se_escape_stall_distance` | 0.15 m | **no (addition b)** | same |
+| `se_escape_avoid_radius` | 1.0 m | **no (addition a)** | static gap tests at the `s1_utrap` stall pose (`6d0d9ce`, `5f17e19`) and the closed-loop test |
+| `se_escape_avoid_hop_radius` | 0.6 m | **no (addition a)** | closed-loop test, a rotated pocket where the selection swung between two places (note section 3, item 1) |
+| `se_escape_avoid_hops` | 3 | **no (addition a)** | same |
+| `se_goal_reached_tolerance` | 0.5 m (compiled default, not written in the YAML) | no (existing) | compiled default |
+| `EscapeCritic.gap_weight` | 0 | advice | 4.2 |
+| APF term | unchanged (`use_apf` true, `repulsion_weight` 2.0, `apf_influence_dist` 0.6) | advice (kept) | 4.2 |
+
+Rules that are compiled constants and not parameters, all additions: at most 6 failed waypoints
+are remembered (addition a); a candidate waypoint closer than 0.2 m is not taken (addition c); an
+avoided place counts only when it is ahead of the ray (less than 90 degrees off), the robot is
+farther than its radius from it, and it lies not more than the radius beyond the end of the ray
+(addition a).
+
+**The rules, in the order the controller applies them** (`opening_search.cpp`,
+`safe_escape_controller.cpp`, `manageEscapePath`):
+
+1. *Detection.* Progress is the arc length along a per-task anchor path (the first plan);
+   a replan is a candidate whose signed advance along the chain of candidates reaches
+   `se_progress_adopt_advance` before it becomes the anchor (`path_progress.cpp`). Entrapment is
+   declared after `se_progress_stall_window` cycles without a progress event, and is suppressed
+   within `se_goal_reached_tolerance` of the goal.
+2. *One cycle of lag.* The escape is decided at the start of a cycle from the detector state at
+   the end of the previous cycle. The stall pose is the pose at the cycle that declared
+   entrapment.
+3. *Opening selection.* Among the rays that reach the sensing horizon (`se_gap_max_range`, or the
+   costmap edge) with a clearance of at least `se_gap_min_clearance` (addition d), and that do not
+   lead to an avoided place (addition a), take the one closest to the goal bearing. If there is
+   none, take the longest ray that does not lead to an avoided place, if it clears
+   `se_gap_min_clearance`. If excluding rays leaves nothing, repeat without the avoid list.
+   Hysteresis keeps the previous bearing unless the best ray is closer to the goal bearing by more
+   than `se_escape_hysteresis`.
+4. *Avoided places* (addition a): the stall pose (`se_escape_avoid_radius`), the failed waypoints
+   of the episode and the last `se_escape_avoid_hops` hop origins (`se_escape_avoid_hop_radius`).
+5. *Waypoint.* On the selected bearing at `min(clearance - robot_radius - 0.05, se_escape_waypoint_cap)`;
+   taken only if that distance is at least 0.2 m (addition c). The path handed to MPPI runs from the
+   robot to the waypoint.
+6. *Re-selection*, checked in this order: the robot is within `se_escape_reselect_radius` of the
+   waypoint (inclusive); `se_escape_reselect_period` has passed; the robot has not moved
+   `se_escape_stall_distance` in `se_escape_stall_time` (addition b); the straight line to the
+   waypoint is blocked. A waypoint that is not reached is added to the failed list (addition a).
+
+**Departure from D-1.** D-1 says "exactly as advised". Additions (a) to (d) are a departure. They
+need a dated decision of the lead before the freeze (item 1 of "Before the freeze"). The reason
+they exist is a measurement. With `se_escape_avoid_radius` 0, `se_escape_avoid_hop_radius` 0 and
+`se_escape_stall_time` 1e6, which leaves the design as advised, the headless closed-loop test
+(`SE_UTRAP_PARAMS`, `rv1_ablate.sh`, logs in `/mnt/d/wsl/se-mppi/escape-fix/logs/review1/`)
+reached the goal in 0 of 3 runs on `w22_d13_r30_a10` (23 to 26 hops, closest approach 2.37 to
+2.39 m), in 19 of 56 geometries of the sweep (the reviewer measured 16 of 56; MPPI's noise is
+seeded per process), and not on the twin of s3 `w22_d15_r-25_a6` (20 hops, 2.47 m). The shipped
+algorithm passes 56 of 56 and reached that twin in 28.2 s with 3 hops. Whatever the paper says
+about SE-MPPI is therefore a statement about the algorithm with the additions. The mirror carries
+both (`escape_extras` true and false), and the mirror re-run (D-2) reports both.
 
 ## Scenarios
 
 | Id | World | Role |
 |---|---|---|
 | `s1_utrap` | `se_mppi_utrap/worlds/testbed.sdf` | development scenario (campaign 1) |
-| `s3_ctrap` | `campaign2/worlds/s3_ctrap.sdf` | **held out**; carries the claim |
+| `s3_ctrap` | `campaign2/worlds/s3_ctrap.sdf` | held out in the sense of the next section |
 | `s0_open` | `campaign2/worlds/s0_open.sdf` | trap-free control |
 | `s1_utrap_evidence` | `testbed.sdf`, start inside the pocket | log artefact; 2 trials each for C2 and C4; not counted |
 
@@ -115,7 +209,33 @@ the back wall, as the template puts its side walls at y = +/-1.0 for a 2.0 m bac
 generator is `make_worlds.py`; `verify_geometry.py` reads the geometry back from the SDF
 file; `s3_ctrap_geometry.png` is the plot for review. No Gazebo run and no headless test
 has used s3. A guard test (`test_heldout_guard.cpp`, `tests/test_c2_plan.py`) fails if the
-world name appears in the repository outside `experiments/campaign2/`.
+world name appears in the repository outside `experiments/campaign2/`. The guard checks the
+world name only. It cannot detect a development geometry that resembles s3.
+
+### Held-out status of s3
+
+s3 has a near mirror twin among the development geometries. The inner size of s3 is 2.1 m wide
+and 1.45 m deep, its bottom side wall is 1.1 m of 1.6 m (0.69), and it is rotated +25 degrees.
+The family members `w22_d15_r-25_a6` and `w26_d15_r-25_a6` (valid geometries; the shipped
+algorithm reached the goal on them with 3 hops in 28.2 s and with 7 hops in 46.3 s) are 2.2 m or
+2.6 m wide, 1.5 m deep, rotated -25 degrees, with the top wall at 0.6. The start, the goal and
+the straight replans all lie on y = 0, so s3 reflected about y = 0 is `w22_d15_r-25_a6` to within
+0.1 m in width, 0.05 m in depth and 0.09 in the wall ratio. The wall thickness differs (0.15 m in
+the family, 0.30 m in s3) and the pivots differ. The controller faces nearly the same problem up
+to the reflection. The additions of the previous section were worked on until this twin passed;
+without them it does not.
+
+What "held out" therefore means here, and all it means: s3 was not driven live, was not run in
+the headless test, and its world file was written by an agent that did not see the tuning. It
+does **not** mean that s3 lies outside the span of the development family, and the campaign does
+not claim a geometry the design never saw. "s3 carries the claim" in the verbatim outcome wording
+below is to be read with this paragraph: the claim on s3 is a claim for a pocket of the
+development family's range that was not driven or tested during development.
+
+The stronger design is a pocket outside the family's range, specified and authored blind by a
+separate agent, added with a dated amendment before the freeze (item 2 of "Before the freeze").
+This file is valid with or without it. If it is added, the statement of H4 above is replaced by
+the stronger one, and this section keeps the disclosure for `s3_ctrap`.
 
 **Pocket polygons** (analysis only; `analyze.py`, `POCKETS`). s1: x from -1.0 to 0.85,
 |y| <= 0.85. s3: the pocket frame rectangle x from -0.3 to 1.15, |y| <= 1.05 (inner faces of
@@ -142,9 +262,12 @@ equally. The persistent tree and `failure_tolerance -1` of campaign 1 are retire
 
 ## Repetitions, order, host gate
 
-Six repetitions per cell: 6 of 6 against 0 of 6 gives a two-sided Fisher p of 0.002, 5 of 6
-against 0 of 6 gives 0.015, 4 of 6 against 0 of 6 gives 0.061. Six is the smallest n at which
-one failure still leaves a significant contrast.
+Six repetitions per cell. The two-sided Fisher p of the repository's own `fisher_two_sided`
+(`results_pilot_rerun/analyze.py`) for a SE cell against a stock cell that reached 0 times: at
+n = 6, 6 of 6 gives 0.0022, 5 of 6 gives 0.0152 and 4 of 6 gives 0.0606; at n = 5, 5 of 5 gives
+0.0079 and 4 of 5 gives 0.0476. So at n = 6 one failure still gives p = 0.015, and at n = 5 one
+failure gives p = 0.048, which is at the threshold of 0.05. n = 6 is chosen for the margin and for
+the time budget. (A test, `tests/test_c2_review_fixes.py`, recomputes these numbers.)
 
 The plan has 76 trials (`run_campaign2.py --list`):
 
@@ -154,9 +277,14 @@ The plan has 76 trials (`run_campaign2.py --list`):
   C3 x s1 repetitions 3 to 5 and all other cells) plus 2 evidence trials each for C2 and C4
   (4 trials).
 
+**Block B and s3 wait for Phase A.** The driver refuses `--block B`, and refuses every `s3_ctrap`
+trial and every Phase-B trial, until Phase A is complete (6 valid C4 x s1 and 3 valid C3 x s1
+trials) and its gate has not fired (`analyze.s3_refusal`). The reason is D-7: if s3 were driven and
+the gate then failed, the second design iteration would no longer have an unseen s3.
+
 The cell order rotates with the repetition (`plan.py`, `_rotate`: one place per repetition
 in Phase A, two places in Phase B). Trial ids are `correct__<scenario>__<config>__rep<n>`.
-Raw data go to `/mnt/d/wsl/se-mppi/campaign2/` (`trials/`, `shakedown/`); only
+Raw data go to `/mnt/d/wsl/se-mppi/campaign2/` (`trials/`, `shakedown/`) for attempt 1; only
 `results.json.gz`, `RESULTS.md` and the log excerpts in `logs/` are committed.
 
 **Host gate and validity** (campaign 1, amendments 5 and 8, unchanged; the module
@@ -166,8 +294,43 @@ Raw data go to `/mnt/d/wsl/se-mppi/campaign2/` (`trials/`, `shakedown/`); only
 and at most 3.0 cores in every 30 s window. An invalid attempt is kept as `.invalidN`,
 reported, and repeated. Time: failing trials take about 6.5 min, successful ones 2.5 to 3.5
 min; 76 trials with half succeeding and 15% invalid repeats need 7 to 9 hours of quiet host
-in two or three sessions. Interruptions resume at the first unfinished trial: finished
-trials are skipped, an unfinished directory is kept as `.abortedN` and the trial runs again.
+in two or three sessions.
+
+## Provenance
+
+The freeze manifest hashes repository sources. At run time the controller libraries come from the
+colcon install prefix, and the behaviour trees, the testbed world, the launch file and the URDF of
+`se_mppi_utrap` come from its installed share directory, which holds copies. Before every counted
+trial the driver (`provenance.py`) checks and records:
+
+1. Every file under the installed `worlds`, `urdf`, `launch`, `config` and `behavior_trees` of
+   `se_mppi_utrap` is byte-identical to the repository file, and to the manifest hash when the file
+   is frozen. Nothing else is installed there. The map files and the s3 and s0 worlds are read
+   from the repository by path and are covered by the manifest.
+2. The sha256 of the installed `libse_mppi_core.so`, `libescape_critic.so`,
+   `libmppi_rollout_check.so` and `libsafe_escape_controller.so`, in `meta.json`.
+3. The build stamp `share/nav2_se_controller/build_stamp.txt`, written by CMake at every build:
+   `git_describe` must be exactly `campaign2-controller` (the tag, not dirty) and `git_head` the
+   commit of the tag.
+4. The repository has the tag as an ancestor of HEAD, no frozen file changed since the tag, and no
+   uncommitted change to a tracked file other than the generated analysis outputs
+   (`RESULTS.md`, `results.json.gz`, `logs/`).
+
+Any difference refuses the trial (exit code 2). The values are in `meta.json` under `provenance`.
+
+## Attempts, interruption and restart
+
+- A trial that stops on Ctrl-C or on an exception is marked `interrupted` and never `complete`.
+  On resume the driver keeps its directory as `.abortedN` (reported, never deleted) and runs the
+  trial again. The analyzer reports such a directory as `INVALID`.
+- Every trial records the sha256 of `FREEZE_MANIFEST.json` and the commit of the tag. A trial
+  directory with another hash or commit is foreign: the driver refuses to run, and the analyzer
+  stops with `MIXED_ATTEMPTS`. Attempt 1 uses `/mnt/d/wsl/se-mppi/campaign2/`. A restart after a
+  fix (D-7 or "A fix restarts the campaign") is attempt 2: run it with `--attempt 2` and analyze
+  it with `analyze.py --attempt 2`; its raw root is `/mnt/d/wsl/se-mppi/campaign2/attempt2/`.
+  Both attempts are reported.
+- Finished trials are skipped on resume, a finished trial whose host-load verdict is invalid is
+  kept as `.invalidN` and repeated.
 
 ## Success criterion and records
 
@@ -176,7 +339,10 @@ the drive and the chassis never touched a wall (chassis-to-wall distance >= 0.01
 ground-truth sample). The other outcomes are those of campaign 1: `REACHED_WITH_CONTACT`
 (reported, not counted as a success), `NOT_REACHED_TIMEOUT`, `NOT_REACHED_ABORTED`,
 `INVALID_HOST_LOAD`, `SETUP_FAIL`, `NO_GOAL_SENT`, `INVALID`. Nav2's own `SUCCEEDED` is
-recorded but not used.
+recorded but not used. The outcome logic of `analyze.py` is a re-implementation of the
+campaign-1 logic; `tests/test_c2_equivalence.py` checks on 300 random synthetic trials that the
+outcome, `reached`, `contact`, the final distance and the minimum wall distance equal those of the
+campaign-1 `analyze_trial`.
 
 **Per SE trial in a pocket scenario.** Whether `SE escape ENTER` was logged at or before the
 first ground-truth sample outside the pocket polygon (`enter_before_leaving_pocket`). A
@@ -185,12 +351,14 @@ reached trial without it is "reached without escape" (`reached_without_escape`).
 **Secondary** (`analyze.py`, one record per trial): time to goal in wall and simulated
 seconds (first ground-truth sample within 0.5 m); ENTER and EXIT counts and the duration
 of each escape episode; waypoint hops (`SE escape waypoint` lines, with bearing, clearance
-and reason); injection BEGIN and END counts; number of messages on
-`/FollowPath/se_escape_path` and the number of publishers the recorder saw; behaviour-tree
-recovery actions (`Running spin`, `Running backup`, `Running wait`, local and global
-costmap clears); `Failed to make progress` count; optimizer failures and the time of the
-first; missed control cycles; real-time factor (whole drive and worst 10 s); load average
-and foreign CPU.
+and reason; **these lines are the controller's choice of heading**); injection BEGIN and END
+counts; the critic's probe lines (`escape_critic_probe_lines`: the opening that the critic would
+select without the avoid list and without hysteresis, toward the escape waypoint; **not** the
+escape heading, labelled so in the log); number of messages on `/FollowPath/se_escape_path` and the
+number of publishers the recorder saw; behaviour-tree recovery actions (`Running spin`,
+`Running backup`, `Running wait`, local and global costmap clears); `Failed to make progress`
+count; optimizer failures and the time of the first; missed control cycles; real-time factor
+(whole drive and worst 10 s); load average and foreign CPU.
 
 ## Analysis
 
@@ -203,6 +371,31 @@ The analysis script, `plan.py` and `tests/` are frozen with the tag (D-4b).
 `python3 experiments/campaign2/analyze.py --check` fails if `results.json.gz` or
 `RESULTS.md` differ from a fresh analysis of the raw data.
 
+### Decision rule
+
+Dated 2026-10-18, written before any counted trial. It selects the outcome branch below from the
+counts alone, so that the branch cannot be chosen after the data are seen.
+
+1. *Significance level.* 0.05, two-sided, per contrast, with no correction for multiple tests.
+   Five contrasts are computed. Each tests its own hypothesis, and only two of them (C4 against C3
+   on `s1_utrap`, and on `s3_ctrap`) take part in the decision, each once.
+2. *Yes on a pocket.* H1 (on `s1_utrap`) or H4 (on `s3_ctrap`) is "yes" on a pocket if and only if
+   the two-sided Fisher p of C4 against C3 on that pocket is below 0.05 **and** C4 reached more
+   often than C3 on it. Otherwise it is "no" on that pocket.
+3. *Branches.* Demonstrated = s1 yes and s3 yes. "s1 yes, s3 no" = s1 yes and s3 no. Not
+   demonstrated = s1 no, whatever s3 shows. (A "yes" on s3 with a "no" on s1 does not rescue the
+   claim: s1 is the Phase-A gate and the development scenario, and the mechanism claim H1 is made
+   there first. The result is reported in full.)
+4. *Descriptive only.* H2 (C2 against C1), H3 (the control), the transfer contrast (C4 on s3
+   against C4 on s1), all time comparisons and all Wilson intervals decide nothing. They are
+   reported with their counts and p values, and the verbatim wording below is filled from the
+   counts of the branch that rule 3 selects.
+5. *Phase-A gate.* Unchanged: C4 on `s1_utrap` at 1 of 6 or fewer stops the campaign (D-7).
+
+With six trials per cell, "yes" needs C4 at 5 of 6 or 6 of 6 when C3 is at 0 of 6 (p = 0.0152 and
+0.0022), and C4 at 6 of 6 when C3 is at 1 of 6 (p = 0.0152); 4 of 6 against 0 of 6 is p = 0.0606 and
+is "no". These p values come from the repository's own function.
+
 ## Stopping rules
 
 `analyze.evaluate_stops` runs before every trial and after every invalid repeat. The driver
@@ -214,14 +407,21 @@ exits with code 3 and deletes nothing when one fires.
   the teardown codes 0, -2, -15 and -9; the driver stops a trial with SIGINT, SIGTERM, SIGKILL,
   so a container killed by the driver shows -9; a kill by the kernel during a drive shows the
   same code and is not detected by this rule) or a refusal to configure (`SETUP_FAIL`: the
-  stack was not active after two launches).
-- **Stack broken.** Stock MPPI (C1 or C3) reaches 4 of 6 or fewer on `s0_open`.
+  stack was not active after two launches). **The crash rule also scans the superseded attempts**
+  (`.invalidN`, `.abortedN`): a crash in an attempt that was repeated is still a crash.
+- **Stack broken.** Stock MPPI (C1 or C3) fails on `s0_open`: the rule fires as soon as a stock
+  cell has 2 or more valid failures, because with six trials per cell at most 4 of 6 can then be
+  reached (the earlier form, "4 of 6 or fewer after the sixth trial", is certain at that point).
+  The six trials of a cell are spread over all six repetitions of Phase B, so waiting for the sixth
+  would detect a broken stack only after about 70 trials.
 - More than 6 invalid attempts on one cell. The cell is reported incomplete.
+- `MIXED_ATTEMPTS`: registered trials with more than one freeze manifest or tag commit.
 
 ## Outcome wording
 
 Copied verbatim from `DESIGN_ADVICE.md` section 3, "Claims after campaign 2 (fixed before
-the trials)". "Section 4.4" in the first item is the section of the paper.
+the trials)". "Section 4.4" in the first item is the section of the paper. The branch is chosen by
+the "Decision rule" above. "Held-out" in the quote is read with "Held-out status of s3".
 
 > - *Demonstrated*: "SE-MPPI without recoveries reached the goal in k of 6 on s1
 >   and k' of 6 on the held-out s3; stock without recoveries in 0 of 6; with
@@ -242,6 +442,9 @@ the trials)". "Section 4.4" in the first item is the section of the paper.
 > `NUMBERS.md` and `check_paper_numbers.py` change with the code. "Coordination is
 > null" stands; campaign 2 does not test it.
 
+Whatever the paper says about the algorithm, it names the additions (a) to (d) of "Escape
+parameters and rules" and the twin of s3 of "Held-out status of s3".
+
 **Not demonstrated** (D-7). If C4 on s1 reaches 1 of 6 or fewer at Phase A, the campaign
 stops, the work returns to the headless test with the evidence, and Fable advises one more
 design iteration and one more Phase A. If that also fails, the paper is held and the owner
@@ -257,14 +460,33 @@ One trial on `s0_open` with C2, id `correct__s0_open__C2__rep0`, raw data in
 `/mnt/d/wsl/se-mppi/campaign2/shakedown/`. Its purpose is to show that the recorder
 captures the new topic and that the analyzer reads the real log. See `SHAKEDOWN.md` for the
 result. The trial uses the shakedown probe (`probe_escape_path.py`), a second publisher on
-the escape-path topic, because the controller never enters escape on `s0_open`.
+the escape-path topic, because the controller never enters escape on `s0_open`. The shakedown
+ran on a build of `baeec71` plus an uncommitted probe edit; it is not evidence about a frozen
+build, and the provenance checks apply to counted blocks only.
 
 ## Before the freeze
 
-1. Review `s3_ctrap_geometry.png` against the specification above. The worlds step did not
+1. **Lead, decision on the additions.** Approve additions (a) to (d) as a dated deviation from
+   D-1, or order them removed (the mirror and the parity test already carry `escape_extras` false
+   for the design as advised; the controller would need a switch per addition, and the closed-loop
+   result for the design as advised is 19 of 56).
+2. **Lead, decision on s3.** Either keep s3 with the disclosure above (this file is valid as it
+   stands), or have a separate agent author a further held-out pocket outside the family's range
+   from a geometric specification only, plot it, and add it with a dated amendment before the
+   freeze (D-4a).
+3. Review `s3_ctrap_geometry.png` against the specification above. The worlds step did not
    look at the plot after rendering it.
-2. Commit the controller commit and run `git tag campaign2-controller`.
-3. Run `python3 experiments/campaign2/freeze_manifest.py --write` and commit the manifest
-   with this file.
-4. Check that the shakedown host report in `SHAKEDOWN.md` matches the host the counted
+4. Rebuild the workspace from the tree to be frozen, so that the build stamp can read the tag
+   (below), and run the full test suite (`colcon test`, `pytest experiments/campaign2/tests`,
+   `pytest experiments/benchmark2d/tests` with `SE_REQUIRE_PARITY=1`).
+5. Freeze, in this order:
+   1. Finish this file and the controller. Run `python3 experiments/campaign2/freeze_manifest.py
+      --write`.
+   2. Commit this file and `FREEZE_MANIFEST.json` together with every other change, so that one
+      commit holds the final pre-registration and the manifest.
+   3. Tag that commit: `git tag campaign2-controller`. The tag points to the commit that has the
+      final PREREG and the manifest (the tag must not come first).
+   4. Rebuild the workspace at the tag, so that the build stamp says `campaign2-controller`.
+   5. The first counted trial records `git describe` (`campaign2-controller`) in `meta.json`.
+6. Check that the shakedown host report in `SHAKEDOWN.md` matches the host the counted
    trials will run on.

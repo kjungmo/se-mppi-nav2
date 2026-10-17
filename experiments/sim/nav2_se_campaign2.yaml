@@ -16,8 +16,16 @@
 #   4. bt_navigator default_nav_to_pose_bt_xml: Nav2's default tree (a byte copy,
 #      nav_to_pose_default_recovery.xml) instead of the persistent tree. C3 and C4
 #      use nav_to_pose_replanning_only.xml (driver overlay).
-#   5. The escape parameters of DESIGN_ADVICE section 4.2 are written out
-#      (they equal the compiled defaults), and EscapeCritic.gap_weight is 0.
+#   5. The escape parameters are written out (they equal the compiled defaults), and
+#      EscapeCritic.gap_weight is 0. Only part of them are in DESIGN_ADVICE section 4.2.
+#      The plugin adds, beyond the advised design: the exclusion of rays that lead to the
+#      stall pose, to recent hop origins and to failed waypoints (se_escape_avoid_radius,
+#      se_escape_avoid_hop_radius, se_escape_avoid_hops, a list of at most 6 failed
+#      waypoints), a movement watchdog (se_escape_stall_time, se_escape_stall_distance), a
+#      0.2 m floor on the waypoint distance and the use of se_gap_min_clearance on horizon
+#      candidates. experiments/campaign2/PREREG.md ("Escape parameters and rules") lists every
+#      key, says which are advised and where each value came from; the reason for each
+#      addition is in docs/architecture/2026-10_escape-v2.md section 3.
 # MPPI block (10 Hz, 28 steps, dt 0.1, batch 1500), inflation 0.45, critics
 # and every other value are unchanged from nav2_se_loopback.yaml.
 amcl:
@@ -149,7 +157,9 @@ controller_server:
       plugin: "nav2_se_controller::SafeEscapeController"
       se_enabled: true
       verbose: true
-      # Escape parameters of DESIGN_ADVICE section 4.2 (frozen; the compiled defaults).
+      # Escape parameters (frozen; the compiled defaults). The first block is DESIGN_ADVICE
+      # section 4.2; se_escape_stall_*, se_escape_avoid_* and the minimum clearance on horizon
+      # candidates are additions of the plugin (PREREG.md, "Escape parameters and rules").
       se_enforce_rollout_check: true
       se_progress_stall_window: 30        # control cycles (3 s at 10 Hz)
       se_progress_min_advance: 0.10       # m, two costmap cells

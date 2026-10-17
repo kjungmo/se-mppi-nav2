@@ -109,6 +109,46 @@ utrap::RunResult runOnce(const utrap::Pocket & p)
 
 }  // namespace
 
+// The pass rule itself, on both sides of every limit. A run with a NoValidControl throw
+// is not a pass: the campaign runs with failure_tolerance 0.0, where the first throw
+// resets the controller and ends the goal (C3 and C4).
+TEST(ClosedLoopUtrap, PassRuleBoundaries)
+{
+  utrap::RunResult ok;
+  ok.geometry = "synthetic";
+  ok.entered_pocket = true;
+  ok.left_pocket = true;
+  ok.exit_time = 60.0;
+  ok.reached = true;
+  ok.goal_time = 150.0;
+  ok.contacts = 0;
+  ok.throws = 0;
+  EXPECT_TRUE(passes(ok)) << "the limits are inclusive: exit at 60 s, goal at 150 s";
+  auto r = ok;
+  r.exit_time = 60.1;
+  EXPECT_FALSE(passes(r));
+  r = ok;
+  r.goal_time = 150.1;
+  EXPECT_FALSE(passes(r));
+  r = ok;
+  r.entered_pocket = false;
+  EXPECT_FALSE(passes(r)) << "a run that never entered the pocket tested no trap";
+  r = ok;
+  r.left_pocket = false;
+  EXPECT_FALSE(passes(r));
+  r = ok;
+  r.reached = false;
+  EXPECT_FALSE(passes(r));
+  r = ok;
+  r.contacts = 1;
+  EXPECT_FALSE(passes(r));
+  r = ok;
+  r.throws = 1;
+  const auto verdict = passes(r);
+  EXPECT_FALSE(verdict);
+  EXPECT_NE(std::string(verdict.failure_message()).find("C4 would abort"), std::string::npos);
+}
+
 // The primary geometries are valid members of the rule and differ from the
 // live s1 pocket (1.7 m x 1.85 m).
 TEST(ClosedLoopUtrap, PrimaryGeometriesFollowTheRule)

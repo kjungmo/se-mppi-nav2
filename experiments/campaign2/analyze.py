@@ -331,6 +331,11 @@ def analyze_trial(tdir: str, boxes: list, chassis: tuple, scenario: str | None =
         'load1_at_start': meta.get('load1_at_start'),
         'load_gate_waited_s': meta.get('load_gate_waited_s'),
     }
+    rec['freeze_manifest_sha256'] = meta.get('freeze_manifest_sha256')
+    rec['controller_tag_commit'] = meta.get('controller_tag_commit')
+    if meta.get('interrupted'):
+        rec.update(outcome='INVALID', invalid_reason='driver did not finish the trial (interrupted)')
+        return rec
     if not meta.get('complete'):
         rec.update(outcome='INVALID', invalid_reason='driver did not finish the trial')
         return rec
@@ -355,6 +360,9 @@ def analyze_trial(tdir: str, boxes: list, chassis: tuple, scenario: str | None =
 
     if t0 is None or t1 is None:
         rec['outcome'] = 'NO_GOAL_SENT'
+        return rec
+    if 'drive_wall_start' not in meta or 'drive_wall_end' not in meta:
+        rec.update(outcome='INVALID', invalid_reason='the driver recorded no drive interval')
         return rec
     rows = read_telemetry(tdir)
     gt_rows = [r for r in rows if not math.isnan(r['gt_x'])]
@@ -607,10 +615,46 @@ def count_invalid_attempts(raw_root: str, cell: tuple) -> int:
     return len(glob.glob(pat))
 
 
-def evaluate_stops(records: list, invalid_attempts: dict | None = None) -> list:
+def phase_a_status(records: list) -> dict:
+    """Phase A progress from the registered trials: valid counts of C4 x s1 and C3 x s1 and
+    whether the gate has fired (PREREG.md, "Phase-A gate")."""
+    def valid(cell):
+        return [t for t in records if (t['scenario'], t['config']) == cell and is_valid_driven(t)]
+    c4 = valid(plan_mod.GATE_CELL)
+    c3 = valid(('s1_utrap', 'C3'))
+    k = sum(1 for t in c4 if t['success'])
+    return {
+        'c4_valid': len(c4), 'c3_valid': len(c3), 'c4_reached': k,
+        'complete': len(c4) >= plan_mod.PHASE_A_C4_REPS and len(c3) >= plan_mod.PHASE_A_C3_REPS,
+        'gate_fired': len(c4) >= plan_mod.PHASE_A_C4_REPS and k <= plan_mod.GATE_MAX_SUCCESSES,
+    }
+
+
+def s3_refusal(records: list) -> str | None:
+    """Why s3_ctrap (and with it block B) must not be driven yet; None when it may be.
+
+    s3 is held out (D-4a). If it were driven and the Phase-A gate then failed, the second design
+    iteration (D-7) would no longer have an unseen s3. So s3 waits for a complete Phase A
+    (6 valid C4 x s1 and 3 valid C3 x s1) whose gate has not fired.
+    """
+    st = phase_a_status(records)
+    if st['gate_fired']:
+        return (f'the Phase-A gate fired (C4 x s1 reached {st["c4_reached"]} of {st["c4_valid"]}): '
+                's3_ctrap stays unseen for the second design iteration (D-7)')
+    if not st['complete']:
+        return (f'Phase A is not complete ({st["c4_valid"]} of {plan_mod.PHASE_A_C4_REPS} valid '
+                f'C4 x s1, {st["c3_valid"]} of {plan_mod.PHASE_A_C3_REPS} valid C3 x s1): '
+                's3_ctrap and block B wait for it')
+    return None
+
+
+def evaluate_stops(records: list, invalid_attempts: dict | None = None,
+                   superseded: list | None = None) -> list:
     """The stopping rules of PREREG.md applied to the registered trials so far.
 
-    Returns a list of (code, message); an empty list means: continue.
+    ``superseded``: the analysed attempts that were kept as ``.invalidN`` or ``.abortedN``;
+    only the crash rule looks at them (a crash in an attempt that was repeated is still a
+    crash of the controller). Returns a list of (code, message); empty means: continue.
     """
     stops = []
     by_cell = {}
@@ -619,26 +663,26 @@ def evaluate_stops(records: list, invalid_attempts: dict | None = None) -> list:
 
     def valid(cell):
         return [t for t in by_cell.get(cell, []) if is_valid_driven(t)]
-    gate = valid(plan_mod.GATE_CELL)
-    if len(gate) >= plan_mod.PHASE_A_C4_REPS:
-        k = sum(1 for t in gate if t['success'])
-        if k <= plan_mod.GATE_MAX_SUCCESSES:
-            stops.append(('PHASE_A_GATE',
-                          f'C4 x s1_utrap reached {k} of {len(gate)} (<= '
-                          f'{plan_mod.GATE_MAX_SUCCESSES}): stop and return to the headless test'))
+    st = phase_a_status(records)
+    if st['gate_fired']:
+        stops.append(('PHASE_A_GATE',
+                      f'C4 x s1_utrap reached {st["c4_reached"]} of {st["c4_valid"]} (<= '
+                      f'{plan_mod.GATE_MAX_SUCCESSES}): stop and return to the headless test'))
     for c in ('C1', 'C3'):
         s0 = valid(('s0_open', c))
-        if len(s0) >= plan_mod.REPS:
-            k = sum(1 for t in s0 if t['success'])
-            if k <= plan_mod.STOCK_S0_MAX_SUCCESSES:
-                stops.append(('STACK_BROKEN',
-                              f'stock MPPI ({c}) reached {k} of {len(s0)} on s0_open (<= '
-                              f'{plan_mod.STOCK_S0_MAX_SUCCESSES}): the stack is broken'))
+        failures = sum(1 for t in s0 if not t['success'])
+        if failures >= plan_mod.STOCK_S0_MIN_FAILURES:
+            # With REPS trials per cell, this many failures leave at most
+            # STOCK_S0_MAX_SUCCESSES successes: the rule is decided, no need to wait for the rest.
+            stops.append(('STACK_BROKEN',
+                          f'stock MPPI ({c}) failed {failures} of {len(s0)} valid trials on s0_open: '
+                          f'at most {plan_mod.REPS - failures} of {plan_mod.REPS} can still reach '
+                          f'(<= {plan_mod.STOCK_S0_MAX_SUCCESSES}): the stack is broken'))
     for cell, n in (invalid_attempts or {}).items():
         if n > plan_mod.MAX_INVALID_PER_CELL:
             stops.append(('INVALID_CAP', f'cell {cell} has {n} invalid attempts '
                           f'(> {plan_mod.MAX_INVALID_PER_CELL}): report it as incomplete'))
-    for t in records:
+    for t in list(records) + list(superseded or []):
         if t.get('process_crash'):
             stops.append(('CONTROLLER_CRASH', f'{t["trial_id"]}: a launched process died with exit '
                           f'code {t["process_exit_codes"]} (not a teardown signal)'))
@@ -646,6 +690,10 @@ def evaluate_stops(records: list, invalid_attempts: dict | None = None) -> list:
         if t['outcome'] == 'SETUP_FAIL':
             stops.append(('SETUP_FAIL', f'{t["trial_id"]}: the stack did not become active '
                           '(controller crash or refusal to configure)'))
+    ids = {(t.get('freeze_manifest_sha256'), t.get('controller_tag_commit')) for t in records}
+    if len(ids) > 1:
+        stops.append(('MIXED_ATTEMPTS', 'registered trials carry more than one freeze manifest or '
+                      'controller tag commit; a restart needs its own raw root (--attempt 2)'))
     return stops
 
 
@@ -682,6 +730,11 @@ def load_dir(raw_root: str, sub: str) -> list:
 def registered_records(raw_root: str) -> list:
     """Registered trials: the directories of ``trials/`` without a suffix."""
     return [t for t in load_dir(raw_root, 'trials') if '.' not in t['trial_id']]
+
+
+def superseded_records(raw_root: str) -> list:
+    """Attempts kept as ``.invalidN`` or ``.abortedN``: repeated, never deleted."""
+    return [t for t in load_dir(raw_root, 'trials') if '.' in t['trial_id']]
 
 
 def build(raw_root: str) -> dict:
@@ -721,7 +774,8 @@ def build(raw_root: str) -> dict:
         'superseded_attempts': superseded,
         'shakedown': load_dir(raw_root, 'shakedown'),
         'stops': evaluate_stops(trials, {
-            f'{k[0]}/{k[1]}': count_invalid_attempts(raw_root, k) for k in groups}),
+            f'{k[0]}/{k[1]}': count_invalid_attempts(raw_root, k) for k in groups},
+                                superseded),
     }
     return result
 
@@ -841,12 +895,15 @@ def pack_excerpts(raw_root: str, out_dir: str) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument('--raw', default=plan_mod.RAW_ROOT)
+    ap.add_argument('--raw', default=None, help='raw data root (default: that of --attempt)')
+    ap.add_argument('--attempt', type=int, default=1,
+                    help='attempt number: attempt N>=2 has its own raw root (PREREG.md, restarts)')
     ap.add_argument('--out', default=HERE)
     ap.add_argument('--check', action='store_true',
                     help='fail if results.json.gz or RESULTS.md differ from a fresh analysis')
     ap.add_argument('--pack', action='store_true', help='also write logs/<trial>.log.gz excerpts')
     args = ap.parse_args()
+    args.raw = args.raw or plan_mod.raw_root(args.attempt)
     result = build(args.raw)
     js = gz_bytes(json.dumps(result, indent=1, sort_keys=True) + '\n')
     md = render(result).encode()

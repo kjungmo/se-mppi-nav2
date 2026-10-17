@@ -500,7 +500,7 @@ def test_stack_broken_rule_on_the_stock_controller_on_s0():
         assert any(c == 'STACK_BROKEN' for c, _ in an.evaluate_stops(cell_trials('s0_open', cfg, 4)))
         assert not an.evaluate_stops(cell_trials('s0_open', cfg, 5))
     assert not an.evaluate_stops(cell_trials('s0_open', 'C2', 0))      # SE cells are not this rule
-    assert not an.evaluate_stops(cell_trials('s0_open', 'C1', 0, n=5))
+    # the rule is decided at the second failure, not after the sixth trial (see test_c2_review_fixes)
 
 
 def test_invalid_cap_and_setup_failure_stop():

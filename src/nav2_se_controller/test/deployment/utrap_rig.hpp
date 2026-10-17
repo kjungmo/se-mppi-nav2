@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -158,6 +159,26 @@ public:
       rclcpp::Parameter("FollowPath.EscapeCritic.progress_stall_window", 30),
     };
     params.insert(params.end(), extra.begin(), extra.end());
+    // Ablation aid, never set in CI: SE_UTRAP_PARAMS="se_escape_avoid_radius=0,se_escape_stall_time=1e6"
+    // sets FollowPath parameters (an integer-looking value is an integer, anything else a double).
+    // The review of 2026-10-18 used it to switch the additions beyond the advised design off.
+    if (const char * env = std::getenv("SE_UTRAP_PARAMS")) {
+      std::stringstream list(env);
+      std::string item;
+      while (std::getline(list, item, ',')) {
+        const auto eq = item.find('=');
+        if (eq == std::string::npos) {
+          continue;
+        }
+        const std::string name = "FollowPath." + item.substr(0, eq);
+        const std::string value = item.substr(eq + 1);
+        if (value.find_first_of(".eE") == std::string::npos) {
+          params.emplace_back(name, static_cast<int64_t>(std::stoll(value)));
+        } else {
+          params.emplace_back(name, std::stod(value));
+        }
+      }
+    }
     rclcpp::NodeOptions options;
     options.parameter_overrides(params);
     node_ = std::make_shared<rclcpp_lifecycle::LifecycleNode>("controller_server", options);

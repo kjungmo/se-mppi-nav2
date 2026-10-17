@@ -17,6 +17,16 @@ REPO = os.path.normpath(os.path.join(HERE, '..', '..'))
 PARAMS_YAML = os.path.join(REPO, 'experiments', 'sim', 'nav2_se_campaign2.yaml')
 BT_DIR = os.path.join(REPO, 'experiments', 'se_mppi_utrap', 'behavior_trees')
 RAW_ROOT = '/mnt/d/wsl/se-mppi/campaign2'
+
+
+def raw_root(attempt: int = 1) -> str:
+    """Raw-data root of an attempt. Attempt 1 uses ``RAW_ROOT``; a restart (a fix after trial 1,
+    decision D-7) is attempt 2 and has its own root, so that no trial of attempt 1 is ever
+    reused or mixed into it."""
+    if attempt < 1:
+        raise ValueError(attempt)
+    return RAW_ROOT if attempt == 1 else f'{RAW_ROOT}/attempt{attempt}'
+
 ENV_LABEL = 'correct'
 
 FP = 'controller_server.ros__parameters.FollowPath'
@@ -55,6 +65,9 @@ PHASE_A_C3_REPS = 3          # C3 x s1
 GATE_CELL = ('s1_utrap', 'C4')
 GATE_MAX_SUCCESSES = 1       # Phase A: C4 x s1 <= 1 of 6 -> stop
 STOCK_S0_MAX_SUCCESSES = 4   # stock MPPI <= 4 of 6 on s0 -> stack broken
+# 4 of 6 or fewer is certain as soon as REPS - STOCK_S0_MAX_SUCCESSES = 2 valid trials of a
+# stock cell on s0 have failed: the rule fires then, not after the sixth trial.
+STOCK_S0_MIN_FAILURES = REPS - STOCK_S0_MAX_SUCCESSES
 MAX_INVALID_PER_CELL = 6     # more invalid attempts than this on a cell -> incomplete
 
 

@@ -16,14 +16,25 @@ New in campaign 2:
 * The plan: Phase A (gate, 9 trials) and Phase B (67 trials), cell order rotating with the
   repetition; ``--list`` prints it.
 * Resume at the first unfinished trial: finished trials are skipped, an unfinished
-  directory is kept as ``.abortedN`` and the trial is run again, a finished trial whose
-  host-load verdict is invalid is kept as ``.invalidN`` and repeated.
+  directory (including one interrupted by Ctrl-C or an exception, which carries
+  ``interrupted`` and never ``complete``) is kept as ``.abortedN`` and the trial is run again,
+  a finished trial whose host-load verdict is invalid is kept as ``.invalidN`` and repeated.
+  A directory whose ``meta.json`` carries another freeze-manifest hash or controller tag commit
+  is foreign: the driver refuses to run. A restart is attempt 2 with its own raw root
+  (``--attempt 2``).
 * Stopping rules after every trial (``analyze.evaluate_stops``): the Phase-A gate, a stock
   controller at or below 4 of 6 on s0_open, more than 6 invalid attempts on a cell, a stack
   that does not become active.
 * Raw data go to ``/mnt/d/wsl/se-mppi/campaign2/`` (``trials/``, ``shakedown/``).
 * Refusal to run ``se_enabled`` with ``vx_min > 0`` (DESIGN_ADVICE D1), and refusal to run a
   counted block unless ``freeze_manifest.py --check`` passes.
+* Provenance before every counted trial (``provenance.py``): the installed behaviour trees,
+  worlds, launch and URDF files equal the repository (and the manifest), the installed
+  controller libraries are hashed into ``meta.json``, the build stamp names the tag
+  ``campaign2-controller`` at the tag commit, and the repository is at the tag with no
+  uncommitted change to a tracked file (the analysis outputs excepted).
+* Block B, and every ``s3_ctrap`` trial, is refused until Phase A is complete and its gate has
+  not fired (``analyze.s3_refusal``), so s3 stays unseen if the second design iteration is needed.
 
 Run from the repository root inside the ``semppi_rerun`` environment with the workspace
 (nav2_se_controller, se_mppi_utrap) sourced:
@@ -52,13 +63,19 @@ sys.path.insert(0, PILOT_DIR)
 sys.path.insert(0, HERE)
 
 import plan as plan_mod  # noqa: E402
+import provenance  # noqa: E402
 
 EXIT_REFUSED = 2
 EXIT_STOP = 3
 
 
-def existing_state(out: str) -> str:
-    """'absent', 'incomplete', 'complete_valid' or 'complete_invalid' for a trial directory."""
+def existing_state(out: str, ident: dict | None = None) -> str:
+    """'absent', 'incomplete', 'foreign', 'complete_valid' or 'complete_invalid' for a trial directory.
+
+    'incomplete': no meta.json, unreadable, ``interrupted``, or not ``complete``. 'foreign': with
+    ``ident`` given, the directory carries another freeze-manifest hash or controller tag commit
+    than this attempt (a trial of an earlier attempt must never be reused).
+    """
     meta_path = os.path.join(out, 'meta.json')
     if not os.path.exists(meta_path):
         return 'absent' if not os.path.exists(out) else 'incomplete'
@@ -67,12 +84,26 @@ def existing_state(out: str) -> str:
             meta = json.load(f)
     except ValueError:
         return 'incomplete'
-    if not meta.get('complete'):
+    if provenance.foreign_reason(meta, ident) is not None:
+        return 'foreign'
+    if meta.get('interrupted') or not meta.get('complete'):
         return 'incomplete'
     load = meta.get('host_load')
     if load is not None and not load.get('valid', True):
         return 'complete_invalid'
     return 'complete_valid'
+
+
+def foreign_trials(trials_dir: str, ident: dict | None) -> list:
+    """Trial directories (any suffix) of ``trials_dir`` that do not belong to this attempt."""
+    if ident is None or not os.path.isdir(trials_dir):
+        return []
+    out = []
+    for name in sorted(os.listdir(trials_dir)):
+        d = os.path.join(trials_dir, name)
+        if os.path.isdir(d) and existing_state(d, ident) == 'foreign':
+            out.append(name)
+    return out
 
 
 def next_free(base: str, kind: str) -> str:
@@ -109,11 +140,15 @@ def environment_info(rr) -> dict:
     return info
 
 
-def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_info, probe):
+def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_info, probe,
+              ident=None, prov=None):
     hostload = rr.hostload
     rl = rr.rl
     out = os.path.join(out_root, trial.trial_id)
-    state = existing_state(out)
+    state = existing_state(out, ident)
+    if state == 'foreign':
+        raise SystemExit(f'{out} belongs to another attempt (freeze manifest or tag commit differ): '
+                         'give a restart its own raw root, --attempt 2')
     if state == 'complete_valid':
         print(f'[campaign2] skip (complete): {trial.trial_id}', flush=True)
         return None
@@ -162,6 +197,8 @@ def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_i
         'wall_start': time.time(), 'complete': False, 'setup_attempts': 0,
         'ncpu': os.cpu_count(), 'active': False,
     }
+    meta.update(ident or {})
+    meta['provenance'] = prov if prov is not None else 'not verified'
     meta_path = os.path.join(out, 'meta.json')
 
     def save():
@@ -172,6 +209,7 @@ def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_i
 
     launch = None
     extras = []
+    ok = False
     try:
         for attempt in range(1, rr.SETUP_RETRIES + 2):
             meta['setup_attempts'] = attempt
@@ -200,6 +238,7 @@ def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_i
             launch = None
         save()
         if not meta['active']:
+            ok = True
             return meta
 
         bridge = subprocess.Popen(
@@ -235,6 +274,7 @@ def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_i
                 meta['drive_returncode'] = None
                 meta['drive_killed_by_driver'] = True
         meta['drive_wall_end'] = time.time()
+        ok = True
     finally:
         for p in extras:
             rr.stop_group(p, grace=5.0)
@@ -247,7 +287,12 @@ def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_i
             meta['host_load'] = hostload.verdict(
                 hostload.read_rows(os.path.join(out, 'host_cpu.csv')),
                 meta['drive_wall_start'], meta['drive_wall_end'])
-        meta['complete'] = True
+        # Only the normal path marks the trial complete. A Ctrl-C or an exception leaves
+        # 'interrupted': resume keeps the directory as .abortedN and runs the trial again.
+        if ok:
+            meta['complete'] = True
+        else:
+            meta['interrupted'] = True
         save()
     print(f'[campaign2] done: {trial.trial_id} active={meta["active"]} '
           f'drive_rc={meta.get("drive_returncode")} host_load={meta.get("host_load")}', flush=True)
@@ -258,19 +303,35 @@ def check_stops(raw_root, trials_done_cells) -> list:
     import analyze as an
     recs = an.registered_records(raw_root)
     inval = {f'{s}/{c}': an.count_invalid_attempts(raw_root, (s, c)) for s, c in trials_done_cells}
-    return an.evaluate_stops(recs, inval)
+    return an.evaluate_stops(recs, inval, an.superseded_records(raw_root))
+
+
+def phase_gate_refusal(raw_root, trial_or_block) -> str | None:
+    """Refusal text when ``trial_or_block`` (a Trial, or the block name 'B') would drive s3 or
+    run block B before Phase A is complete and its gate decided. None when allowed."""
+    import analyze as an
+    if isinstance(trial_or_block, str):
+        needs = trial_or_block == 'B'
+    else:
+        needs = trial_or_block.scenario == 's3_ctrap' or trial_or_block.phase == 'B'
+    if not needs:
+        return None
+    return an.s3_refusal(an.registered_records(raw_root))
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--block', default='all', choices=('A', 'B', 'all', 'shakedown'))
-    ap.add_argument('--raw', default=plan_mod.RAW_ROOT, help='raw data root (outside the repository)')
+    ap.add_argument('--raw', default=None, help='raw data root (default: that of --attempt)')
+    ap.add_argument('--attempt', type=int, default=1,
+                    help='attempt number; a restart after a fix is attempt 2 with its own raw root')
     ap.add_argument('--list', action='store_true', help='print the plan and exit')
     ap.add_argument('--allow-unfrozen', action='store_true',
                     help='run a counted block without a passing freeze manifest (not for the campaign)')
     ap.add_argument('--max-trials', type=int, default=None,
                     help='stop after this many trials have run in this session (resume later)')
     args = ap.parse_args()
+    args.raw = args.raw or plan_mod.raw_root(args.attempt)
 
     trials = plan_mod.plan(args.block)
     if args.list:
@@ -284,12 +345,26 @@ def main():
     from experiments.runner import scenario as scenario_mod
     import yaml
 
-    if args.block != 'shakedown' and not args.allow_unfrozen:
+    counted_block = args.block != 'shakedown'
+    if counted_block and not args.allow_unfrozen:
         import freeze_manifest
         diffs = freeze_manifest.check()
         if diffs:
             print('[campaign2] REFUSED: the frozen files differ from FREEZE_MANIFEST.json '
                   '(PREREG.md, "Frozen files"):\n  ' + '\n  '.join(diffs[:20]), flush=True)
+            return EXIT_REFUSED
+    ident = (provenance.identity(REPO, os.path.join(HERE, 'FREEZE_MANIFEST.json'))
+             if counted_block else None)
+    if counted_block:
+        refusal = phase_gate_refusal(args.raw, args.block)
+        if refusal:
+            print(f'[campaign2] REFUSED block {args.block}: {refusal}', flush=True)
+            return EXIT_REFUSED
+        foreign = foreign_trials(os.path.join(args.raw, 'trials'), ident)
+        if foreign:
+            print('[campaign2] REFUSED: trial directories of another attempt (freeze manifest or '
+                  'tag commit differ) are in this raw root; a restart needs its own root '
+                  f'(--attempt 2):\n  ' + '\n  '.join(foreign[:20]), flush=True)
             return EXIT_REFUSED
     if not rr.rl.ros_available():
         raise SystemExit('no ros2 on PATH: activate the environment and source the workspace')
@@ -324,13 +399,31 @@ def main():
                 print('[campaign2] Stopping rule triggered: report to the lead; see PREREG.md '
                       '(stopping rules). Nothing was deleted.', flush=True)
                 return EXIT_STOP
+        if sub == 'trials':
+            refusal = phase_gate_refusal(args.raw, trial)
+            if refusal and existing_state(os.path.join(out_root, trial.trial_id), ident) != 'complete_valid':
+                print(f'[campaign2] REFUSED {trial.trial_id}: {refusal}', flush=True)
+                return EXIT_REFUSED
         if args.max_trials is not None and ran >= args.max_trials:
             print(f'[campaign2] --max-trials {args.max_trials} reached; resume with the same command',
                   flush=True)
             return 0
         while True:
+            prov = None
+            if sub == 'trials' and not args.allow_unfrozen:
+                import freeze_manifest
+                with open(freeze_manifest.MANIFEST) as f:
+                    manifest_files = json.load(f)['files']
+                pdiffs, prov = provenance.verify_installed(
+                    REPO, info['controller_prefix'], info['testbed_prefix'], manifest_files,
+                    freeze_manifest.files())
+                if pdiffs:
+                    print('[campaign2] REFUSED: what is installed is not what is frozen '
+                          '(PREREG.md, "Provenance"):\n  ' + '\n  '.join(pdiffs[:20]), flush=True)
+                    return EXIT_REFUSED
             meta = run_trial(rr, config_mod, suite, base_tree, scenarios[trial.scenario], trial,
-                             out_root, info, probe=(trial.phase == 'shakedown'))
+                             out_root, info, probe=(trial.phase == 'shakedown'),
+                             ident=ident, prov=prov)
             if meta is None:                       # complete and valid: skipped
                 break
             ran += 1

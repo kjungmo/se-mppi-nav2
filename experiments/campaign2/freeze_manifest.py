@@ -7,7 +7,7 @@
 
 The driver refuses to run a counted trial (Phase A or B) unless ``--check`` passes.
 The manifest covers the parameter file, the behaviour trees, the worlds and scenarios,
-the plan, the driver, the recorder, the host-load module, the analyzer and its tests
+the plan, the driver, the provenance module, the recorder, the host-load module, the analyzer and its tests
 (DECISION D-4b: the analysis script and its tests are frozen with the pre-registration
 tag), and the campaign-1 analyzer that the new analyzer imports. ``PREREG.md`` and the
 generated results are not in the manifest: a dated amendment edits the first, and the
@@ -48,6 +48,8 @@ FROZEN = [
     'experiments/campaign2/recorder.py',
     'experiments/campaign2/probe_escape_path.py',
     'experiments/campaign2/analyze.py',
+    'experiments/campaign2/provenance.py',
+    'experiments/se_mppi_utrap/CMakeLists.txt',
     'experiments/campaign2/freeze_manifest.py',
     'experiments/results_pilot_rerun/hostload.py',
     'experiments/results_pilot_rerun/run_rerun.py',
@@ -59,6 +61,7 @@ FROZEN_GLOBS = [
     'src/nav2_se_controller/src/*.cpp',
     'src/nav2_se_controller/include/**/*.hpp',
     'src/nav2_se_controller/CMakeLists.txt',
+    'src/nav2_se_controller/cmake/*.cmake',
 ]
 
 
