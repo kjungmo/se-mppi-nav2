@@ -6,10 +6,10 @@ tier: barn
 map: ../se_mppi_utrap/maps/utrap_loc.yaml
 start: [-3.0, 0.0, 0.0]
 goal:  [3.0, 0.0, 0.0]
+world: worlds/s3_ctrap.sdf
 meta:
   kind: c-trap
   note: asymmetric rotated pocket absent from planner map; local-minimum escape test
-  world: campaign2/worlds/s3_ctrap.sdf
   launch:
     pkg: se_mppi_utrap
     file: utrap_bench.launch.py
