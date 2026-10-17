@@ -26,7 +26,13 @@ def main():
     rclpy.init()
     node = rclpy.create_node('se_shakedown_probe')
     pub = node.create_publisher(Path, topic, 1)
-    time.sleep(2.0)              # discovery
+    # Wait until the recorder's subscription is matched (a volatile publisher drops messages
+    # that it sends before the match), for 60 s at most.
+    deadline = time.time() + 60.0
+    while pub.get_subscription_count() < 1 and time.time() < deadline:
+        rclpy.spin_once(node, timeout_sec=0.1)
+    print(f'subscriptions matched: {pub.get_subscription_count()}', flush=True)
+    time.sleep(1.0)
     for i in range(3):
         msg = Path()
         msg.header.frame_id = FRAME

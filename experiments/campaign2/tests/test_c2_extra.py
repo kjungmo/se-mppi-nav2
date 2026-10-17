@@ -126,3 +126,34 @@ def test_sha256_matches_the_standard_tool(tmp_path):
     p.write_bytes(b'campaign 2\n')
     out = subprocess.run(['sha256sum', str(p)], capture_output=True, text=True).stdout.split()[0]
     assert fm.sha256(str(p)) == out == plan.sha256_file(str(p))
+
+
+# --------------------------------------------------------------------------- #
+# Process exit codes: teardown signals are normal, anything else is a crash
+# --------------------------------------------------------------------------- #
+def died(code, pid=4242):
+    return (f"[ERROR] [component_container_isolated-5]: process has died [pid {pid}, exit code {code}, "
+            "cmd '/x/lib/rclcpp_components/component_container_isolated --ros-args'].")
+
+
+@pytest.mark.parametrize('code,crash', [(0, False), (-2, False), (-15, False), (-9, False),
+                                        (-11, True), (-6, True), (1, True), (134, True)])
+def test_exit_codes_of_the_teardown_are_not_crashes(code, crash):
+    p = an.parse_launch_log(died(code), 0.0)
+    assert p['process_exit_codes'] == [code] and p['process_crash'] is crash
+
+
+def test_no_died_line_is_no_crash_and_several_lines_are_all_listed():
+    p = an.parse_launch_log('nothing', 0.0)
+    assert p['process_exit_codes'] == [] and p['process_crash'] is False
+    p = an.parse_launch_log(died(-9, 1) + '\n' + died(-11, 2) + '\n' + died(-2, 3), 0.0)
+    assert p['process_exit_codes'] == [-9, -11, -2] and p['process_crash'] is True
+
+
+def test_a_crash_in_the_launch_log_reaches_the_record_and_the_stop_rule(tmp_path):
+    t = analyze_one(tmp_path, 'c', 's0_open', 'C1', drive_to_goal(30.0), launch=died(-11))
+    assert t['process_crash'] is True and t['process_exit_codes'] == [-11]
+    stops = an.evaluate_stops([t])
+    assert [c for c, _ in stops] == ['CONTROLLER_CRASH'] and '-11' in stops[0][1]
+    ok = analyze_one(tmp_path, 'ok', 's0_open', 'C1', drive_to_goal(30.0), launch=died(-9))
+    assert ok['process_crash'] is False and an.evaluate_stops([ok]) == []

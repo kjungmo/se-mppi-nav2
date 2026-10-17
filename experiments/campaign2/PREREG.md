@@ -210,7 +210,11 @@ exits with code 3 and deletes nothing when one fires.
 
 - **Phase-A gate.** C4 on s1 reaches 1 of 6 or fewer (after six valid trials). Stop; the work
   returns to the headless test (decision D-7).
-- A controller crash or refusal to configure (`SETUP_FAIL`).
+- A controller crash (`CONTROLLER_CRASH`: a launched process exits with a code other than
+  the teardown codes 0, -2, -15 and -9; the driver stops a trial with SIGINT, SIGTERM, SIGKILL,
+  so a container killed by the driver shows -9; a kill by the kernel during a drive shows the
+  same code and is not detected by this rule) or a refusal to configure (`SETUP_FAIL`: the
+  stack was not active after two launches).
 - **Stack broken.** Stock MPPI (C1 or C3) reaches 4 of 6 or fewer on `s0_open`.
 - More than 6 invalid attempts on one cell. The cell is reported incomplete.
 

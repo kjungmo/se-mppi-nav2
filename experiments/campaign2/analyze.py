@@ -134,6 +134,11 @@ WAIT_RE = re.compile(r'\[behavior_server\]: Running wait\b')
 CLEAR_LOCAL_RE = re.compile(r'Received request to clear entirely the local_costmap')
 CLEAR_GLOBAL_RE = re.compile(r'Received request to clear entirely the global_costmap')
 VX_MIN_WARN_RE = re.compile(r'vx_min = [-\d.]+ > 0 with se_enabled')
+DIED_RE = re.compile(r'process has died \[pid \d+, exit code (?P<code>-?\d+)')
+# Exit codes of the teardown: the driver stops a trial with SIGINT, SIGTERM, SIGKILL in that
+# order, so a container that was killed shows -2, -15 or -9, and one that exited cleanly 0.
+# Any other exit code (SIGSEGV -11, SIGABRT -6, a positive status) is a crash.
+TEARDOWN_EXIT_CODES = (0, -2, -15, -9)
 KEY_LINE_RE = re.compile(
     r'SE escape |escape-cost injection|selected opening|no opening found|'
     r'Failed to make progress|Running (?:spin|backup|wait)\b|'
@@ -231,6 +236,9 @@ def parse_launch_log(text: str, t0: float | None) -> dict:
         'bt_clear_local': len(CLEAR_LOCAL_RE.findall(text)),
         'bt_clear_global': len(CLEAR_GLOBAL_RE.findall(text)),
         'vx_min_warning': bool(VX_MIN_WARN_RE.search(text)),
+        'process_exit_codes': [int(m.group('code')) for m in DIED_RE.finditer(text)],
+        'process_crash': any(int(m.group('code')) not in TEARDOWN_EXIT_CODES
+                             for m in DIED_RE.finditer(text)),
     }
 
 
@@ -627,6 +635,10 @@ def evaluate_stops(records: list, invalid_attempts: dict | None = None) -> list:
         if n > plan_mod.MAX_INVALID_PER_CELL:
             stops.append(('INVALID_CAP', f'cell {cell} has {n} invalid attempts '
                           f'(> {plan_mod.MAX_INVALID_PER_CELL}): report it as incomplete'))
+    for t in records:
+        if t.get('process_crash'):
+            stops.append(('CONTROLLER_CRASH', f'{t["trial_id"]}: a launched process died with exit '
+                          f'code {t["process_exit_codes"]} (not a teardown signal)'))
     for t in records:
         if t['outcome'] == 'SETUP_FAIL':
             stops.append(('SETUP_FAIL', f'{t["trial_id"]}: the stack did not become active '
