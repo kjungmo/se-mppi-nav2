@@ -707,7 +707,8 @@ void SafeEscapeController::manageEscapePath(const geometry_msgs::msg::PoseStampe
       if (escape_.active) {
         ++escape_.cycles;
         const int cycle_limit =
-          std::max(1, static_cast<int>(std::lround(escape_reselect_period_ * controller_frequency_)));
+          std::max(
+          1, static_cast<int>(std::lround(escape_reselect_period_ * controller_frequency_)));
         if (std::hypot(escape_.wx - x, escape_.wy - y) <= escape_reselect_radius_) {
           need = true;
           why = "waypoint reached";

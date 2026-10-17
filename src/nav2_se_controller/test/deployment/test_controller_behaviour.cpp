@@ -40,7 +40,6 @@
 #include "tf2_ros/buffer.h"
 
 #include "diagnostic_msgs/msg/diagnostic_array.hpp"
-#include "nav_msgs/msg/path.hpp"
 #include "nav2_se_controller/dynamic_obstacle_tracker.hpp"
 #include "utrap_dev_geometries.hpp"
 #include "nav2_se_controller/safe_escape_controller.hpp"
@@ -737,13 +736,13 @@ protected:
     path.header.frame_id = "map";
     path.header.stamp = node_->now();
     auto add = [&](double px, double py) {
-        geometry_msgs::msg::PoseStamped p;
-        p.header = path.header;
-        p.pose.position.x = px;
-        p.pose.position.y = py;
-        p.pose.orientation.w = 1.0;
-        path.poses.push_back(p);
-      };
+      geometry_msgs::msg::PoseStamped p;
+      p.header = path.header;
+      p.pose.position.x = px;
+      p.pose.position.y = py;
+      p.pose.orientation.w = 1.0;
+      path.poses.push_back(p);
+    };
     for (double y = 0.0; y < 1.5; y += 0.05) {add(x, y);}
     for (double px = x; px < 2.0; px += 0.05) {add(px, 1.5);}
     for (double y = 1.5; y > 0.0; y -= 0.05) {add(2.0, y);}
@@ -776,7 +775,9 @@ TEST_F(ControllerReplan, ReplansFromAStationaryRobotDoNotCancelEntrapment)
 TEST_F(ControllerReplan, ThreeCentimetresAfterAReplanDoNotClearEntrapmentFifteenDo)
 {
   begin(5);
-  for (int k = 0; k < 10; ++k) {step(0.5, 0.0);}
+  for (int k = 0; k < 10; ++k) {
+    step(0.5, 0.0);
+  }
   ASSERT_TRUE(controller_->entrapped());
   replanFrom(0.5);
   step(0.5, 0.0);
@@ -797,8 +798,12 @@ TEST_F(ControllerReplan, ThreeCentimetresAfterAReplanDoNotClearEntrapmentFifteen
 TEST_F(ControllerReplan, BackedOffRobotStaysEntrappedAfterAReplanAndOneCell)
 {
   begin(5);
-  for (int k = 0; k <= 20; ++k) {step(0.05 * k, 0.0);}
-  for (int k = 0; k < 10; ++k) {step(0.6, 0.0);}
+  for (int k = 0; k <= 20; ++k) {
+    step(0.05 * k, 0.0);
+  }
+  for (int k = 0; k < 10; ++k) {
+    step(0.6, 0.0);
+  }
   ASSERT_TRUE(controller_->entrapped());
   replanFrom(0.6);
   step(0.6, 0.0);
@@ -828,7 +833,9 @@ TEST_F(ControllerReplan, SteadyMotionWithReplansEveryTenCyclesIsNeverEntrapped)
 TEST_F(ControllerReplan, ADivergingReplanFollowedForSixDecimetresIsNotEntrapment)
 {
   begin(30);
-  for (int k = 0; k < 3; ++k) {step(0.5, 0.0);}
+  for (int k = 0; k < 3; ++k) {
+    step(0.5, 0.0);
+  }
   controller_->setPlan(detourPath(0.5));
   for (int k = 0; k <= 20; ++k) {
     step(0.5, 0.03 * k);
@@ -848,7 +855,9 @@ TEST_F(ControllerReplan, ADivergingReplanFollowedForSixDecimetresIsNotEntrapment
 TEST_F(ControllerReplan, ADivergingReplanIsAdoptedAtHalfAMetreNotBefore)
 {
   begin(5);
-  for (int k = 0; k < 3; ++k) {step(0.5, 0.0);}
+  for (int k = 0; k < 3; ++k) {
+    step(0.5, 0.0);
+  }
   controller_->setPlan(detourPath(0.5));
   step(0.5, 0.0);
   step(0.5, 0.45);
@@ -873,8 +882,11 @@ TEST_F(ControllerReplan, ProgressDistancesCanBeSetAtRuntime)
   ASSERT_TRUE(
     node_->set_parameter(rclcpp::Parameter("FollowPath.se_progress_min_advance", 0.3)).successful);
   ASSERT_TRUE(
-    node_->set_parameter(rclcpp::Parameter("FollowPath.se_progress_adopt_advance", 0.2)).successful);
-  for (int k = 0; k < 10; ++k) {step(0.5, 0.0);}
+    node_->set_parameter(
+      rclcpp::Parameter("FollowPath.se_progress_adopt_advance", 0.2)).successful);
+  for (int k = 0; k < 10; ++k) {
+    step(0.5, 0.0);
+  }
   ASSERT_TRUE(controller_->entrapped());
   step(0.65, 0.0);
   EXPECT_TRUE(controller_->entrapped()) << "0.15 m is below the new minimum of 0.3 m";
@@ -1093,7 +1105,9 @@ TEST_F(ControllerEscapePath, SwitchingTheSeLayerOffGivesTheBtPathBack)
 TEST_F(ControllerEscapePath, SubstitutionCanBeSwitchedOff)
 {
   begin({rclcpp::Parameter("FollowPath.se_escape_path_substitution", false)});
-  for (int k = 0; k < 20; ++k) {step(kStallX, 0.0);}
+  for (int k = 0; k < 20; ++k) {
+    step(kStallX, 0.0);
+  }
   EXPECT_TRUE(controller_->entrapped());
   EXPECT_EQ(controller_->handed.size(), 1u) << "only the BT path";
   EXPECT_FALSE(controller_->escapeActive());
@@ -1104,7 +1118,9 @@ TEST_F(ControllerEscapePath, SubstitutionCanBeSwitchedOff)
 TEST_F(ControllerEscapePath, NothingIsSubstitutedNearTheGoal)
 {
   begin();
-  for (int k = 0; k < 20; ++k) {step(2.8, 0.0);}
+  for (int k = 0; k < 20; ++k) {
+    step(2.8, 0.0);
+  }
   EXPECT_FALSE(controller_->entrapped());
   EXPECT_EQ(controller_->handed.size(), 1u);
 }
@@ -1167,12 +1183,15 @@ TEST_F(ControllerEscapePath, ABlockedWaypointLineSelectsAnotherHop)
 // The timeout: a waypoint that stands for se_escape_reselect_period is re-selected.
 TEST_F(ControllerEscapePath, AStandingWaypointIsReselectedAfterThePeriod)
 {
-  begin({rclcpp::Parameter("FollowPath.se_escape_stall_time", 100.0),
+  begin(
+    {rclcpp::Parameter("FollowPath.se_escape_stall_time", 100.0),
       rclcpp::Parameter("FollowPath.se_escape_reselect_period", 1.0)});
   stallUntilEscapePath();
   ASSERT_EQ(controller_->hops(), 1u);
   // controller_frequency is 20 Hz: 20 cycles.
-  for (int k = 0; k < 19; ++k) {step(kStallX, 0.0);}
+  for (int k = 0; k < 19; ++k) {
+    step(kStallX, 0.0);
+  }
   EXPECT_EQ(controller_->hops(), 1u) << "19 cycles";
   step(kStallX, 0.0);
   EXPECT_EQ(controller_->hops(), 2u) << "20 cycles";
@@ -1189,7 +1208,9 @@ TEST_F(ControllerEscapePath, ARobotThatDoesNotMoveGetsAnotherWaypoint)
   ASSERT_EQ(controller_->hops(), 1u);
   const double first_bearing = controller_->escapeBearing();
   const auto first_wp = controller_->handed.back().poses.back().pose.position;
-  for (int k = 0; k < 9; ++k) {step(kStallX, 0.0);}
+  for (int k = 0; k < 9; ++k) {
+    step(kStallX, 0.0);
+  }
   EXPECT_EQ(controller_->hops(), 1u) << "9 cycles of 10";
   step(kStallX, 0.0);
   EXPECT_EQ(controller_->hops(), 2u) << "10 cycles at 20 Hz = 0.5 s";
@@ -1208,7 +1229,9 @@ TEST_F(ControllerEscapePath, MovingRobotIsNotStalled)
   stallUntilEscapePath();
   double x = kStallX;
   for (int round = 0; round < 4; ++round) {
-    for (int k = 0; k < 5; ++k) {step(x, 0.0);}
+    for (int k = 0; k < 5; ++k) {
+      step(x, 0.0);
+    }
     x -= 0.16;  // 0.16 m every 5 cycles (0.25 s)
   }
   EXPECT_EQ(controller_->hops(), 1u);
@@ -1229,7 +1252,9 @@ TEST_F(ControllerEscapePath, AnEscapeEpisodeStartsWithHopOne)
   step(0.5, 0.0);
   ASSERT_FALSE(controller_->escapeActive());
   // Stall again further on: hop 1 of the new episode.
-  for (int k = 0; k < 30 && !controller_->escapeActive(); ++k) {step(0.5, 0.0);}
+  for (int k = 0; k < 30 && !controller_->escapeActive(); ++k) {
+    step(0.5, 0.0);
+  }
   EXPECT_TRUE(controller_->escapeActive());
   EXPECT_EQ(controller_->escapeHop(), 1);
 }

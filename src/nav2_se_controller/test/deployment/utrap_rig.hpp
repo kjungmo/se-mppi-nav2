@@ -18,8 +18,8 @@
 // the behaviour tree that replans a straight line to the goal every second.
 // No Gazebo.
 
-#ifndef UTRAP_RIG_HPP_
-#define UTRAP_RIG_HPP_
+#ifndef DEPLOYMENT__UTRAP_RIG_HPP_
+#define DEPLOYMENT__UTRAP_RIG_HPP_
 
 #include <algorithm>
 #include <array>
@@ -249,7 +249,9 @@ public:
         ++r.throws;  // controller_server publishes zero velocity
       }
       if (verbose_ && k % 5 == 0) {
-        std::printf("UTRAPV t=%.1f pose=(%.2f,%.2f,%.2f) cmd=(%.3f,%.3f) throws=%d\n", t, x, y, yaw, cv, cw, r.throws);
+        std::printf(
+          "UTRAPV t=%.1f pose=(%.2f,%.2f,%.2f) cmd=(%.3f,%.3f) throws=%d\n",
+          t, x, y, yaw, cv, cw, r.throws);
       }
       // Acceleration limits as in the MPPI configuration.
       cv = std::clamp(cv, v - 3.0 * kDt, v + 3.0 * kDt);
@@ -306,4 +308,4 @@ private:
 
 }  // namespace utrap
 
-#endif  // UTRAP_RIG_HPP_
+#endif  // DEPLOYMENT__UTRAP_RIG_HPP_

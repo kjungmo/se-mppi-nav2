@@ -16,8 +16,8 @@
 // written in UTRAP_DEV_GEOMETRIES.md (same directory) and was committed before
 // the first run of the test. Plain C++, no ROS.
 
-#ifndef UTRAP_DEV_GEOMETRIES_HPP_
-#define UTRAP_DEV_GEOMETRIES_HPP_
+#ifndef DEPLOYMENT__UTRAP_DEV_GEOMETRIES_HPP_
+#define DEPLOYMENT__UTRAP_DEV_GEOMETRIES_HPP_
 
 #include <algorithm>
 #include <cmath>
@@ -86,11 +86,11 @@ inline std::vector<Segment> walls(const Pocket & p)
   const double hw = 0.5 * p.w;
   std::vector<Segment> out;
   auto add = [&](double u0, double v0, double u1, double v1) {
-      Segment s;
-      toWorld(p, u0, v0, s.x0, s.y0);
-      toWorld(p, u1, v1, s.x1, s.y1);
-      out.push_back(s);
-    };
+    Segment s;
+    toWorld(p, u0, v0, s.x0, s.y0);
+    toWorld(p, u1, v1, s.x1, s.y1);
+    out.push_back(s);
+  };
   add(h, -(hw + 2.0 * h), h, hw + 2.0 * h);                      // back wall
   add(-p.d * p.ft, hw + h, 2.0 * h, hw + h);                     // top side wall
   add(-p.d * p.fb, -(hw + h), 2.0 * h, -(hw + h));               // bottom side wall
@@ -218,4 +218,4 @@ inline std::vector<Pocket> sweep()
 
 }  // namespace utrap
 
-#endif  // UTRAP_DEV_GEOMETRIES_HPP_
+#endif  // DEPLOYMENT__UTRAP_DEV_GEOMETRIES_HPP_

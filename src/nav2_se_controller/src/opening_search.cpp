@@ -195,7 +195,8 @@ HorizonGap selectHorizonGap(
   const std::optional<double> & previous_bearing, double hysteresis,
   const std::vector<AvoidPoint> & avoid)
 {
-  HorizonGap out = selectOnce(rays, goal_bearing, min_clearance, previous_bearing, hysteresis, avoid);
+  HorizonGap out =
+    selectOnce(rays, goal_bearing, min_clearance, previous_bearing, hysteresis, avoid);
   if (!out.found && !avoid.empty()) {
     out = selectOnce(rays, goal_bearing, min_clearance, previous_bearing, hysteresis, {});
   }

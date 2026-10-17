@@ -44,7 +44,8 @@ public:
 void report(const utrap::RunResult & r, int run)
 {
   std::printf(
-    "UTRAP geometry=%s run=%d enter_t=%.1f exit_t=%.1f goal_t=%.1f reached=%d contacts=%d throws=%d "
+    "UTRAP geometry=%s run=%d enter_t=%.1f exit_t=%.1f goal_t=%.1f reached=%d contacts=%d "
+    "throws=%d "
     "enters=%d hops=%d min_goal_dist=%.2f sim_t=%.1f\n",
     r.geometry.c_str(), run, r.enter_time, r.exit_time, r.goal_time, r.reached ? 1 : 0, r.contacts,
     r.throws, r.enters, r.hops, r.min_goal_dist, r.sim_time);

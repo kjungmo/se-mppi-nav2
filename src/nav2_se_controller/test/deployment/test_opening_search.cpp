@@ -359,8 +359,10 @@ TEST(GapPocket, AtTheMouthTheRayBackToTheStallPoseIsExcluded)
       "GAP at the mouth (%.1f, 0.0) avoiding the stall pose: bearing %.0f deg, clearance "
       "%.2f m (without: %.0f deg)\n", rx, deg(with.bearing), with.clearance, deg(without.bearing));
     const double offset =
-      avoid.distance * std::sin(std::abs(std::atan2(
-        std::sin(with.bearing - avoid.bearing), std::cos(with.bearing - avoid.bearing))));
+      avoid.distance * std::sin(
+      std::abs(
+        std::atan2(
+          std::sin(with.bearing - avoid.bearing), std::cos(with.bearing - avoid.bearing))));
     EXPECT_GE(offset, avoid.radius) << "the selected ray passes the stall pose at its radius";
     EXPECT_TRUE(with.horizon);
   }

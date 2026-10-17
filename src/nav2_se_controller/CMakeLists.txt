@@ -251,7 +251,6 @@ if(BUILD_TESTING)
     test/test_multi_robot_coordinator.cpp
     test/test_path_progress.cpp
     test/test_gap_search.cpp
-    test/test_gap_pocket.cpp
     test/test_escape_injection_live_shapes.cpp)
   target_include_directories(test_nav2_se_controller PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -309,6 +308,18 @@ if(BUILD_TESTING)
   get_filename_component(SE_REPO_ROOT "${SE_SOURCE_REAL}/../.." ABSOLUTE)
   ament_add_gtest(test_heldout_guard test/deployment/test_heldout_guard.cpp)
   target_compile_definitions(test_heldout_guard PRIVATE SE_REPO_ROOT="${SE_REPO_ROOT}")
+
+  # Opening search and path progress (defects 3 and 4 of campaign 1). Kept apart
+  # from the algorithm unit tests above, which the paper counts.
+  ament_add_gtest(test_opening_search test/deployment/test_opening_search.cpp)
+  target_include_directories(test_opening_search PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(test_opening_search se_mppi_core escape_critic)
+  ament_target_dependencies(test_opening_search nav2_mppi_controller nav2_costmap_2d nav_msgs)
+
+  ament_add_gtest(test_path_progress_tracker test/deployment/test_path_progress_tracker.cpp)
+  target_include_directories(test_path_progress_tracker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(test_path_progress_tracker se_mppi_core)
+  ament_target_dependencies(test_path_progress_tracker nav_msgs)
 
   ament_add_gtest(test_task_boundary test/deployment/test_task_boundary.cpp)
   target_include_directories(test_task_boundary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
