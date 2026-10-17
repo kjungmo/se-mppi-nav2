@@ -557,3 +557,18 @@ TEST(GapPocket, SegmentBlockedUsesTheInscribedThresholdInclusively)
   // Beyond the end of the segment does not count.
   EXPECT_FALSE(segmentBlocked(cm, 0.0, 0.0, 0.5, 0.0));
 }
+
+TEST(GapPocket, SegmentBlockedDoesNotTestItsStartPoint)
+{
+  // Cells are 0.1 m; the segment starts at x = 0.09, inside the cell [0.0, 0.1).
+  // The first sample is half a cell on (x = 0.14, the next cell).
+  nav2_costmap_2d::Costmap2D cm(40, 40, 0.1, -2.0, -2.0, 0);
+  unsigned int mx = 0;
+  unsigned int my = 0;
+  ASSERT_TRUE(cm.worldToMap(0.09, 0.0, mx, my));
+  cm.setCost(mx, my, 254);  // the cell the segment starts in is lethal
+  EXPECT_FALSE(segmentBlocked(cm, 0.09, 0.0, 1.0, 0.0));
+  ASSERT_TRUE(cm.worldToMap(0.5, 0.0, mx, my));
+  cm.setCost(mx, my, 254);
+  EXPECT_TRUE(segmentBlocked(cm, 0.09, 0.0, 1.0, 0.0));
+}
