@@ -319,6 +319,15 @@ def phase_gate_refusal(raw_root, trial_or_block) -> str | None:
     return an.s3_refusal(an.registered_records(raw_root))
 
 
+def trial_refusal(raw_root, out_root, trial, ident) -> str | None:
+    """Why ``trial`` must not run now (s3 and block B wait for Phase A), or None. A trial that is
+    already complete and valid is skipped, not refused."""
+    refusal = phase_gate_refusal(raw_root, trial)
+    if refusal and existing_state(os.path.join(out_root, trial.trial_id), ident) != 'complete_valid':
+        return refusal
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
     ap.add_argument('--block', default='all', choices=('A', 'B', 'all', 'shakedown'))
@@ -400,8 +409,8 @@ def main():
                       '(stopping rules). Nothing was deleted.', flush=True)
                 return EXIT_STOP
         if sub == 'trials':
-            refusal = phase_gate_refusal(args.raw, trial)
-            if refusal and existing_state(os.path.join(out_root, trial.trial_id), ident) != 'complete_valid':
+            refusal = trial_refusal(args.raw, out_root, trial, ident)
+            if refusal:
                 print(f'[campaign2] REFUSED {trial.trial_id}: {refusal}', flush=True)
                 return EXIT_REFUSED
         if args.max_trials is not None and ran >= args.max_trials:

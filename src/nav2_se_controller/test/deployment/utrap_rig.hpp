@@ -159,7 +159,8 @@ public:
       rclcpp::Parameter("FollowPath.EscapeCritic.progress_stall_window", 30),
     };
     params.insert(params.end(), extra.begin(), extra.end());
-    // Ablation aid, never set in CI: SE_UTRAP_PARAMS="se_escape_avoid_radius=0,se_escape_stall_time=1e6"
+    // Ablation aid, never set in CI:
+    //   SE_UTRAP_PARAMS="se_escape_avoid_radius=0,se_escape_stall_time=1e6"
     // sets FollowPath parameters (an integer-looking value is an integer, anything else a double).
     // The review of 2026-10-18 used it to switch the additions beyond the advised design off.
     if (const char * env = std::getenv("SE_UTRAP_PARAMS")) {

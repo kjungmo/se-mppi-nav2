@@ -18,7 +18,8 @@
 // (experiments/benchmark2d/tests/test_v2_cxx_parity.py) drives it.
 //
 //   SELECT <min_clearance> <hysteresis> <goal_bearing> <prev|nan> <n_avoid>
-//          {<bearing> <distance> <radius>}*n_avoid <n_rays> {<bearing> <clearance> <horizon>}*n_rays
+//          {<bearing> <distance> <radius>}*n_avoid
+//          <n_rays> {<bearing> <clearance> <horizon>}*n_rays
 //     -> found bearing clearance horizon kept_previous candidates
 //        (selectHorizonGap: horizon rule, minimum clearance, avoid list with its retry,
 //         hysteresis; the rays are given, so only the selection rule is under test)
@@ -122,8 +123,9 @@ int main()
           cm.setCost(x, y, static_cast<unsigned char>(c));
         }
       }
-      const auto rays = castGapRays(cm, rx, ry, n_rays, max_range,
-          static_cast<unsigned char>(threshold));
+      const auto rays = castGapRays(
+        cm, rx, ry, n_rays, max_range,
+        static_cast<unsigned char>(threshold));
       for (const auto & r : rays) {
         std::printf("%.17g %.17g %d\n", r.bearing, r.clearance, r.horizon ? 1 : 0);
       }

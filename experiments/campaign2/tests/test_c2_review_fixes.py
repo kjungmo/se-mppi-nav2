@@ -320,6 +320,28 @@ def test_block_b_and_every_s3_trial_are_refused_by_the_driver(monkeypatch, tmp_p
     assert drv.phase_gate_refusal(str(tmp_path), s3) is None
 
 
+def test_trial_refusal_skips_nothing_that_is_complete_and_refuses_the_rest(monkeypatch, tmp_path):
+    monkeypatch.setattr(an, 'registered_records', lambda raw: [])
+    s3 = plan.Trial('s3_ctrap', 'C4', 0, 'B')
+    out_root = str(tmp_path / 'trials')
+    assert 'not complete' in drv.trial_refusal(str(tmp_path), out_root, s3, IDENT)
+    d = tmp_path / 'trials' / s3.trial_id
+    d.mkdir(parents=True)
+    (d / 'meta.json').write_text(json.dumps(dict(IDENT, complete=True, active=True)))
+    assert drv.trial_refusal(str(tmp_path), out_root, s3, IDENT) is None      # already done: skipped
+    (d / 'meta.json').write_text(json.dumps(dict(IDENT, complete=False)))
+    assert 'not complete' in drv.trial_refusal(str(tmp_path), out_root, s3, IDENT)
+    a = plan.Trial('s1_utrap', 'C4', 0, 'A')
+    assert drv.trial_refusal(str(tmp_path), out_root, a, IDENT) is None
+
+
+def test_interrupted_wins_over_complete_in_existing_state(tmp_path):
+    d = tmp_path / 't'
+    d.mkdir()
+    (d / 'meta.json').write_text(json.dumps(dict(IDENT, complete=True, interrupted=True, active=True)))
+    assert drv.existing_state(str(d), IDENT) == 'incomplete'
+
+
 def test_main_refuses_block_b_before_phase_a(monkeypatch, capsys, tmp_path):
     import freeze_manifest
     monkeypatch.setattr(freeze_manifest, 'check', lambda *a, **k: [])

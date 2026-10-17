@@ -611,6 +611,67 @@ def test_every_flag_off_reproduces_the_v1_rollout(family, seed, name):
     assert r2['v2_zero_cmd_steps'] == 0 and r2['v2_progress_events'] == 0
 
 
+@pytest.mark.parametrize('lag,expected', [(True, 1), (False, 0)])
+def test_the_escape_starts_one_cycle_after_detection_like_the_plugin(monkeypatch, lag, expected):
+    """manageEscapePath decides from prev_entrapped_ (the detector state at the end of the previous
+    cycle), so the first escape step is the step after the one that declared entrapment."""
+    seen = {'calls': 0}
+    real_det = se.EntrapmentDetector.update
+    real_hop = v2m.WaypointHopper.update
+
+    def det_update(self, x):
+        n = seen['calls']
+        seen['calls'] += 1
+        r = real_det(self, x)
+        if r and 'det' not in seen:
+            seen['det'] = n
+        return r
+
+    def hop_update(self, step, *a, **k):
+        seen.setdefault('hop', step)
+        return real_hop(self, step, *a, **k)
+    monkeypatch.setattr(se.EntrapmentDetector, 'update', det_update)
+    monkeypatch.setattr(v2m.WaypointHopper, 'update', hop_update)
+    cfg = make_v2_configs(act_on_previous_cycle=lag)['C_escape']
+    scn = sc.make('utrap', 4)
+    rollout(scn.world, cfg, scn.start, max_steps=400, seed=4)
+    assert 'det' in seen and 'hop' in seen, seen
+    assert seen['hop'] - seen['det'] == expected, seen
+
+
+def test_the_stall_pose_is_the_pose_that_declared_entrapment(monkeypatch):
+    marks = []
+    real_mark = v2m.WaypointHopper.mark_entry
+    steps = []
+    real_det = se.EntrapmentDetector.update
+
+    def mark(self, pos):
+        marks.append(np.array(pos, float))
+        return real_mark(self, pos)
+
+    def det_update(self, x):
+        r = real_det(self, x)
+        steps.append(r)
+        return r
+    monkeypatch.setattr(v2m.WaypointHopper, 'mark_entry', mark)
+    monkeypatch.setattr(se.EntrapmentDetector, 'update', det_update)
+    cfg = make_v2_configs()['C_escape']
+    scn = sc.make('utrap', 4)
+    r = rollout(scn.world, cfg, scn.start, max_steps=400, seed=4)
+    assert len(marks) >= 1
+    # the first mark is the position at the step whose detector update first returned True
+    first = steps.index(True)
+    assert np.allclose(marks[0], r['_traj'][first]), (first, marks[0], r['_traj'][first])
+
+
+def test_no_entrapment_within_the_goal_reached_tolerance():
+    """se_goal_reached_tolerance: the detector is reset near the goal, so no escape starts."""
+    world = se.World([se.Obstacle(2.2, 0.0, 0.3)], goal=(3.0, 0.0), robot_radius=0.22)
+    cfg = make_v2_configs(goal_reached_tolerance=5.0)['C_escape']
+    r = rollout(world, cfg, np.array([1.6, 0.0, 0.0]), max_steps=120, seed=0)
+    assert r['entrapped_frac'] == 0.0 and r['v2_hops'] == 0
+
+
 def test_v2_flags_change_the_u_trap_run():
     # sanity: the switches are live (v2 defaults differ from v1 on a U-trap)
     cfgs = make_v2_configs()
