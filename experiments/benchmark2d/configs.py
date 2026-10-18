@@ -60,4 +60,7 @@ def make_v2_configs(**overrides):
 
 
 CONFIGS_V2 = make_v2_configs()
-VARIANTS = {'v1': CONFIGS, 'v2': CONFIGS_V2}
+# 'v2_advised': the same algorithm without the four additions (a) to (d) of PREREG.md, that is
+# the design of DESIGN_ADVICE.md as advised (escape_extras=False). 'v2' is the shipped algorithm.
+CONFIGS_V2_ADVISED = make_v2_configs(escape_extras=False)
+VARIANTS = {'v1': CONFIGS, 'v2': CONFIGS_V2, 'v2_advised': CONFIGS_V2_ADVISED}

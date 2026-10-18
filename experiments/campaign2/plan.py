@@ -50,10 +50,20 @@ CONFIG_ORDER = ('C1', 'C2', 'C3', 'C4')
 SCENARIO_FILES = {
     's1_utrap': 'experiments/barn/s1_utrap.scenario.yaml',
     's3_ctrap': 'experiments/campaign2/s3_ctrap.scenario.yaml',
+    's4_ltrap': 'experiments/campaign2/s4_ltrap.scenario.yaml',
     's0_open': 'experiments/campaign2/s0_open.scenario.yaml',
     's1_utrap_evidence': 'experiments/barn/s1_utrap_evidence.scenario.yaml',
 }
-SCENARIO_ORDER = ('s1_utrap', 's3_ctrap', 's0_open')       # counted scenarios
+SCENARIO_ORDER = ('s1_utrap', 's3_ctrap', 's4_ltrap', 's0_open')   # counted scenarios
+# Configurations that run on a scenario. s4_ltrap (the pocket outside the development family,
+# amendment 1 of PREREG.md) runs the two no-recovery configurations only: the clean transfer test
+# is C4 against C3, so C1 and C2 are not run there. Every other counted scenario runs all four.
+SCENARIO_CONFIGS = {'s4_ltrap': ('C3', 'C4')}
+HELD_OUT_POCKETS = ('s3_ctrap', 's4_ltrap')
+
+
+def configs_of(scenario: str) -> tuple:
+    return SCENARIO_CONFIGS.get(scenario, CONFIG_ORDER)
 EVIDENCE_SCENARIO = 's1_utrap_evidence'
 EVIDENCE_CONFIGS = ('C2', 'C4')                           # SE configurations only
 REPS = 6
@@ -114,7 +124,7 @@ def phase_a() -> list:
 
 
 def phase_b() -> list:
-    canonical = [(s, c) for s in SCENARIO_ORDER for c in CONFIG_ORDER]
+    canonical = [(s, c) for s in SCENARIO_ORDER for c in configs_of(s)]
     canonical += [(EVIDENCE_SCENARIO, c) for c in EVIDENCE_CONFIGS]
     out = []
     for rep in range(REPS):

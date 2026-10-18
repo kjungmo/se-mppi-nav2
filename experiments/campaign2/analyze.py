@@ -66,6 +66,7 @@ WORLDS = {
     's1_utrap': BASE_WORLD,
     's1_utrap_evidence': BASE_WORLD,
     's3_ctrap': os.path.join(REPO, 'experiments', 'campaign2', 'worlds', 's3_ctrap.sdf'),
+    's4_ltrap': os.path.join(REPO, 'experiments', 'campaign2', 'worlds', 's4_ltrap.sdf'),
     's0_open': os.path.join(REPO, 'experiments', 'campaign2', 'worlds', 's0_open.sdf'),
 }
 
@@ -88,23 +89,62 @@ def _rotate(pt, pivot, deg):
     return (pivot[0] + c * dx - s * dy, pivot[1] + s * dx + c * dy)
 
 
+# s4: the L-shaped dead end, in the pocket frame (mouth plane at x 0, facing -x): the corridor
+# x 0..2.05 and |y| <= 0.65 (inner faces of the 0.3 m walls on the centre lines x 2.2, y +/-0.8) and
+# the leg x 1.55..2.05, y up to 1.85 (inner faces of the walls on the centre lines x 1.4, y 2.0).
+# The polygon is not convex. Frame to world: rotate by -15 degrees about the mouth centre and put
+# the mouth centre at (-0.6, 0) (make_s4_ltrap.py, verify_s4_ltrap.py).
+S4_MOUTH = (-0.6, 0.0)
+S4_ROT_DEG = -15.0
+S4_POCKET_FRAME = [(0.0, -0.65), (2.05, -0.65), (2.05, 1.85), (1.55, 1.85), (1.55, 0.65),
+                   (0.0, 0.65)]
+
 POCKETS = {
     's1_utrap': [(-1.0, -0.85), (0.85, -0.85), (0.85, 0.85), (-1.0, 0.85)],
     's3_ctrap': [_rotate(p, S3_PIVOT, S3_ROT_DEG) for p in S3_POCKET_FRAME],
+    's4_ltrap': [_rotate((S4_MOUTH[0] + x, S4_MOUTH[1] + y), S4_MOUTH, S4_ROT_DEG)
+                 for x, y in S4_POCKET_FRAME],
 }
 POCKETS['s1_utrap_evidence'] = POCKETS['s1_utrap']
 
 
-def inside_polygon(pt, poly) -> bool:
-    """Point in a convex polygon (counter-clockwise), boundary counts as inside."""
-    x, y = pt
+def _convex(poly) -> bool:
     n = len(poly)
     for i in range(n):
         x1, y1 = poly[i]
         x2, y2 = poly[(i + 1) % n]
-        if (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1) < -1e-12:
+        x3, y3 = poly[(i + 2) % n]
+        if (x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2) < -1e-12:
             return False
     return True
+
+
+def inside_polygon(pt, poly) -> bool:
+    """Point in a simple polygon (counter-clockwise), boundary counts as inside.
+
+    A convex polygon uses the half-plane test; a non-convex one (the L of s4) uses the even-odd
+    rule with an explicit boundary test.
+    """
+    x, y = pt
+    n = len(poly)
+    if _convex(poly):
+        for i in range(n):
+            x1, y1 = poly[i]
+            x2, y2 = poly[(i + 1) % n]
+            if (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1) < -1e-12:
+                return False
+        return True
+    inside = False
+    for i in range(n):
+        x1, y1 = poly[i]
+        x2, y2 = poly[(i + 1) % n]
+        cross = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1)
+        if (abs(cross) <= 1e-9 and min(x1, x2) - 1e-9 <= x <= max(x1, x2) + 1e-9
+                and min(y1, y2) - 1e-9 <= y <= max(y1, y2) + 1e-9):
+            return True                                   # on the boundary
+        if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
+            inside = not inside
+    return inside
 
 
 # --------------------------------------------------------------------------- #
@@ -569,8 +609,50 @@ CONTRASTS = [
     ('C4 vs C3 on s3_ctrap', ('s3_ctrap', 'C4'), ('s3_ctrap', 'C3')),
     ('C2 vs C1 on s1_utrap', ('s1_utrap', 'C2'), ('s1_utrap', 'C1')),
     ('C2 vs C1 on s3_ctrap', ('s3_ctrap', 'C2'), ('s3_ctrap', 'C1')),
+    ('C4 vs C3 on s4_ltrap', ('s4_ltrap', 'C4'), ('s4_ltrap', 'C3')),
     ('C4 on s3_ctrap vs C4 on s1_utrap (transfer)', ('s3_ctrap', 'C4'), ('s1_utrap', 'C4')),
+    ('C4 on s4_ltrap vs C4 on s1_utrap (transfer)', ('s4_ltrap', 'C4'), ('s1_utrap', 'C4')),
 ]
+
+
+# The decision rule of PREREG.md ("Decision rule", amendment 1): "yes" on a pocket iff the two-sided
+# Fisher p of C4 against C3 on it is below ALPHA and C4 reached more often than C3. Only s1 and s4
+# take part; s3 is reported (it has a twin in the development family) and is not decision-bearing.
+ALPHA = 0.05
+DECISION_POCKETS = ('s1_utrap', 's4_ltrap')
+
+
+def pocket_yes(cells: dict, scenario: str) -> dict:
+    a, b = cells.get((scenario, 'C4')), cells.get((scenario, 'C3'))
+    if not a or not b or a['n_valid'] == 0 or b['n_valid'] == 0:
+        return {'scenario': scenario, 'yes': False, 'fisher_p': None, 'c4': None, 'c3': None,
+                'complete': False}
+    k4, n4, k3, n3 = a['successes'], a['n_valid'], b['successes'], b['n_valid']
+    p = pilot.fisher_two_sided(k4, n4 - k4, k3, n3 - k3)
+    return {'scenario': scenario, 'yes': bool(p < ALPHA and k4 > k3), 'fisher_p': p,
+            'c4': [k4, n4], 'c3': [k3, n3],
+            'complete': n4 >= plan_mod.REPS and n3 >= plan_mod.REPS}
+
+
+def decision(cells: dict) -> dict:
+    """The outcome branch, from the counts alone (PREREG.md, "Decision rule").
+
+    Demonstrated = s1 yes and s4 yes: the claim of transfer rests on s4, the pocket outside the
+    development family. "s1 yes, s4 no" = the claim shrinks to the development geometry. Not
+    demonstrated = s1 no, whatever s4 shows. s3 does not change the branch; a "no" on s3 beside
+    "yes" on s1 and s4 is reported with the counts (``s3_note``).
+    """
+    y1, y4 = pocket_yes(cells, 's1_utrap'), pocket_yes(cells, 's4_ltrap')
+    y3 = pocket_yes(cells, 's3_ctrap')
+    if not y1['yes']:
+        branch = 'not_demonstrated'
+    elif y4['yes']:
+        branch = 'demonstrated'
+    else:
+        branch = 's1_yes_s4_no'
+    return {'branch': branch, 's1': y1, 's4': y4, 's3': y3,
+            'decided': y1['complete'] and y4['complete'],
+            's3_note': bool(branch == 'demonstrated' and y3['complete'] and not y3['yes'])}
 
 
 def contrasts(cells: dict) -> list:
@@ -631,20 +713,20 @@ def phase_a_status(records: list) -> dict:
 
 
 def s3_refusal(records: list) -> str | None:
-    """Why s3_ctrap (and with it block B) must not be driven yet; None when it may be.
+    """Why s3_ctrap and s4_ltrap (and with them block B) must not be driven yet; None when they may.
 
-    s3 is held out (D-4a). If it were driven and the Phase-A gate then failed, the second design
+    s3 and s4 are held out (D-4a). If it were driven and the Phase-A gate then failed, the second design
     iteration (D-7) would no longer have an unseen s3. So s3 waits for a complete Phase A
     (6 valid C4 x s1 and 3 valid C3 x s1) whose gate has not fired.
     """
     st = phase_a_status(records)
     if st['gate_fired']:
         return (f'the Phase-A gate fired (C4 x s1 reached {st["c4_reached"]} of {st["c4_valid"]}): '
-                's3_ctrap stays unseen for the second design iteration (D-7)')
+                's3_ctrap and s4_ltrap stay unseen for the second design iteration (D-7)')
     if not st['complete']:
         return (f'Phase A is not complete ({st["c4_valid"]} of {plan_mod.PHASE_A_C4_REPS} valid '
                 f'C4 x s1, {st["c3_valid"]} of {plan_mod.PHASE_A_C3_REPS} valid C3 x s1): '
-                's3_ctrap and block B wait for it')
+                's3_ctrap, s4_ltrap and block B wait for it')
     return None
 
 
@@ -771,6 +853,7 @@ def build(raw_root: str) -> dict:
                            for k, v in sorted(ev_groups.items())],
         'contrasts': contrasts(cells),
         'h3_control': h3(cells),
+        'decision': decision(cells),
         'superseded_attempts': superseded,
         'shakedown': load_dir(raw_root, 'shakedown'),
         'stops': evaluate_stops(trials, {
@@ -827,6 +910,18 @@ def render(result: dict) -> str:
                  f"| {r['fisher_p']:.4f} | "
                  + (f"{mw['median1']:.1f} / {mw['median2']:.1f} ({mw['n1']}, {mw['n2']}) | {mw['p']:.4f} ({mw['method']}) |"
                     if mw else '-- | -- |'))
+    d = result['decision']
+    L += ['', '## Decision (PREREG.md, "Decision rule")', '',
+          f"Branch: `{d['branch']}`" + ('' if d['decided'] else ' (not final: a pocket cell has fewer than '
+                                       f'{plan_mod.REPS} valid trials)'), '']
+    for key, label in (('s1', 's1_utrap (development)'), ('s4', 's4_ltrap (outside the family)'),
+                       ('s3', 's3_ctrap (twin in the family; not decision-bearing)')):
+        y = d[key]
+        L.append(f"- {label}: " + ('--' if y['fisher_p'] is None else
+                 f"C4 {y['c4'][0]} of {y['c4'][1]}, C3 {y['c3'][0]} of {y['c3'][1]}, Fisher p "
+                 f"{y['fisher_p']:.4f}, {'yes' if y['yes'] else 'no'}"))
+    if d['s3_note']:
+        L.append('- s3 is "no" beside "yes" on s1 and s4: report both (PREREG.md, Decision rule 3).')
     h = result['h3_control']
     L += ['', '## H3: trap-free control (s0_open)', '',
           f"Reached {h['reached']} of {h['n_valid']} valid trials; escape ENTER lines: {h['escape_enter_total']}.", '']

@@ -90,6 +90,20 @@ python3 -m experiments.benchmark2d.report \
     --trials experiments/results_2d_v2/trials.csv --out-dir experiments/results_2d_v2
 ```
 
+The second arm is the design as advised (`escape_extras` false), a file of its own. LEAD_DECISIONS_2
+E-1 asks for both arms in the 1,200-trial re-run:
+
+```bash
+python3 -m experiments.benchmark2d.runner --variant v2_advised \
+    --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
+    --out experiments/results_2d_v2_advised/trials.csv
+python3 -m experiments.benchmark2d.report \
+    --trials experiments/results_2d_v2_advised/trials.csv --out-dir experiments/results_2d_v2_advised
+```
+
+The runner refuses to write either arm to `experiments/results_2d/trials.csv`, and refuses to put
+the two arms in one file (the `variant` column).
+
 Expected runtime: about 15 minutes at 4 workers on the shared host (this
 smoke: 180 trials in 140 s at load 3 to 7; U-trap and narrow-dynamic trials 1.1 s, clutter and
 dynamic trials 0.5 s each, so 600 x 1.1 + 600 x 0.5 s of wall time). A quiet

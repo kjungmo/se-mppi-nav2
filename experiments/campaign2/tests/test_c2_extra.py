@@ -97,6 +97,8 @@ def test_frozen_files_all_exist_and_cover_the_inputs():
                  'experiments/campaign2/analyze.py', 'experiments/campaign2/plan.py',
                  'experiments/campaign2/tests/test_c2_analyze.py',
                  'experiments/campaign2/worlds/s3_ctrap.sdf',
+                 'experiments/campaign2/worlds/s4_ltrap.sdf',
+                 'experiments/campaign2/s4_ltrap.scenario.yaml',
                  'src/nav2_se_controller/src/safe_escape_controller.cpp',
                  'experiments/results_pilot_rerun/hostload.py'):
         assert must in files, must

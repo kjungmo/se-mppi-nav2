@@ -18,20 +18,20 @@ def run_list(*args):
                           check=True).stdout.splitlines()
 
 
-def test_list_prints_the_76_trial_plan():
+def test_list_prints_the_88_trial_plan():
     lines = run_list()
-    assert lines[-1] == '76 trials'
+    assert lines[-1] == '88 trials'
     rows = lines[:-1]
-    assert len(rows) == 76
+    assert len(rows) == 88
     assert rows[0].split()[:3] == ['1', 'A', 'correct__s1_utrap__C4__rep0']
     assert sum(r.split()[1] == 'A' for r in rows) == 9
-    assert sum(r.split()[1] == 'B' for r in rows) == 67
-    assert len({r.split()[2] for r in rows}) == 76
+    assert sum(r.split()[1] == 'B' for r in rows) == 79
+    assert len({r.split()[2] for r in rows}) == 88
 
 
 def test_list_of_blocks():
     assert run_list('--block', 'A')[-1] == '9 trials'
-    assert run_list('--block', 'B')[-1] == '67 trials'
+    assert run_list('--block', 'B')[-1] == '79 trials'
     sd = run_list('--block', 'shakedown')
     assert sd[-1] == '1 trials' and sd[0].split()[1:] == ['shakedown', 'correct__s0_open__C2__rep0']
 
@@ -85,7 +85,7 @@ def test_resume_picks_the_first_unfinished_trial_in_plan_order(tmp_path):
     pending = [t for t in plan.plan('all')
                if drv.existing_state(str(tmp_path / t.trial_id)) != 'complete_valid']
     assert pending[0] == plan.plan('all')[11]
-    assert len(pending) == 76 - 11
+    assert len(pending) == 88 - 11
 
 
 def test_unsafe_configuration_is_refused_before_any_launch():

@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Guard for the held-out campaign geometry (decision D-3): its world name must
-// not appear in the repository outside experiments/campaign2/, so that no code,
-// test, parameter or document is developed against it before the campaign. The
-// name is assembled at run time so that this file does not contain it.
+// Guard for the held-out campaign geometries (decision D-3 and LEAD_DECISIONS_2 E-2): their world
+// names must not appear in the repository outside experiments/campaign2/, so that no code, test,
+// parameter or document is developed against them before the campaign. The names are assembled at
+// run time so that this file does not contain them.
 
 #include <gtest/gtest.h>
 
@@ -35,15 +35,17 @@ namespace fs = std::filesystem;
 namespace
 {
 
-std::string heldOutName()
+// The held-out worlds: s3 (a pocket inside the development family's range, with a twin there) and
+// s4 (outside the range, authored blind).
+std::vector<std::string> heldOutNames()
 {
-  return std::string("s3") + "_" + "ctrap";
+  return {std::string("s3") + "_" + "ctrap", std::string("s4") + "_" + "ltrap"};
 }
 
-// Files under `root` that contain `needle`, skipping `.git`, build trees and
+// Files under `root` that contain any of `needles`, skipping `.git`, build trees and
 // the exempt subdirectory (a path relative to root, with a trailing slash).
 std::vector<std::string> filesWithNeedle(
-  const fs::path & root, const std::string & needle, const std::string & exempt)
+  const fs::path & root, const std::vector<std::string> & needles, const std::string & exempt)
 {
   std::vector<std::string> hits;
   for (auto it = fs::recursive_directory_iterator(
@@ -70,7 +72,11 @@ std::vector<std::string> filesWithNeedle(
     std::ifstream in(it->path(), std::ios::binary);
     std::ostringstream ss;
     ss << in.rdbuf();
-    if (ss.str().find(needle) != std::string::npos) {
+    const std::string text = ss.str();
+    if (std::any_of(
+        needles.begin(), needles.end(),
+        [&text](const std::string & n) {return text.find(n) != std::string::npos;}))
+    {
       hits.push_back(rel);
     }
   }
@@ -91,29 +97,34 @@ TEST(HeldOutGuard, ScannerFlagsOutsideAndIgnoresCampaignDirectory)
 {
   const fs::path tmp = fs::temp_directory_path() / "se_heldout_guard_selftest";
   fs::remove_all(tmp);
-  writeFile(tmp / "src/a.cpp", "// uses " + heldOutName() + "\n");
-  writeFile(tmp / "experiments/campaign2/worlds/w.sdf", heldOutName());
-  writeFile(tmp / "experiments/other/b.yaml", "world: " + heldOutName());
-  writeFile(tmp / ".git/config", heldOutName());
+  const auto names = heldOutNames();
+  ASSERT_EQ(names.size(), 2u);
+  writeFile(tmp / "src/a.cpp", "// uses " + names[0] + "\n");
+  writeFile(tmp / "docs/second.md", "the second pocket: " + names[1]);   // the second name alone
+  writeFile(tmp / "experiments/campaign2/worlds/w.sdf", names[0]);
+  writeFile(tmp / "experiments/campaign2/worlds/v.sdf", names[1]);
+  writeFile(tmp / "experiments/other/b.yaml", "world: " + names[0]);
+  writeFile(tmp / ".git/config", names[0] + names[1]);
   writeFile(tmp / "docs/clean.md", "nothing here");
-  const auto hits = filesWithNeedle(tmp, heldOutName(), "experiments/campaign2/");
+  const auto hits = filesWithNeedle(tmp, names, "experiments/campaign2/");
   fs::remove_all(tmp);
-  ASSERT_EQ(hits.size(), 2u);
+  ASSERT_EQ(hits.size(), 3u);
   std::vector<std::string> sorted = hits;
   std::sort(sorted.begin(), sorted.end());
-  EXPECT_EQ(sorted[0], "experiments/other/b.yaml");
-  EXPECT_EQ(sorted[1], "src/a.cpp");
+  EXPECT_EQ(sorted[0], "docs/second.md");
+  EXPECT_EQ(sorted[1], "experiments/other/b.yaml");
+  EXPECT_EQ(sorted[2], "src/a.cpp");
 }
 
-TEST(HeldOutGuard, TheHeldOutWorldNameIsAbsentOutsideTheCampaignDirectory)
+TEST(HeldOutGuard, TheHeldOutWorldNamesAreAbsentOutsideTheCampaignDirectory)
 {
   const fs::path root = SE_REPO_ROOT;
   if (root.empty() || !fs::exists(root / "src" / "nav2_se_controller")) {
     GTEST_SKIP() << "repository root not available at SE_REPO_ROOT='" << root.string() << "'";
   }
-  const auto hits = filesWithNeedle(root, heldOutName(), "experiments/campaign2/");
+  const auto hits = filesWithNeedle(root, heldOutNames(), "experiments/campaign2/");
   for (const auto & h : hits) {
-    ADD_FAILURE() << "the held-out world name appears outside experiments/campaign2/: " << h;
+    ADD_FAILURE() << "a held-out world name appears outside experiments/campaign2/: " << h;
   }
   EXPECT_TRUE(hits.empty());
 }

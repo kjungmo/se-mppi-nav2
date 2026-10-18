@@ -466,7 +466,7 @@ def test_contrasts_use_valid_counts_and_report_none_for_empty_cells():
     assert (r['a_successes'], r['a_n'], r['b_successes'], r['b_n']) == (6, 6, 0, 6)
     assert r['fisher_p'] == pytest.approx(0.002165, abs=1e-5) and r['mann_whitney'] is None
     assert rows['C4 vs C3 on s3_ctrap']['fisher_p'] is None
-    assert len(rows) == 5
+    assert len(rows) == 7
 
 
 def test_h3_sums_the_control_cells():

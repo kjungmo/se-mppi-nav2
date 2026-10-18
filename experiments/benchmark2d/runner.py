@@ -31,6 +31,20 @@ _CSV_FIELDS = [
 ]
 # Extra columns written only by the opt-in v2 variant (the v1 file is unchanged).
 _V2_FIELDS = ['v2_zero_cmd_steps', 'v2_progress_events', 'v2_adoptions', 'v2_hops']
+# Variant columns: both v2 variants write the v2 columns and a 'variant' column, so that the shipped
+# arm ('v2') and the design as advised ('v2_advised') cannot be mixed up in one file.
+_V2_VARIANTS = ('v2', 'v2_advised')
+
+
+def variant_fields(variant):
+    return _CSV_FIELDS + (_V2_FIELDS + ['variant'] if variant in _V2_VARIANTS else [])
+
+
+def refuse_paper_file(variant, out, paper_v1):
+    """Message when a non-v1 variant would write the committed paper-v1 file, else None."""
+    if variant != 'v1' and os.path.abspath(out) == os.path.abspath(paper_v1):
+        return (f'--variant {variant} must not write the committed paper-v1 file; pass --out')
+    return None
 
 
 def run_one_scenario(task):
@@ -60,7 +74,8 @@ def run_one_scenario(task):
             'n_obstacles': scn.meta.get('n_obstacles'),
             'n_dynamic': scn.meta.get('n_dynamic', 0),
             'feasible': int(scn.meta.get('feasible', True)),
-            **({k: r[k] for k in _V2_FIELDS} if variant == 'v2' else {}),
+            **({**{k: r[k] for k in _V2_FIELDS}, 'variant': variant}
+               if variant in _V2_VARIANTS else {}),
         })
     return rows
 
@@ -101,6 +116,18 @@ def run_benchmark(families, n, out_csv, *, config_names=None, max_steps=350,
              if (fam, seed) not in done]
     os.makedirs(os.path.dirname(os.path.abspath(out_csv)), exist_ok=True)
     new_file = not os.path.exists(out_csv) or os.path.getsize(out_csv) == 0
+    if not new_file:
+        with open(out_csv, newline='') as f:
+            header = next(csv.reader(f), [])
+        if header != variant_fields(variant):
+            raise ValueError(f'{out_csv} has the columns of another variant; '
+                             f'--variant {variant} needs its own file')
+        if variant in _V2_VARIANTS:
+            with open(out_csv, newline='') as f:
+                other = {r['variant'] for r in csv.DictReader(f)} - {variant}
+            if other:
+                raise ValueError(f'{out_csv} holds rows of variant {sorted(other)}; '
+                                 f'--variant {variant} needs its own file')
 
     t0 = time.perf_counter()
     produced = []
@@ -109,8 +136,7 @@ def run_benchmark(families, n, out_csv, *, config_names=None, max_steps=350,
               f'{len(tasks)} remaining', flush=True)
 
     with open(out_csv, 'a', newline='') as fout:
-        writer = csv.DictWriter(
-            fout, fieldnames=_CSV_FIELDS + (_V2_FIELDS if variant == 'v2' else []))
+        writer = csv.DictWriter(fout, fieldnames=variant_fields(variant))
         if new_file:
             writer.writeheader()
             fout.flush()
@@ -165,16 +191,18 @@ def main():
     ap.add_argument('--no-resume', action='store_true')
     ap.add_argument('--variant', choices=sorted(VARIANTS), default='v1',
                     help="v1 = paper results (default); v2 = SE-MPPI v2 escape "
-                         "logic (smoke / re-run; write to a separate --out)")
+                         "logic as shipped; v2_advised = v2 without the four "
+                         "additions (the design as advised). Write v2 and "
+                         "v2_advised to separate --out files")
     ap.add_argument('--out', default=os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         'experiments', 'results_2d', 'trials.csv'))
     args = ap.parse_args()
     paper_v1 = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.abspath(__file__)))), 'experiments', 'results_2d', 'trials.csv')
-    if args.variant != 'v1' and os.path.abspath(args.out) == paper_v1:
-        ap.error('--variant v2 must not write the committed paper-v1 file; '
-                 'pass --out')
+    msg = refuse_paper_file(args.variant, args.out, paper_v1)
+    if msg:
+        ap.error(msg)
     run_benchmark(args.families, args.n, args.out,
                   max_steps=args.max_steps, workers=args.workers,
                   resume=not args.no_resume, variant=args.variant)

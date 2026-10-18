@@ -13,7 +13,7 @@ New in campaign 2:
 
 * Configurations C1-C4 (``plan.py``): ablation (A_stock or F_se_full) x behaviour tree x
   progress-checker allowance, on top of ``experiments/sim/nav2_se_campaign2.yaml``.
-* The plan: Phase A (gate, 9 trials) and Phase B (67 trials), cell order rotating with the
+* The plan: Phase A (gate, 9 trials) and Phase B (79 trials, 88 in all), cell order rotating with the
   repetition; ``--list`` prints it.
 * Resume at the first unfinished trial: finished trials are skipped, an unfinished
   directory (including one interrupted by Ctrl-C or an exception, which carries
@@ -33,8 +33,8 @@ New in campaign 2:
   controller libraries are hashed into ``meta.json``, the build stamp names the tag
   ``campaign2-controller`` at the tag commit, and the repository is at the tag with no
   uncommitted change to a tracked file (the analysis outputs excepted).
-* Block B, and every ``s3_ctrap`` trial, is refused until Phase A is complete and its gate has
-  not fired (``analyze.s3_refusal``), so s3 stays unseen if the second design iteration is needed.
+* Block B, and every ``s3_ctrap`` and ``s4_ltrap`` trial, is refused until Phase A is complete and its gate has
+  not fired (``analyze.s3_refusal``), so s3 and s4 stay unseen if the second design iteration is needed.
 
 Run from the repository root inside the ``semppi_rerun`` environment with the workspace
 (nav2_se_controller, se_mppi_utrap) sourced:
@@ -313,7 +313,8 @@ def phase_gate_refusal(raw_root, trial_or_block) -> str | None:
     if isinstance(trial_or_block, str):
         needs = trial_or_block == 'B'
     else:
-        needs = trial_or_block.scenario == 's3_ctrap' or trial_or_block.phase == 'B'
+        needs = (trial_or_block.scenario in plan_mod.HELD_OUT_POCKETS
+                 or trial_or_block.phase == 'B')
     if not needs:
         return None
     return an.s3_refusal(an.registered_records(raw_root))

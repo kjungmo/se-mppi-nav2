@@ -40,7 +40,14 @@ experiments/
   - (d) 지평선 후보에 0.6 m 최소 여유를 요구합니다.
 - `escape_extras=False`는 설계 문서대로 만든 알고리즘입니다.
 - 나머지 기능은 `configs.make_v2_configs(progress=..., gap_rule=..., hop=..., zero_on_all_collide=..., act_on_previous_cycle=..., escape_extras=...)`로 각각 끕니다.
-- 실행: `python3 -m experiments.benchmark2d.runner --variant v2 --out <새 파일>`. v2는 `results_2d/trials.csv`에 쓰지 못합니다.
+- 변형(`--variant`)은 세 가지입니다.
+  - `v1`: 논문 v1. 기본값입니다.
+  - `v2`: 출하 알고리즘입니다 (`escape_extras` 켜짐).
+  - `v2_advised`: 설계 문서대로 만든 알고리즘입니다 (`escape_extras` 꺼짐). 다른 설정은 `v2`와 같습니다.
+- 실행: `python3 -m experiments.benchmark2d.runner --variant v2 --out <새 파일>`. `v2_advised`도 같은 명령에서 변형 이름만 바꿉니다.
+  - `v2`와 `v2_advised`는 `results_2d/trials.csv`에 쓰지 못합니다.
+  - 두 변형은 `v2_*` 열과 `variant` 열을 따로 씁니다. 한 파일에 두 변형을 섞으면 오류가 납니다.
+  - 1,200회 재실행은 변형마다 파일을 따로 씁니다 (`SMOKE.md`의 "Full re-run").
 - 스모크 결과와 전체 재실행 명령: `results_2d_v2_smoke/SMOKE.md`. 스모크는 결과가 아닙니다. 1,200회 전체 재실행(D-2)은 아직 돌리지 않았습니다.
 - 시험: `benchmark2d/tests/test_v2_mirror.py`, `test_v2_cxx_parity.py`, `test_v1_unchanged.py`.
   - `test_v2_cxx_parity.py`는 C++ 코드를 직접 부릅니다 (`parity_shim`). 선택 규칙·광선 쏘기·진행 사슬을 비교합니다.

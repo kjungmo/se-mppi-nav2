@@ -16,13 +16,13 @@ REPO = plan.REPO
 # --------------------------------------------------------------------------- #
 # Plan
 # --------------------------------------------------------------------------- #
-def test_plan_has_76_trials_in_two_phases():
+def test_plan_has_88_trials_in_two_phases():
     allp = plan.plan('all')
-    assert len(allp) == 76
+    assert len(allp) == 88
     assert len(plan.plan('A')) == 9
-    assert len(plan.plan('B')) == 67
+    assert len(plan.plan('B')) == 79
     assert allp[:9] == plan.plan('A') and allp[9:] == plan.plan('B')
-    assert len({t.trial_id for t in allp}) == 76          # no duplicate
+    assert len({t.trial_id for t in allp}) == 88          # no duplicate
 
 
 def test_plan_counts_per_cell():
@@ -30,11 +30,15 @@ def test_plan_counts_per_cell():
     for t in plan.plan('all'):
         counts[t.cell] = counts.get(t.cell, 0) + 1
     for s in plan.SCENARIO_ORDER:
-        for c in plan.CONFIG_ORDER:
+        for c in plan.configs_of(s):
             assert counts[(s, c)] == 6, (s, c)
+    # s4_ltrap runs the two no-recovery configurations only (PREREG.md, amendment 1)
+    assert plan.configs_of('s4_ltrap') == ('C3', 'C4')
+    assert not any(k[0] == 's4_ltrap' and k[1] in ('C1', 'C2') for k in counts)
+    assert counts[('s4_ltrap', 'C3')] == counts[('s4_ltrap', 'C4')] == 6
     assert counts[(plan.EVIDENCE_SCENARIO, 'C2')] == 2
     assert counts[(plan.EVIDENCE_SCENARIO, 'C4')] == 2
-    assert sum(counts.values()) == 72 + 4
+    assert sum(counts.values()) == 72 + 12 + 4
     assert not any(k[0] == plan.EVIDENCE_SCENARIO and k[1] in ('C1', 'C3') for k in counts)
 
 
@@ -242,7 +246,7 @@ def _scenario(name):
 
 def test_scenarios_share_start_goal_and_map():
     base = _scenario('s1_utrap')
-    for n in ('s3_ctrap', 's0_open'):
+    for n in ('s3_ctrap', 's4_ltrap', 's0_open'):
         s = _scenario(n)
         assert s['start'] == base['start'] == [-3.0, 0.0, 0.0]
         assert s['goal'] == base['goal'] == [3.0, 0.0, 0.0]
@@ -252,7 +256,7 @@ def test_scenarios_share_start_goal_and_map():
 
 def test_campaign2_scenarios_name_an_existing_world_file_next_to_them():
     from experiments.runner import scenario as scenario_mod
-    for n in ('s3_ctrap', 's0_open'):
+    for n in ('s3_ctrap', 's4_ltrap', 's0_open'):
         sc = scenario_mod.load_scenario(os.path.join(REPO, plan.SCENARIO_FILES[n]))
         assert sc.name == n
         assert sc.world and os.path.exists(sc.world), sc.world
@@ -269,7 +273,7 @@ def test_s1_uses_the_default_world_without_a_world_argument():
         assert sc.world is None
 
 
-def test_held_out_world_name_only_inside_campaign2():
+def test_held_out_world_names_only_inside_campaign2():
     hits = []
     for path in glob.glob(os.path.join(REPO, 'experiments', '**', '*'), recursive=True):
         if not os.path.isfile(path) or path.endswith(('.pyc', '.png', '.pgm', '.pdf')):
@@ -278,8 +282,9 @@ def test_held_out_world_name_only_inside_campaign2():
             continue
         try:
             with open(path, errors='ignore') as f:
-                if 's3_ctrap' in f.read():
-                    hits.append(path)
+                text = f.read()
+            if any(name in text for name in plan.HELD_OUT_POCKETS):
+                hits.append(path)
         except OSError:
             pass
     assert hits == []

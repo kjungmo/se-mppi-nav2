@@ -19,7 +19,7 @@ import analyze as an
 from test_c2_analyze import make_trial
 
 PILOT = an.pilot
-SCENARIOS = ('s0_open', 's1_utrap', 's3_ctrap')
+SCENARIOS = ('s0_open', 's1_utrap', 's3_ctrap', 's4_ltrap')
 COMPARED = ('outcome', 'reached', 'contact', 'final_goal_distance_m', 'min_wall_distance_m',
             'nearest_wall', 'nav2_false_success', 'drive_wall_s', 'final_gt_xy', 'rtf')
 
