@@ -222,7 +222,11 @@ used 100 percent of one core for 12 minutes; it was killed, and the sweep was ru
 geometry at which it stopped (`w13_d11_r15_a6`) passed 3 of 3 when run alone, so the stop did not
 reproduce. The cause is not found; the log is kept (`sweep_off3.log`). On the primary geometry
 `w22_d13_r30_a10` the review found 0 of 3 runs without the additions (23 to 26 hops, closest approach
-2.37 to 2.39 m) and the twin of s3, `w22_d15_r-25_a6`, did not pass without them.
+2.37 to 2.39 m) and the twin of s3, `w22_d15_r-25_a6`, did not pass without them in the sweeps (run alone, with the
+additions off, it passed 3 of 3). The per-sweep counts are the reported quantity. A geometry's outcome
+without the additions depends on its position in the sweep process (reviewer subset of 4 geometries,
+3 processes per arm: 8 of 12 passed run alone against 4 of 12 in the sweeps; with the additions on,
+12 of 12 in both).
 
 The paper states the additions (a) to (d), this ablation and its non-seedable noise as a limit of the
 evidence: the additions were worked on until the development family passed, so the 56 of 56 is a
@@ -264,7 +268,8 @@ the straight replans all lie on y = 0, so s3 reflected about y = 0 is `w22_d15_r
 0.1 m in width, 0.05 m in depth and 0.09 in the wall ratio. The wall thickness differs (0.15 m in
 the family, 0.30 m in s3) and the pivots differ. The controller faces nearly the same problem up
 to the reflection. The additions of the previous section were worked on until this twin passed;
-without them it does not.
+without them it failed in all three ablation sweeps, but run alone it passed 3 of 3, so its failure
+without the additions is not robust.
 
 What "held out" therefore means here, and all it means: s3 was not driven live, was not run in
 the headless test, and its world file was written by an agent that did not see the tuning. It
@@ -297,7 +302,7 @@ headless test has used s4. `test_heldout_guard` and `tests/test_c2_plan.py` fail
 the repository outside `experiments/campaign2/`.
 
 **Checks by the author** (computed, `s4_ltrap_verify.txt`). The straight start-goal line enters the
-corridor at the mouth centre (-0.6, 0) and ends on the back wall at pocket y = -0.55, inside the
+corridor at the mouth centre (-0.6, 0) and ends on the back wall at pocket y = +0.55, on the side of the leg and 0.10 m below the leg's opening (erratum: the author's printout in `verify_s4_ltrap.py` line 116 has the sign wrong and gave -0.55; its own `to_pocket` gives +0.549), inside the
 inner half width of 0.65. The mouth is 1.6 m between wall centre lines and 1.3 m clear. The leg is 0.5 m
 clear. A flood fill on the 5 cm grid with the mouth sealed encloses 3.145 m2 from both the corridor and
 the leg, and the region reaches neither the goal, nor the start, nor the perimeter. With the mouth open

@@ -170,12 +170,12 @@ def test_the_s4_corridor_is_deeper_than_every_development_pocket():
 def test_the_straight_line_enters_the_corridor_and_ends_on_the_back_wall():
     depth, _ = s4_depth_and_width()
     # y = 0 crosses the mouth plane at the mouth centre and meets the back wall's inner face at
-    # pocket y = -depth * tan(15 deg), inside the corridor's inner half width of 0.65
+    # pocket y = +depth * tan(15 deg), on the leg side, inside the corridor's inner half width of 0.65
     x_back = MOUTH[0] + depth / math.cos(YAW)
     px, py = to_pocket((x_back, 0.0))
     assert px == pytest.approx(depth, abs=1e-9)
-    assert abs(py) == pytest.approx(depth * math.tan(math.radians(15.0)), abs=1e-9)
-    assert abs(py) < 0.65
+    assert py == pytest.approx(depth * math.tan(math.radians(15.0)), abs=1e-9)
+    assert 0 < py < 0.65
     assert x_back - MOUTH[0] == pytest.approx(2.1223, abs=1e-3)
 
 
