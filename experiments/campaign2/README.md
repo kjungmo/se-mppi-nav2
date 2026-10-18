@@ -1,7 +1,7 @@
 # experiments/campaign2
 
 Assets of campaign 2: the live test of the fixed SE-MPPI controller on a development
-pocket (`s1_utrap`), a held-out pocket (`s3_ctrap`) and a trap-free control (`s0_open`).
+pocket (`s1_utrap`), a held-out pocket (`s3_ctrap`), a second held-out pocket outside the family (`s4_ltrap`, an L-shaped dead end) and a trap-free control (`s0_open`).
 Design and rules: `PREREG.md` (draft until the tag). Campaign 1 is in
 `../results_pilot_rerun/`.
 
@@ -14,7 +14,8 @@ Design and rules: `PREREG.md` (draft until the tag). Campaign 1 is in
 | `analyze.py` | every number from the raw files; writes `results.json.gz`, `RESULTS.md`, `logs/*.log.gz` |
 | `freeze_manifest.py` | sha256 manifest of the frozen files (`FREEZE_MANIFEST.json`, written before the tag and committed with `PREREG.md`) |
 | `provenance.py` | what is installed is what is frozen: installed trees and libraries, build stamp, git state, attempt identity |
-| `make_worlds.py`, `verify_geometry.py`, `worlds/`, `*.scenario.yaml`, `s3_ctrap_geometry.png` | the two new worlds and scenarios |
+| `make_worlds.py`, `verify_geometry.py`, `worlds/`, `*.scenario.yaml`, `s3_ctrap_geometry.png` | the new worlds and scenarios (`s3_ctrap`, `s4_ltrap`) |
+| `make_s4_ltrap.py`, `verify_s4_ltrap.py`, `s4_ltrap_geometry.png`, `s4_ltrap_verify.txt` | the s4 world generator, its geometry check and their outputs |
 | `tests/` | `python -m pytest experiments/campaign2/tests` |
 | `SHAKEDOWN.md` | the one shakedown trial (not counted) |
 
@@ -46,5 +47,5 @@ a stopping rule fires, and with code 2 when it refuses to run.
 A counted trial is refused (exit code 2) when the installed behaviour trees, worlds, launch files
 or controller build are not the frozen ones, when the build stamp does not name the tag
 `campaign2-controller`, when the raw root holds trials of another attempt (another freeze manifest
-or tag commit), or when it would drive `s3_ctrap` or run block B before Phase A is complete.
+or tag commit), or when it would drive `s3_ctrap` or `s4_ltrap` or run block B before Phase A is complete.
 `PREREG.md` ("Provenance", "Attempts, interruption and restart") says why.

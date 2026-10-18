@@ -189,8 +189,10 @@ as additions found necessary on the development family. The mirror carries both 
 true and false; runner variants `v2` and `v2_advised`), and the 1,200-trial mirror re-run reports both.
 Whatever the paper says about SE-MPPI is a statement about the algorithm with the additions.
 
-**Measured ablation.** The additions are switched off with `se_escape_avoid_radius` 0,
-`se_escape_avoid_hop_radius` 0 and `se_escape_stall_time` 1e6 (`SE_UTRAP_PARAMS`). That leaves the rules
+**Measured ablation.** The additions are switched off with `se_escape_avoid_radius` 0.0,
+`se_escape_avoid_hop_radius` 0.0 and `se_escape_stall_time` 1e6. The exact string is
+`SE_UTRAP_PARAMS="se_escape_avoid_radius=0.0,se_escape_avoid_hop_radius=0.0,se_escape_stall_time=1e6"`.
+The values must carry a decimal point: the rig reads `0` as an integer, and the parameter then fails with an invalid type. That leaves the rules
 of `DESIGN_ADVICE.md`, except the 0.2 m waypoint floor, the 0.6 m horizon clearance and the failed-waypoint
 list, which have no parameter. The test is the whole development family (56 valid geometries, one run each,
 `SE_UTRAP_SWEEP=all`) with the pass rule of `UTRAP_DEV_GEOMETRIES.md` (enters the pocket, leaves within 60 s,
@@ -318,7 +320,11 @@ measured along the pocket axis, as the family defines `d`.
 
 **Pocket polygons** (analysis only; `analyze.py`, `POCKETS`). s1: x from -1.0 to 0.85,
 |y| <= 0.85. s3: the pocket frame rectangle x from -0.3 to 1.15, |y| <= 1.05 (inner faces of
-the walls, mouth at the end of the longer side wall), rotated as the walls. A trial leaves
+the walls, mouth at the end of the longer side wall), rotated as the walls. s4: the non-convex L in the pocket frame (mouth plane at x 0), with
+the vertices (0, -0.65), (2.05, -0.65), (2.05, 1.85), (1.55, 1.85), (1.55, 0.65), (0, 0.65). That is the
+corridor x 0 to 2.05 with |y| <= 0.65 plus the leg x 1.55 to 2.05 up to y 1.85, all at the inner faces of
+the walls. The frame is rotated by -15 degrees about the mouth centre, and the mouth centre is at
+(-0.6, 0) in the world. The inside test is the even-odd rule. A trial leaves
 the pocket at the first ground-truth sample outside the polygon after the first sample
 inside it. For s1 this is the rule "x < -1.0 or |y| > 0.85" of the design.
 
@@ -385,7 +391,7 @@ trial the driver (`provenance.py`) checks and records:
 
 1. Every file under the installed `worlds`, `urdf`, `launch`, `config` and `behavior_trees` of
    `se_mppi_utrap` is byte-identical to the repository file, and to the manifest hash when the file
-   is frozen. Nothing else is installed there. The map files and the s3 and s0 worlds are read
+   is frozen. Nothing else is installed there. The map files and the s3, s4 and s0 worlds are read
    from the repository by path and are covered by the manifest.
 2. The sha256 of the installed `libse_mppi_core.so`, `libescape_critic.so`,
    `libmppi_rollout_check.so` and `libsafe_escape_controller.so`, in `meta.json`.
@@ -508,7 +514,7 @@ Copied verbatim from `DESIGN_ADVICE.md` section 3, "Claims after campaign 2 (fix
 the trials)". "Section 4.4" in the first item is the section of the paper. The branch is chosen by
 the "Decision rule" above. Read the quote with amendment 1: "the held-out s3" and "s3 carries the claim"
 mean `s4_ltrap` (outside the family), and `s3_ctrap` is reported beside it with "Held-out status of s3".
-The count "k' of 6" in the first item is the count of C4 on s4, and the stock count "0 of 6" is that of C3 on s4.
+The count "k' of 6" in the first item is the count of C4 on s4. The stock count "0 of 6" is given per pocket: C3 on s1 and C3 on s4. The counts "m of 6" and "m' of 6" are C1 and C2 on s1 (C1 and C2 do not run on s4), and s3 is reported beside them.
 
 > - *Demonstrated*: "SE-MPPI without recoveries reached the goal in k of 6 on s1
 >   and k' of 6 on the held-out s3; stock without recoveries in 0 of 6; with
