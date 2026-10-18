@@ -233,6 +233,16 @@ def test_verify_installed_collects_every_kind_of_difference(tmp_path, pkg):
         f.write(b' ')
     diffs, _ = pv.verify_installed(str(root), str(ctrl), testbed_prefix, manifest, [])
     assert len(diffs) >= 3
+    assert any('build stamp' in d for d in diffs) and any('installed copy differs' in d for d in diffs)
+    # a dirty tracked file of the repository is reported too (the git check is part of the verdict)
+    (stamp_dir / 'build_stamp.txt').write_text(f'git_describe={pv.TAG}\ngit_head={head}\n')
+    with open(os.path.join(share, 'worlds/testbed.sdf'), 'wb') as f:
+        f.write(PKG_FILES['worlds/testbed.sdf'])
+    diffs, _ = pv.verify_installed(str(root), str(ctrl), testbed_prefix, manifest, [])
+    assert diffs == []
+    (root / 'experiments' / 'se_mppi_utrap' / 'launch' / 'utrap_bench.launch.py').write_bytes(b'# edited')
+    diffs, _ = pv.verify_installed(str(root), str(ctrl), testbed_prefix, manifest, [])
+    assert any('uncommitted change to a tracked file' in d for d in diffs), diffs
 
 
 def test_the_cmake_stamp_script_writes_describe_and_head(repo, tmp_path):

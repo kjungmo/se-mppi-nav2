@@ -310,6 +310,8 @@ def test_block_b_and_every_s3_trial_are_refused_by_the_driver(monkeypatch, tmp_p
     assert 'not complete' in drv.phase_gate_refusal(str(tmp_path), 'B')
     assert 'not complete' in drv.phase_gate_refusal(str(tmp_path), s3)
     assert 'not complete' in drv.phase_gate_refusal(str(tmp_path), s1_b)
+    s3_in_a = plan.Trial('s3_ctrap', 'C4', 0, 'A')                  # not in the plan, but s3 either way
+    assert 'not complete' in drv.phase_gate_refusal(str(tmp_path), s3_in_a)
     assert drv.phase_gate_refusal(str(tmp_path), s1_a) is None
     assert drv.phase_gate_refusal(str(tmp_path), 'A') is None
     assert drv.phase_gate_refusal(str(tmp_path), 'all') is None

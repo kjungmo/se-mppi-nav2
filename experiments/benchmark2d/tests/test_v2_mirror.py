@@ -442,6 +442,77 @@ def test_hop_off_reselects_every_step():
     assert hop.hops == 5
 
 
+def test_avoid_rule_boundaries_in_python():
+    # distance*sin(delta) == radius is not "closer than the radius" (strict <)
+    delta, dist = 0.5, 2.0
+    radius = dist * float(np.sin(delta))
+    assert not v2m.leads_to_avoided(0.0, 5.0, [(delta, dist, radius)])
+    assert v2m.leads_to_avoided(0.0, 5.0, [(delta, dist, np.nextafter(radius, np.inf))])
+    # distance == clearance + radius is not beyond the end of the ray (dyadic)
+    assert v2m.leads_to_avoided(0.0, 1.0, [(0.0, 1.5, 0.5)])
+    assert not v2m.leads_to_avoided(0.0, 1.0, [(0.0, np.nextafter(1.5, np.inf), 0.5)])
+    # a place at 90 degrees or more off the ray, and the place the robot stands in, are ignored
+    assert not v2m.leads_to_avoided(0.0, 5.0, [(np.pi / 2, 1.0, 0.5)])
+    assert not v2m.leads_to_avoided(0.0, 5.0, [(0.0, 0.5, 0.5)])
+    assert v2m.leads_to_avoided(0.0, 5.0, [(0.0, np.nextafter(0.5, np.inf), 0.5)])
+
+
+def test_the_avoid_list_holds_stall_pose_failed_waypoints_and_hop_origins_in_that_order():
+    world = se.World([], goal=(50.0, 0.0))
+    hop = v2m.WaypointHopper(v2m.v2_params(reselect_timeout_s=0.1), 0.1)   # every call a timeout
+    hop.mark_entry(np.array([-2.0, 0.0]))
+    hop.update(0, np.zeros(2), 0.0, world)
+    hop.update(1, np.array([0.0, 0.1]), 0.0, world)                       # timeout: first waypoint failed
+    pos = np.array([0.0, 0.1])
+    av = hop._avoid(pos)
+    assert len(hop.failed) == 1 and len(hop.origins) == 2
+    assert [round(a[2], 3) for a in av] == [1.0, 0.6, 0.6, 0.6]
+    assert av[0][1] == pytest.approx(np.hypot(-2.0 - pos[0], 0.0 - pos[1]))      # the stall pose
+    fx, fy = hop.failed[0]
+    assert av[1][1] == pytest.approx(np.hypot(fx - pos[0], fy - pos[1]))         # the failed waypoint
+    ox, oy = hop.origins[0]
+    assert av[2][1] == pytest.approx(np.hypot(ox - pos[0], oy - pos[1]))         # the oldest origin
+
+
+def test_a_failed_waypoint_and_a_hop_origin_steer_the_next_selection_away():
+    # the goal bearing is 0; a first hop leaves along the +x ray, fails (timeout), and the second
+    # selection must not take a ray through that waypoint or back through the hop origin
+    world = se.World([], goal=(50.0, 0.0))
+    p = v2m.v2_params(reselect_timeout_s=0.1)
+    hop = v2m.WaypointHopper(p, 0.1)
+    hop.update(0, np.zeros(2), 0.0, world)
+    first = hop.log[0][1]
+    hop.update(1, np.zeros(2), 0.0, world)
+    second = hop.log[1][1]
+    assert abs(float(v2m.wrap(first - second))) > 2 * STEP, (first, second)
+    # without the extras the same call selects the same ray again
+    hop = v2m.WaypointHopper(v2m.v2_params(reselect_timeout_s=0.1, escape_extras=False), 0.1)
+    hop.update(0, np.zeros(2), 0.0, world)
+    hop.update(1, np.zeros(2), 0.0, world)
+    assert abs(float(v2m.wrap(hop.log[0][1] - hop.log[1][1]))) <= STEP / 2 + 1e-9
+
+
+def test_a_non_finite_position_is_ignored_by_the_tracker():
+    tr = v2m.PathProgressTracker(0.125, 0.5)
+    tr.start_task([(0, 0), (8, 0)])
+    tr.update((1.0, 0.0))
+    assert tr.update((float('nan'), 0.0)) == 0 and tr.update((0.0, float('inf'))) == 0
+    assert tr.last == (1.0, 0.0)
+    assert tr.update((1.125, 0.0)) == 1
+
+
+def test_the_longest_ray_at_the_minimum_clearance_is_taken_in_python():
+    b, f, r = np.array([0.0, 1.0]), np.array([0.5, 0.1]), np.array([False, False])
+    assert v2m.select_horizon_gap(b, f, r, 0.0, 0.5, None, 0.5, []).found
+    assert not v2m.select_horizon_gap(b, np.array([np.nextafter(0.5, 0), 0.1]), r, 0.0, 0.5, None,
+                                      0.5, []).found
+
+
+def test_alignment_ties_take_the_first_ray_in_python():
+    b, f, r = np.array([-0.5, 0.5]), np.array([1.5, 1.5]), np.array([True, True])
+    assert v2m.select_horizon_gap(b, f, r, 0.0, 0.0, None, 0.5, []).bearing == -0.5
+
+
 def test_the_movement_watchdog_fires_after_stall_time_and_not_before():
     # extra (b): no movement of stall_distance in stall_time_s (30 cycles at 0.1 s) re-selects
     world = se.World([], goal=(5.0, 0.0))

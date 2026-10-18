@@ -193,6 +193,66 @@ def test_selection_rule_boundaries_match_the_cxx(shim):
         assert py == cxx and (cxx[3] is True) is ok, (c, cxx)
 
 
+def test_exact_boundaries_of_the_avoid_rule_and_the_tie_rules_match_the_cxx(shim):
+    n = 36
+    b = [-math.pi + 2 * math.pi * k / n for k in range(n)]
+    # "beyond the end of the ray": distance == clearance + radius is NOT beyond (dyadic numbers)
+    free = [1.0] * n
+    reach = [True] * n
+    k = 20
+    for dist, blocked in ((1.5, True), (1.5000001, False)):
+        av = [(b[k], dist, 0.5)]
+        cxx = cxx_select(shim, b, free, reach, b[k], 0.0, None, 0.5, av)
+        py = v2m.select_horizon_gap(np.array(b), np.array(free), np.array(reach), b[k], 0.0, None,
+                                    0.5, av).as_tuple()
+        assert py == cxx and (cxx[1] != b[k]) is blocked, (dist, py, cxx)
+    # tie in the alignment: two rays equally far from the goal bearing: the first one wins
+    tb, tf, tr = [-0.5, 0.5], [1.5, 1.5], [True, True]
+    cxx = cxx_select(shim, tb, tf, tr, 0.0, 0.0, None, 0.5, [])
+    py = v2m.select_horizon_gap(np.array(tb), np.array(tf), np.array(tr), 0.0, 0.0, None, 0.5, [])
+    assert py.as_tuple() == cxx and cxx[1] == -0.5
+    # the longest ray whose clearance equals min_clearance exactly is taken; just under is not
+    for c, ok in ((0.5, True), (0.4999999, False)):
+        lb, lf, lr = [0.0, 1.0], [c, 0.1], [False, False]
+        cxx = cxx_select(shim, lb, lf, lr, 0.0, 0.5, None, 0.5, [])
+        py = v2m.select_horizon_gap(np.array(lb), np.array(lf), np.array(lr), 0.0, 0.5, None, 0.5, [])
+        assert py.as_tuple() == cxx and cxx[0] is ok, (c, py.as_tuple(), cxx)
+    # a longest-ray tie within 1e-9: the one closer to the goal bearing wins; beyond 1e-9 the longer
+    for second, expect in ((1.0 + 5e-10, 1.0), (1.0 + 2e-9, 2.0)):
+        lb, lf, lr = [1.0, 2.0], [1.0, second], [False, False]
+        cxx = cxx_select(shim, lb, lf, lr, 1.0, 0.0, None, 0.5, [])
+        py = v2m.select_horizon_gap(np.array(lb), np.array(lf), np.array(lr), 1.0, 0.0, None, 0.5, [])
+        assert py.as_tuple() == cxx and cxx[1] == expect, (second, py.as_tuple(), cxx)
+
+
+def test_two_replans_without_an_update_between_match_the_cxx(shim):
+    """The candidate is closed only after an update has set its base (pending base). The robot
+    moves along y, away from the anchor (no anchor events restart the chain)."""
+    shim.ask('PROGRESS 0.125 0.5 30')
+    mir = v2m.PathProgressTracker(0.125, 0.5)
+    shim.ask('START 0 0 8 0')
+    mir.start_task([(0, 0), (8, 0)])
+
+    def u(x, y):
+        (row,) = shim.ask(f'UPDATE {x} {y}')
+        ev = mir.update((x, y))
+        assert (int(row[0]), int(row[1])) == (ev, mir.adoptions), (x, y, row, ev, mir.adoptions)
+
+    def r(x0, y0, x1, y1):
+        shim.ask(f'REPLAN {x0} {y0} {x1} {y1}')
+        mir.offer_replan([(x0, y0), (x1, y1)])
+    u(1.0, 0.0)
+    r(1.0, -0.5, 1.0, 8.0)                  # C1: the robot starts 0.5 m along it
+    u(1.0, 0.0)
+    u(1.0, 0.25)
+    r(1.0, 0.25, 1.0, 8.25)                 # C2 closes C1: +0.25 carried
+    r(1.0, 0.25, 1.0, 8.25)                 # C3, no update in between: C2 (pending) adds nothing
+    u(1.0, 0.25)
+    assert mir.adoptions == 0 and mir.carried == 0.25
+    u(1.0, 0.5)                             # 0.25 carried + 0.25 on C3 == adopt_advance
+    assert mir.adoptions == 1
+
+
 # --------------------------------------------------------------------------- #
 # 2. Ray casting: analytic world against the C++ on a rasterised costmap
 # --------------------------------------------------------------------------- #
