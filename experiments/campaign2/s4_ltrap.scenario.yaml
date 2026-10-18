@@ -1,0 +1,20 @@
+# S4 - L-shaped dead end. Pocket mouth faces -x; corridor 1.6 m wide, 2.2 m deep;
+# the top wall turns into a closed 1.2 m leg along +y at the far end (dead end,
+# not a passage). Structure translated so the mouth centre is at (-0.6, 0) and
+# rotated -15 deg about the mouth centre. Walls are physical in the gz world
+# but absent from the localization map (empty box), as in s1.
+name: s4_ltrap
+tier: campaign2
+world: worlds/s4_ltrap.sdf
+map: ../se_mppi_utrap/maps/utrap_loc.yaml
+start: [-3.0, 0.0, 0.0]
+goal:  [3.0, 0.0, 0.0]
+meta:
+  kind: l-trap
+  note: physical L-shaped dead end absent from planner map; local-minimum escape test
+  launch:
+    pkg: se_mppi_utrap
+    file: utrap_bench.launch.py
+    pass_map: true
+    pass_spawn: true
+    use_sim_time: true
