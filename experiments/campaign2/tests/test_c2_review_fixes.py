@@ -138,9 +138,11 @@ def test_decision_rule_names_level_branches_and_descriptive_parts():
                    'Each tests its own hypothesis',
                    'two-sided Fisher p of C4 against C3 on that pocket is below 0.05',
                    'C4 reached more often than C3',
-                   'Demonstrated = s1 yes and s3 yes',
-                   '"s1 yes, s3 no" = s1 yes and s3 no',
-                   'Not demonstrated = s1 no, whatever s3 shows',
+                   'Demonstrated = s1 yes and s4 yes',
+                   '"s1 yes, s4 no" = s1 yes and s4 no',
+                   'Not demonstrated = s1 no, whatever s4 shows',
+                   'The claim of transfer rests on s4',
+                   'does not change the branch',
                    'H2 (C2 against C1)', 'decide nothing'):
         assert needle in sec, needle
     h = flat(prereg_text().split('## Hypotheses')[1].split('## Fixed inputs')[0])
@@ -152,8 +154,9 @@ def test_s3_is_disclosed_as_having_a_near_mirror_twin_and_h4_is_narrowed():
     assert 'w22_d15_r-25_a6' in text and 'near mirror twin' in text
     assert 'does **not** mean that s3 lies outside the span of the development family' in text
     h = flat(prereg_text().split('## Hypotheses')[1].split('## Fixed inputs')[0])
-    assert 'not driven live and not run in the headless test' in h
-    assert 'H4 does not claim a geometry outside the development family' in h
+    assert 'It was not driven live and not run headless, but it lies inside the family\'s range' in h
+    assert 'H4 does not rest on it' in h
+    assert 'H4 is tested on `s4_ltrap` only' in h
     assert 'a geometry that was not used during development' not in h
 
 

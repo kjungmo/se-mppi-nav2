@@ -3,7 +3,10 @@
 **Status: DRAFT.** Written on 2026-10-18 from `DESIGN_ADVICE.md` section 4 with the lead
 decisions D-4 (a) to (c). Revised on 2026-10-18 after the first Opus review (sections
 "Escape parameters and rules", "Held-out status of s3", "Decision rule", "Provenance",
-"Attempts, interruption and restart"). It becomes the pre-registration when the lead commits
+"Attempts, interruption and restart"). Amended on 2026-10-18 by the lead decisions E-1 to E-3
+(`LEAD_DECISIONS_2.md`): the extras are accepted and disclosed with the measured ablation, a
+second held-out pocket `s4_ltrap` outside the development family is added, and the plan has
+**88 trials** (see "Amendments", amendment 1). It becomes the pre-registration when the lead commits
 it together with `FREEZE_MANIFEST.json` and tags that commit `campaign2-controller`, before the
 first trial of Phase A (see "Before the freeze"). No counted trial has run. One shakedown trial
 on `s0_open` ran and is recorded below; it counts for nothing.
@@ -37,10 +40,13 @@ campaign asks whether the fixed controller escapes live.
   from them (see "Decision rule").
 - **H3 (no harm).** On a trap-free course all four configurations reach the goal and
   SE-MPPI logs no `SE escape ENTER`. Descriptive: counts on `s0_open`.
-- **H4 (transfer).** H1 holds on `s3_ctrap`, a pocket that was not driven live and not run in
-  the headless test, and whose size, depth, rotation and wall ratio lie inside the range of
-  the development family (it has a near mirror twin in that family; see "Held-out status of
-  s3"). H4 does not claim a geometry outside the development family.
+- **H4 (transfer).** H1 holds on `s4_ltrap`, an L-shaped dead end that lies outside the
+  development family (its corridor is deeper than any development pocket and it has a bent
+  leg), was specified by the lead before anything ran on it, and was authored blind (see
+  "The second held-out pocket"). **H4 is tested on `s4_ltrap` only. The claim of transfer rests on
+  s4.** `s3_ctrap` is also run and reported. It was not driven live and not run headless, but it lies
+  inside the family's range and has a near mirror twin there (see "Held-out status of s3"). H4
+  does not rest on it.
 
 ## Fixed inputs
 
@@ -176,24 +182,57 @@ farther than its radius from it, and it lies not more than the radius beyond the
    `se_escape_stall_distance` in `se_escape_stall_time` (addition b); the straight line to the
    waypoint is blocked. A waypoint that is not reached is added to the failed list (addition a).
 
-**Departure from D-1.** D-1 says "exactly as advised". Additions (a) to (d) are a departure. They
-need a dated decision of the lead before the freeze (item 1 of "Before the freeze"). The reason
-they exist is a measurement. With `se_escape_avoid_radius` 0, `se_escape_avoid_hop_radius` 0 and
-`se_escape_stall_time` 1e6, which leaves the design as advised, the headless closed-loop test
-(`SE_UTRAP_PARAMS`, `rv1_ablate.sh`, logs in `/mnt/d/wsl/se-mppi/escape-fix/logs/review1/`)
-reached the goal in 0 of 3 runs on `w22_d13_r30_a10` (23 to 26 hops, closest approach 2.37 to
-2.39 m), in 19 of 56 geometries of the sweep (the reviewer measured 16 of 56; MPPI's noise is
-seeded per process), and not on the twin of s3 `w22_d15_r-25_a6` (20 hops, 2.47 m). The shipped
-algorithm passes 56 of 56 and reached that twin in 28.2 s with 3 hops. Whatever the paper says
-about SE-MPPI is therefore a statement about the algorithm with the additions. The mirror carries
-both (`escape_extras` true and false), and the mirror re-run (D-2) reports both.
+**Departure from D-1, and the decision on it (E-1).** D-1 says "exactly as advised". Additions (a) to (d)
+are a departure. The lead decided on 2026-10-18 (`LEAD_DECISIONS_2.md`, E-1) to accept them as the
+shipped algorithm and to disclose them here, in the method section of the paper and in its limitations,
+as additions found necessary on the development family. The mirror carries both arms (`escape_extras`
+true and false; runner variants `v2` and `v2_advised`), and the 1,200-trial mirror re-run reports both.
+Whatever the paper says about SE-MPPI is a statement about the algorithm with the additions.
+
+**Measured ablation.** The additions are switched off with `se_escape_avoid_radius` 0,
+`se_escape_avoid_hop_radius` 0 and `se_escape_stall_time` 1e6 (`SE_UTRAP_PARAMS`). That leaves the rules
+of `DESIGN_ADVICE.md`, except the 0.2 m waypoint floor, the 0.6 m horizon clearance and the failed-waypoint
+list, which have no parameter. The test is the whole development family (56 valid geometries, one run each,
+`SE_UTRAP_SWEEP=all`) with the pass rule of `UTRAP_DEV_GEOMETRIES.md` (enters the pocket, leaves within 60 s,
+reaches the goal within 150 s, no contact, no `NoValidControl` throw). MPPI's noise cannot be seeded from
+the test, so one sweep is one process and the sweeps are independent. Counts per sweep:
+
+| Sweep (process) | Additions | Passed of 56 | Non-pass |
+|---|---|---|---|
+| implementer | on | 56 of 56 | none |
+| reviewer | on | 55 of 56 | the run never entered the pocket (a shallow pocket the straight line passes) |
+| reviewer | off | 16 of 56 | not itemised |
+| implementer, earlier | off | 19 of 56 | not itemised |
+| confirmation 2, `on1` | on | 55 of 56 | `w26_d11_r15_a6`: never entered the pocket; it reached the goal |
+| confirmation 2, `on2` | on | 56 of 56 | none |
+| confirmation 2, `on3` | on | 56 of 56 | none |
+| confirmation 2, `off1` | off | 16 of 56 | 31 goal not reached within 150 s, 9 did not leave within 60 s |
+| confirmation 2, `off2` | off | 18 of 56 | 29 goal not reached within 150 s, 9 did not leave within 60 s |
+| confirmation 2, `off3b` | off | 14 of 56 | 33 goal not reached within 150 s, 9 did not leave within 60 s |
+
+Confirmation 2 ran at commit `b7e012a` (the controller sources are those of `507173a`; only the guard
+test differs), on the build in the job workspace, on a shared host. Raw logs:
+`/mnt/d/wsl/se-mppi/v2_confirm2/sweep_*.log`. With the additions: 167 of 168 runs pass (all 168 reach
+the goal; zero contacts, zero throws; mean 5.1 to 5.3 hops per run). Without them: 16, 18 and 14 of 56
+(mean 16, 48 of 168), with zero contacts and zero throws, and a mean of 16.7 to 17.4 hops per run. One
+first attempt at the third sweep without the additions (`off3`) stopped producing output after 3 rows and
+used 100 percent of one core for 12 minutes; it was killed, and the sweep was run again as `off3b`. The
+geometry at which it stopped (`w13_d11_r15_a6`) passed 3 of 3 when run alone, so the stop did not
+reproduce. The cause is not found; the log is kept (`sweep_off3.log`). On the primary geometry
+`w22_d13_r30_a10` the review found 0 of 3 runs without the additions (23 to 26 hops, closest approach
+2.37 to 2.39 m) and the twin of s3, `w22_d15_r-25_a6`, did not pass without them.
+
+The paper states the additions (a) to (d), this ablation and its non-seedable noise as a limit of the
+evidence: the additions were worked on until the development family passed, so the 56 of 56 is a
+development result, not a test result.
 
 ## Scenarios
 
 | Id | World | Role |
 |---|---|---|
 | `s1_utrap` | `se_mppi_utrap/worlds/testbed.sdf` | development scenario (campaign 1) |
-| `s3_ctrap` | `campaign2/worlds/s3_ctrap.sdf` | held out in the sense of the next section |
+| `s3_ctrap` | `campaign2/worlds/s3_ctrap.sdf` | held out in the sense of "Held-out status of s3" (twin in the family); reported, not decision-bearing |
+| `s4_ltrap` | `campaign2/worlds/s4_ltrap.sdf` | held out outside the family's range ("The second held-out pocket"); configurations C3 and C4 only; carries H4 |
 | `s0_open` | `campaign2/worlds/s0_open.sdf` | trap-free control |
 | `s1_utrap_evidence` | `testbed.sdf`, start inside the pocket | log artefact; 2 trials each for C2 and C4; not counted |
 
@@ -232,10 +271,50 @@ not claim a geometry the design never saw. "s3 carries the claim" in the verbati
 below is to be read with this paragraph: the claim on s3 is a claim for a pocket of the
 development family's range that was not driven or tested during development.
 
-The stronger design is a pocket outside the family's range, specified and authored blind by a
-separate agent, added with a dated amendment before the freeze (item 2 of "Before the freeze").
-This file is valid with or without it. If it is added, the statement of H4 above is replaced by
-the stronger one, and this section keeps the disclosure for `s3_ctrap`.
+The stronger design is a pocket outside the family's range, specified by the lead and authored
+blind by a separate agent. Lead decision E-2 (2026-10-18) adds it as `s4_ltrap`, and keeps s3 with this
+disclosure. H4 is now stated on s4 (see "The second held-out pocket" and amendment 1).
+
+### The second held-out pocket
+
+**Specification** (lead, written before anyone ran anything on it, `LEAD_DECISIONS_2.md` E-2).
+An L-shaped dead end. In a pocket frame with the mouth facing -x: a corridor 1.6 m wide and 2.2 m
+deep along +x (wall centre lines at y = +/-0.8 from x = 0 to x = 2.2), closed at x = 2.2, except that the
+top wall turns: from (2.2, 0.8) a second leg 1.2 m long continues along +y to (2.2, 2.0), with its
+inner wall from (1.4, 0.8) to (1.4, 2.0) and the cap from (1.4, 2.0) to (2.2, 2.0). The leg is closed
+(a dead end, not a passage). The structure is translated so that the mouth centre is at (-0.6, 0) and
+rotated by -15 degrees about the mouth centre. Start (-3, 0), goal (3, 0), testbed and empty map as in
+s1. Wall thickness 0.3 m and height 1.0 m as in the template.
+
+**Authorship.** An agent that saw only this specification wrote the world. It did not see the
+controller, the family rule, the tuning or the campaign-1 analysis. The world is branch
+`semppi-v2/campaign2-s4`, commit `8561495`, merged on this branch. The generator is
+`make_s4_ltrap.py`, `verify_s4_ltrap.py` reads the geometry back from the SDF file, and
+`s4_ltrap_geometry.png` and `s4_ltrap_verify.txt` are the plot and the output. No Gazebo run and no
+headless test has used s4. `test_heldout_guard` and `tests/test_c2_plan.py` fail if the world name appears in
+the repository outside `experiments/campaign2/`.
+
+**Checks by the author** (computed, `s4_ltrap_verify.txt`). The straight start-goal line enters the
+corridor at the mouth centre (-0.6, 0) and ends on the back wall at pocket y = -0.55, inside the
+inner half width of 0.65. The mouth is 1.6 m between wall centre lines and 1.3 m clear. The leg is 0.5 m
+clear. A flood fill on the 5 cm grid with the mouth sealed encloses 3.145 m2 from both the corridor and
+the leg, and the region reaches neither the goal, nor the start, nor the perimeter. With the mouth open
+the goal is reachable only around the structure.
+
+**Checks by the lead** (`tests/test_c2_s4.py`, read from the SDF file and from
+`UTRAP_DEV_GEOMETRIES.md`; the family's maximum depth was not told to the author):
+
+| Quantity | s4_ltrap | Development family | Outside the range? |
+|---|---|---|---|
+| Inner depth, mouth plane to back-wall face | 2.05 m (2.12 m along the start-goal line) | 1.1, 1.5, 1.8 m (maximum 1.8 m) | **yes**, by 0.25 m (14 percent) |
+| Inner width | 1.3 m | 1.3, 1.6, 2.2, 2.6 m | no (at the lower end) |
+| Rotation | -15 degrees | -25, 0, 15, 30 degrees | no (inside the span) |
+| Shape | corridor and a closed bent leg, 5 walls | one rectangle, 3 walls | **yes** (no counterpart) |
+| Rule V1 of the family (`|d tan(theta)| <= w/2 - 0.3`) | 0.55 > 0.35 | holds for every member | **fails** (margin 0.10 m, not 0.3 m) |
+
+So s4 is outside the family by its depth, by its bent leg and by the margin at which the straight
+line enters the corridor. It is inside the family's span in width and rotation. The depth is
+measured along the pocket axis, as the family defines `d`.
 
 **Pocket polygons** (analysis only; `analyze.py`, `POCKETS`). s1: x from -1.0 to 0.85,
 |y| <= 0.85. s3: the pocket frame rectangle x from -0.3 to 1.15, |y| <= 1.05 (inner faces of
@@ -269,18 +348,19 @@ n = 6, 6 of 6 gives 0.0022, 5 of 6 gives 0.0152 and 4 of 6 gives 0.0606; at n = 
 failure gives p = 0.048, which is at the threshold of 0.05. n = 6 is chosen for the margin and for
 the time budget. (A test, `tests/test_c2_review_fixes.py`, recomputes these numbers.)
 
-The plan has 76 trials (`run_campaign2.py --list`):
+The plan has **88 trials** (`run_campaign2.py --list`; it was 76 before amendment 1, which adds the 12
+trials of C3 and C4 on `s4_ltrap`):
 
 - **Phase A (gate, 9 trials).** C4 x s1 x 6 and C3 x s1 x 3 (repetitions 0 to 2). Phase A
   trials count.
-- **Phase B (67 trials).** The remaining cells of {C1..C4} x {s1, s3, s0} x 6 (63 trials:
-  C3 x s1 repetitions 3 to 5 and all other cells) plus 2 evidence trials each for C2 and C4
-  (4 trials).
+- **Phase B (79 trials).** The remaining cells of {C1..C4} x {s1, s3, s0} x 6 (63 trials:
+  C3 x s1 repetitions 3 to 5 and all other cells), C3 and C4 x s4 x 6 (12 trials), plus 2 evidence
+  trials each for C2 and C4 (4 trials). C1 and C2 do not run on s4.
 
-**Block B and s3 wait for Phase A.** The driver refuses `--block B`, and refuses every `s3_ctrap`
-trial and every Phase-B trial, until Phase A is complete (6 valid C4 x s1 and 3 valid C3 x s1
-trials) and its gate has not fired (`analyze.s3_refusal`). The reason is D-7: if s3 were driven and
-the gate then failed, the second design iteration would no longer have an unseen s3.
+**Block B, s3 and s4 wait for Phase A.** The driver refuses `--block B`, and refuses every `s3_ctrap` and
+`s4_ltrap` trial and every Phase-B trial, until Phase A is complete (6 valid C4 x s1 and 3 valid C3 x s1
+trials) and its gate has not fired (`analyze.s3_refusal`). The reason is D-7: if s3 or s4 were driven and
+the gate then failed, the second design iteration would no longer have an unseen pocket.
 
 The cell order rotates with the repetition (`plan.py`, `_rotate`: one place per repetition
 in Phase A, two places in Phase B). Trial ids are `correct__<scenario>__<config>__rep<n>`.
@@ -293,7 +373,7 @@ Raw data go to `/mnt/d/wsl/se-mppi/campaign2/` (`trials/`, `shakedown/`) for att
 30 s is below 0.5 core. A trial is valid if the foreign CPU is at most 1.0 core on average
 and at most 3.0 cores in every 30 s window. An invalid attempt is kept as `.invalidN`,
 reported, and repeated. Time: failing trials take about 6.5 min, successful ones 2.5 to 3.5
-min; 76 trials with half succeeding and 15% invalid repeats need 7 to 9 hours of quiet host
+min; 88 trials with half succeeding and 15% invalid repeats need 8 to 10 hours of quiet host
 in two or three sessions.
 
 ## Provenance
@@ -363,8 +443,8 @@ count; optimizer failures and the time of the first; missed control cycles; real
 ## Analysis
 
 Counts per cell with Wilson 95% intervals. Two-sided Fisher exact tests for C4 against C3
-(s1 and s3 separately), C2 against C1 (s1 and s3 separately) and C4 on s3 against C4 on s1
-(transfer). Mann-Whitney on wall time to goal over reached trials, descriptive (exact for up
+(s1, s3 and s4 separately), C2 against C1 (s1 and s3 separately), and C4 on s3 and C4 on s4 each
+against C4 on s1 (transfer). Seven contrasts in all (`analyze.CONTRASTS`). Mann-Whitney on wall time to goal over reached trials, descriptive (exact for up
 to 20,000 arrangements, normal approximation otherwise). No pooling over scenarios. H3 is
 the ENTER count on s0 (expected 0) and the reached count on s0 (expected 24 of 24).
 The analysis script, `plan.py` and `tests/` are frozen with the tag (D-4b).
@@ -373,24 +453,29 @@ The analysis script, `plan.py` and `tests/` are frozen with the tag (D-4b).
 
 ### Decision rule
 
-Dated 2026-10-18, written before any counted trial. It selects the outcome branch below from the
-counts alone, so that the branch cannot be chosen after the data are seen.
+Dated 2026-10-18, written before any counted trial. Extended on 2026-10-18 by amendment 1 (the rule for
+s3 was replaced by the rule for s4). It selects the outcome branch below from the counts alone, so that
+the branch cannot be chosen after the data are seen. `analyze.decision` computes it.
 
 1. *Significance level.* 0.05, two-sided, per contrast, with no correction for multiple tests.
-   Five contrasts are computed. Each tests its own hypothesis, and only two of them (C4 against C3
-   on `s1_utrap`, and on `s3_ctrap`) take part in the decision, each once.
-2. *Yes on a pocket.* H1 (on `s1_utrap`) or H4 (on `s3_ctrap`) is "yes" on a pocket if and only if
+   Seven contrasts are computed. Each tests its own hypothesis, and only two of them (C4 against C3
+   on `s1_utrap`, and on `s4_ltrap`) take part in the decision, each once.
+2. *Yes on a pocket.* H1 (on `s1_utrap`) or H4 (on `s4_ltrap`) is "yes" on a pocket if and only if
    the two-sided Fisher p of C4 against C3 on that pocket is below 0.05 **and** C4 reached more
    often than C3 on it. Otherwise it is "no" on that pocket.
-3. *Branches.* Demonstrated = s1 yes and s3 yes. "s1 yes, s3 no" = s1 yes and s3 no. Not
-   demonstrated = s1 no, whatever s3 shows. (A "yes" on s3 with a "no" on s1 does not rescue the
+3. *Branches.* Demonstrated = s1 yes and s4 yes. "s1 yes, s4 no" = s1 yes and s4 no. Not
+   demonstrated = s1 no, whatever s4 shows. (A "yes" on s4 with a "no" on s1 does not rescue the
    claim: s1 is the Phase-A gate and the development scenario, and the mechanism claim H1 is made
-   there first. The result is reported in full.)
-4. *Descriptive only.* H2 (C2 against C1), H3 (the control), the transfer contrast (C4 on s3
-   against C4 on s1), all time comparisons and all Wilson intervals decide nothing. They are
-   reported with their counts and p values, and the verbatim wording below is filled from the
-   counts of the branch that rule 3 selects.
-5. *Phase-A gate.* Unchanged: C4 on `s1_utrap` at 1 of 6 or fewer stops the campaign (D-7).
+   there first. A "yes" on s3 does not rescue a "no" on s4.) The result is reported in full.
+   **The claim of transfer rests on s4.**
+4. *s3.* `s3_ctrap` is run and reported with the counts, the Fisher p and the disclosure of its
+   twin. It does not change the branch. If s3 is "no" beside "yes" on s1 and s4, both are reported and
+   the sentence for the branch says so (`decision.s3_note`).
+5. *Descriptive only.* H2 (C2 against C1), H3 (the control), the two transfer contrasts (C4 on s3
+   and C4 on s4, each against C4 on s1), all time comparisons and all Wilson intervals decide
+   nothing. They are reported with their counts and p values, and the verbatim wording below is
+   filled from the counts of the branch that rule 3 selects.
+6. *Phase-A gate.* Unchanged: C4 on `s1_utrap` at 1 of 6 or fewer stops the campaign (D-7).
 
 With six trials per cell, "yes" needs C4 at 5 of 6 or 6 of 6 when C3 is at 0 of 6 (p = 0.0152 and
 0.0022), and C4 at 6 of 6 when C3 is at 1 of 6 (p = 0.0152); 4 of 6 against 0 of 6 is p = 0.0606 and
@@ -421,7 +506,9 @@ exits with code 3 and deletes nothing when one fires.
 
 Copied verbatim from `DESIGN_ADVICE.md` section 3, "Claims after campaign 2 (fixed before
 the trials)". "Section 4.4" in the first item is the section of the paper. The branch is chosen by
-the "Decision rule" above. "Held-out" in the quote is read with "Held-out status of s3".
+the "Decision rule" above. Read the quote with amendment 1: "the held-out s3" and "s3 carries the claim"
+mean `s4_ltrap` (outside the family), and `s3_ctrap` is reported beside it with "Held-out status of s3".
+The count "k' of 6" in the first item is the count of C4 on s4, and the stock count "0 of 6" is that of C3 on s4.
 
 > - *Demonstrated*: "SE-MPPI without recoveries reached the goal in k of 6 on s1
 >   and k' of 6 on the held-out s3; stock without recoveries in 0 of 6; with
@@ -443,7 +530,8 @@ the "Decision rule" above. "Held-out" in the quote is read with "Held-out status
 > null" stands; campaign 2 does not test it.
 
 Whatever the paper says about the algorithm, it names the additions (a) to (d) of "Escape
-parameters and rules" and the twin of s3 of "Held-out status of s3".
+parameters and rules" with their measured ablation, the twin of s3 of "Held-out status of s3", and
+that s4 is the pocket outside the family on which the claim of transfer rests.
 
 **Not demonstrated** (D-7). If C4 on s1 reaches 1 of 6 or fewer at Phase A, the campaign
 stops, the work returns to the headless test with the evidence, and Fable advises one more
@@ -452,7 +540,22 @@ is told.
 
 ## Amendments
 
-None. Every amendment is dated and placed before the trials it affects.
+Every amendment is dated and placed before the trials it affects. No counted trial has run.
+
+**Amendment 1, 2026-10-18 (lead decisions E-1 to E-3, `LEAD_DECISIONS_2.md`).**
+
+1. *Extras accepted (E-1).* The four additions (a) to (d) are the shipped algorithm. They are disclosed in
+   this file ("Escape parameters and rules"), in the method section of the paper and in its
+   limitations, with the measured ablation. The mirror carries both arms (`escape_extras` true and
+   false, runner variants `v2` and `v2_advised`), and the 1,200-trial re-run reports both. This
+   replaces item 1 of "Before the freeze" and ends the departure from D-1 as an open question.
+2. *Second held-out pocket (E-2).* `s4_ltrap` is added. H4 is tested on it. C3 and C4 run on it, 6
+   repetitions each (12 trials), so the plan has 88 trials (Phase A 9, Phase B 79). C1 and C2 do not run
+   on s4. s3 stays, with its twin disclosure, reported and not decision-bearing. The decision rule is
+   extended as above. This replaces item 2 of "Before the freeze".
+3. *Frozen files.* `s4_ltrap.sdf` and `s4_ltrap.scenario.yaml` join the manifest. The analyzer gains the
+   s4 pocket polygon (a non-convex L, even-odd test) and `analyze.decision`.
+4. *Mirror variant (E-3).* `v2_advised` joins `configs.VARIANTS` (see the mirror README).
 
 ## Shakedown (not a registered trial)
 
@@ -466,19 +569,14 @@ build, and the provenance checks apply to counted blocks only.
 
 ## Before the freeze
 
-1. **Lead, decision on the additions.** Approve additions (a) to (d) as a dated deviation from
-   D-1, or order them removed (the mirror and the parity test already carry `escape_extras` false
-   for the design as advised; the controller would need a switch per addition, and the closed-loop
-   result for the design as advised is 19 of 56).
-2. **Lead, decision on s3.** Either keep s3 with the disclosure above (this file is valid as it
-   stands), or have a separate agent author a further held-out pocket outside the family's range
-   from a geometric specification only, plot it, and add it with a dated amendment before the
-   freeze (D-4a).
-3. Review `s3_ctrap_geometry.png` against the specification above. The worlds step did not
-   look at the plot after rendering it.
-4. Rebuild the workspace from the tree to be frozen, so that the build stamp can read the tag
-   (below), and run the full test suite (`colcon test`, `pytest experiments/campaign2/tests`,
-   `pytest experiments/benchmark2d/tests` with `SE_REQUIRE_PARITY=1`).
+1. ~~Lead, decision on the additions.~~ Done: E-1 accepts them (amendment 1).
+2. ~~Lead, decision on s3.~~ Done: E-2 keeps s3 with the disclosure and adds s4 (amendment 1).
+3. Review `s3_ctrap_geometry.png` and `s4_ltrap_geometry.png` against the specifications above. The
+   worlds step did not look at the s3 plot after rendering it.
+4. Opus confirmation of amendment 1 (E-4). Rebuild the workspace from the tree to be frozen, so that
+   the build stamp can read the tag (below), and run the full test suite (`colcon test`,
+   `pytest experiments/campaign2/tests`, `pytest experiments/benchmark2d/tests` with
+   `SE_REQUIRE_PARITY=1`, `scripts/check_paper_numbers.py`).
 5. Freeze, in this order:
    1. Finish this file and the controller. Run `python3 experiments/campaign2/freeze_manifest.py
       --write`.
@@ -489,4 +587,4 @@ build, and the provenance checks apply to counted blocks only.
    4. Rebuild the workspace at the tag, so that the build stamp says `campaign2-controller`.
    5. The first counted trial records `git describe` (`campaign2-controller`) in `meta.json`.
 6. Check that the shakedown host report in `SHAKEDOWN.md` matches the host the counted
-   trials will run on.
+   trials will run on. Run campaign 2 on an exclusive host (no other CPU work), Phase A first.

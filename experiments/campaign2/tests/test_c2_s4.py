@@ -63,6 +63,9 @@ def test_the_s4_polygon_is_not_convex_and_the_convex_test_is_kept_for_convex_one
     ((1.8, 1.2), True),                 # leg
     ((1.8, 0.65), True),                # corridor and leg meet
     ((0.0, 0.0), True),                 # mouth plane: boundary counts as inside
+    ((2.05, 0.0), True),                # back wall face: boundary on the right side
+    ((1.8, 1.85), True),                # cap face
+    ((1.55, 1.0), True),                # inner wall face of the leg
     ((1.0, 1.2), False),                # the notch beside the corridor: outside, behind the top wall
     ((1.0, 0.9), False),                # on the top wall
     ((-0.2, 0.0), False),               # in front of the mouth
@@ -73,6 +76,15 @@ def test_the_polygon_separates_corridor_and_leg_from_the_outside(pocket_xy, insi
     assert an.inside_polygon(to_world(pocket_xy), an.POCKETS[S4]) is inside
 
 
+def edge_distance(pt, poly):
+    best = math.inf
+    for a, b in zip(poly, poly[1:] + poly[:1]):
+        ex, ey = b[0] - a[0], b[1] - a[1]
+        t = max(0.0, min(1.0, ((pt[0] - a[0]) * ex + (pt[1] - a[1]) * ey) / (ex * ex + ey * ey)))
+        best = min(best, math.hypot(pt[0] - a[0] - t * ex, pt[1] - a[1] - t * ey))
+    return best
+
+
 def test_the_polygon_is_the_free_space_the_walls_enclose():
     poly = an.POCKETS[S4]
     n_in = 0
@@ -81,10 +93,9 @@ def test_the_polygon_is_the_free_space_the_walls_enclose():
             pw = to_world((i * 0.025, j * 0.025))
             if an.inside_polygon(pw, poly):
                 n_in += 1
-                px, py = to_pocket(pw)
-                # a point 0.02 m inside the polygon's edges is free of walls
-                if 0.02 < px < 2.03 and abs(py) < 0.63 or (1.57 < px < 2.03 and 0.63 <= py < 1.83):
-                    assert not in_a_wall(pw), (px, py)
+                # a point more than 0.03 m inside the polygon is free of walls
+                if edge_distance((i * 0.025, j * 0.025), an.S4_POCKET_FRAME) > 0.03:
+                    assert not in_a_wall(pw), (i * 0.025, j * 0.025)
     assert n_in > 1000
     # every edge but the mouth lies on a wall: a point 0.05 m outside the edge is inside a wall
     p = an.S4_POCKET_FRAME
@@ -254,3 +265,34 @@ def test_the_rendered_results_name_the_branch():
               'decision': an.decision(cells_of(s1_C4=6, s1_C3=0, s4_C4=2, s4_C3=0))}
     text = an.render(result)
     assert 'Branch: `s1_yes_s4_no`' in text and 's4_ltrap (outside the family)' in text
+
+
+# --------------------------------------------------------------------------- #
+# The pre-registration text against the plan and the decision function
+# --------------------------------------------------------------------------- #
+def prereg():
+    from test_c2_review_fixes import flat, prereg_text
+    return flat(prereg_text())
+
+
+def test_the_prereg_states_the_plan_size_the_plan_has():
+    text = prereg()
+    counts = re.findall(r'\*\*(\d+) trials\*\*', text)
+    assert len(counts) >= 2 and set(counts) == {str(len(plan.plan('all')))}, counts   # every mention
+    assert f'**Phase B ({len(plan.plan("B"))} trials).**' in text
+    assert f'**Phase A (gate, {len(plan.plan("A"))} trials).**' in text
+    assert 'C1 and C2 do not run on s4' in text
+
+
+def test_the_prereg_decision_rule_matches_the_function():
+    text = prereg()
+    assert f'is below {an.ALPHA}' in text
+    assert 'Seven contrasts are computed' in text and len(an.CONTRASTS) == 7
+    assert an.DECISION_POCKETS == ('s1_utrap', 's4_ltrap')
+    assert 'only two of them (C4 against C3 on `s1_utrap`, and on `s4_ltrap`) take part' in text
+
+
+def test_the_prereg_ablation_counts_are_the_measured_ones():
+    text = prereg()
+    for needle in ('167 of 168 runs pass', '16, 18 and 14 of 56', '48 of 168', 'commit `b7e012a`'):
+        assert needle.lower() in text.lower(), needle
