@@ -159,7 +159,14 @@ def test_the_s4_corridor_is_deeper_than_every_development_pocket():
     assert width == pytest.approx(1.3, abs=1e-6)
     f = family_values()
     assert depth > max(f['d'])
-    assert depth - max(f['d']) == pytest.approx(0.25, abs=1e-6)
+    # the deepest development pocket is s1_utrap (1.85 m, UTRAP_DEV_GEOMETRIES.md); the gating
+    # primaries are 1.3 m and 1.5 m deep (utrap_dev_geometries.hpp, primary())
+    s1_depth = 1.85
+    primaries = [(1.3, 30.0), (1.5, -15.0)]
+    assert depth > s1_depth
+    assert depth - s1_depth == pytest.approx(0.20, abs=1e-6)
+    assert all(depth > d for d, _ in primaries)
+    assert -15.0 in [th for _, th in primaries]
     # the width and the rotation lie inside the family's span; the depth and the bend do not
     assert min(f['w']) <= width <= max(f['w'])
     assert min(f['theta']) <= -15.0 <= max(f['theta'])

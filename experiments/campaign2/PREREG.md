@@ -41,7 +41,7 @@ campaign asks whether the fixed controller escapes live.
 - **H3 (no harm).** On a trap-free course all four configurations reach the goal and
   SE-MPPI logs no `SE escape ENTER`. Descriptive: counts on `s0_open`.
 - **H4 (transfer).** H1 holds on `s4_ltrap`, an L-shaped dead end that lies outside the
-  development family (its corridor is deeper than any development pocket and it has a bent
+  development family (its corridor is deeper than any development pocket, 2.05 m against 1.85 m for `s1_utrap`, and it has a bent
   leg), was specified by the lead before anything ran on it, and was authored blind (see
   "The second held-out pocket"). **H4 is tested on `s4_ltrap` only. The claim of transfer rests on
   s4.** `s3_ctrap` is also run and reported. It was not driven live and not run headless, but it lies
@@ -84,7 +84,7 @@ the same cycle, and in C3 and C4 the first throw ends the goal. **The detector u
 therefore cannot act in this campaign**; it acts only with `failure_tolerance` -1, as in campaign
 1. The headless test does not exercise it either: its pass rule requires zero throws
 (`test_closed_loop_utrap.cpp`, `passes()`), and a run with a throw is reported as "C4 would
-abort". All 56 geometries of the family pass with zero throws. A trial in which a throw occurs
+abort". All 168 runs with the additions (3 sweeps of 56 geometries) had zero throws and zero contacts and reached the goal; 167 of 168 passed (the one non-pass never entered the pocket). A trial in which a throw occurs
 is a trial in which the escape did not prevent the all-collide state; it is counted as it ends.
 The fix of defect 2 is tested by the unit tests with the detector driven through the throw path
 (`ControllerNoValidControl`), not by this campaign.
@@ -216,11 +216,16 @@ Confirmation 2 ran at commit `b7e012a` (the controller sources are those of `507
 test differs), on the build in the job workspace, on a shared host. Raw logs:
 `/mnt/d/wsl/se-mppi/v2_confirm2/sweep_*.log`. With the additions: 167 of 168 runs pass (all 168 reach
 the goal; zero contacts, zero throws; mean 5.1 to 5.3 hops per run). Without them: 16, 18 and 14 of 56
-(mean 16, 48 of 168), with zero contacts and zero throws, and a mean of 16.7 to 17.4 hops per run. One
-first attempt at the third sweep without the additions (`off3`) stopped producing output after 3 rows and
-used 100 percent of one core for 12 minutes; it was killed, and the sweep was run again as `off3b`. The
-geometry at which it stopped (`w13_d11_r15_a6`) passed 3 of 3 when run alone, so the stop did not
-reproduce. The cause is not found; the log is kept (`sweep_off3.log`). On the primary geometry
+(mean 16, 48 of 168), with zero contacts and zero throws, and a mean of 16.7 to 17.4 hops per run. A stall occurred twice, in either arm. The first was in the third sweep without the additions (`off3`): it stopped
+producing output after 3 rows and used 100 percent of one core for 12 minutes; it was killed and the sweep was run again
+as `off3b`. The geometry it stopped at (`w13_d11_r15_a6`) passed 3 of 3 alone. The reviewer then reproduced the stall in
+the first sweep with the additions (`on1`) on `w22_d11_r0_a10`: the run finished normally (escape exit, controller
+deactivated and cleaned up), then after the `local_costmap` destroy message the main thread spun at 100 percent for 13
+minutes without printing the row, ignored SIGINT and needed SIGKILL. `sweep_off3.log` ends with the same signature. Both stalls
+are in the teardown of the test rig (`Rig::~Rig`, `utrap_rig.hpp`, at `costmap_ros_.reset()` or `node_.reset()`; that
+costmap was configured but never activated or cleaned up), after the run's row is complete. They do not depend on the
+arm and do not occur in a control cycle; the counts are not affected and no controller change is needed. The log is kept
+(`sweep_off3.log`). On the primary geometry
 `w22_d13_r30_a10` the review found 0 of 3 runs without the additions (23 to 26 hops, closest approach
 2.37 to 2.39 m) and the twin of s3, `w22_d15_r-25_a6`, did not pass without them in the sweeps (run alone, with the
 additions off, it passed 3 of 3). The per-sweep counts are the reported quantity. A geometry's outcome
@@ -313,9 +318,9 @@ the goal is reachable only around the structure.
 
 | Quantity | s4_ltrap | Development family | Outside the range? |
 |---|---|---|---|
-| Inner depth, mouth plane to back-wall face | 2.05 m (2.12 m along the start-goal line) | 1.1, 1.5, 1.8 m (maximum 1.8 m) | **yes**, by 0.25 m (14 percent) |
-| Inner width | 1.3 m | 1.3, 1.6, 2.2, 2.6 m | no (at the lower end) |
-| Rotation | -15 degrees | -25, 0, 15, 30 degrees | no (inside the span) |
+| Inner depth, mouth plane to back-wall face | 2.05 m (2.12 m along the start-goal line) | grid 1.1, 1.5, 1.8 m; gating primaries 1.3 and 1.5 m; the development scenario `s1_utrap` 1.85 m (maximum 1.85 m) | **yes**, by 0.20 m (11 percent) over `s1_utrap`, the deepest development pocket |
+| Inner width | 1.3 m | 1.3, 1.6, 2.2, 2.6 m (primaries 2.2 and 1.6 m; `s1_utrap` 1.7 m) | no (at the lower end) |
+| Rotation | -15 degrees | grid -25, 0, 15, 30 degrees; gating primaries 30 and -15 degrees | no (inside the span; -15 degrees is exactly the rotation of the gating primary `w16_d15_r-15_a6`) |
 | Shape | corridor and a closed bent leg, 5 walls | one rectangle, 3 walls | **yes** (no counterpart) |
 | Rule V1 of the family (`|d tan(theta)| <= w/2 - 0.3`) | 0.55 > 0.35 | holds for every member | **fails** (margin 0.10 m, not 0.3 m) |
 
