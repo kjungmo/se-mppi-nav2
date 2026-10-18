@@ -1,17 +1,22 @@
 # Pre-registration: campaign 2, the live U-pocket test of the fixed SE-MPPI controller
 
-**Status: DRAFT.** Written on 2026-10-18 from `DESIGN_ADVICE.md` section 4 with the lead
-decisions D-4 (a) to (c). Revised on 2026-10-18 after the first Opus review (sections
-"Escape parameters and rules", "Held-out status of s3", "Decision rule", "Provenance",
-"Attempts, interruption and restart"). Amended on 2026-10-18 by the lead decisions E-1 to E-3
-(`LEAD_DECISIONS_2.md`): the extras are accepted and disclosed with the measured ablation, a
-second held-out pocket `s4_ltrap` outside the development family is added, and the plan has
-**88 trials** (see "Amendments", amendment 1). It becomes the pre-registration when the lead commits
-it together with `FREEZE_MANIFEST.json` and tags that commit `campaign2-controller`, before the
-first trial of Phase A (see "Before the freeze"). No counted trial has run. One shakedown trial
-on `s0_open` ran and is recorded below; it counts for nothing.
+**Status: FROZEN on 2026-10-18.** The controller, the parameter file, the worlds, the plan and the
+analysis code are fixed at base commit `7e629d2` and listed with their sha256 in
+`FREEZE_MANIFEST.json`. The freeze commit is the commit that holds this file and the manifest. It
+carries the annotated tag `campaign2-controller` (`git rev-parse campaign2-controller^{commit}`); a
+commit cannot name its own hash, so the tag is the pointer. The plan has **88 trials** (Phase A 9,
+Phase B 79). No counted trial has run. One shakedown trial on `s0_open` ran and is recorded below; it
+counts for nothing. Later edits to this file are dated amendments placed before the trials they
+affect.
 
-Open items for the lead before the freeze are listed at the end ("Before the freeze").
+History of the draft: written on 2026-10-18 from `DESIGN_ADVICE.md` section 4 with the lead
+decisions D-4 (a) to (c); revised the same day after the first Opus review (sections "Escape
+parameters and rules", "Held-out status of s3", "Decision rule", "Provenance", "Attempts,
+interruption and restart"); amended by the lead decisions E-1 to E-3 (`LEAD_DECISIONS_2.md`): the
+extras are accepted and disclosed with the measured ablation, a second held-out pocket `s4_ltrap`
+outside the development family is added, and the plan has 88 trials (see "Amendments", amendment 1).
+
+The checklist before the freeze, with the state of each item, is at the end ("Before the freeze").
 
 ## Why
 
@@ -587,12 +592,16 @@ build, and the provenance checks apply to counted blocks only.
 
 1. ~~Lead, decision on the additions.~~ Done: E-1 accepts them (amendment 1).
 2. ~~Lead, decision on s3.~~ Done: E-2 keeps s3 with the disclosure and adds s4 (amendment 1).
-3. Review `s3_ctrap_geometry.png` and `s4_ltrap_geometry.png` against the specifications above. The
-   worlds step did not look at the s3 plot after rendering it.
-4. Opus confirmation of amendment 1 (E-4). Rebuild the workspace from the tree to be frozen, so that
-   the build stamp can read the tag (below), and run the full test suite (`colcon test`,
-   `pytest experiments/campaign2/tests`, `pytest experiments/benchmark2d/tests` with
-   `SE_REQUIRE_PARITY=1`, `scripts/check_paper_numbers.py`).
+3. ~~Review `s3_ctrap_geometry.png` and `s4_ltrap_geometry.png`.~~ Done 2026-10-18: both plots were
+   viewed. s3 shows the three-wall pocket open to the start with the start-goal line entering the
+   mouth chord and meeting the back wall. s4 shows the L-shaped dead end with its mouth facing the
+   start and the goal behind the back wall; `s4_ltrap_verify.txt` agrees.
+4. ~~Opus confirmation of amendment 1 (E-4).~~ Accepted by the lead for head `7e629d2`. Tests run on
+   2026-10-18 before the freeze: `pytest experiments/campaign2/tests` 212 passed;
+   `pytest experiments/benchmark2d/tests` 89 passed, 9 skipped (the C++ parity tests are skipped
+   because no `parity_shim` build exists on this host); `scripts/check_paper_numbers.py` OK. Not run
+   before the freeze: `colcon test` and the parity tests under `SE_REQUIRE_PARITY=1`. They need the
+   workspace build of step 5.4 and run on that build before Phase A.
 5. Freeze, in this order:
    1. Finish this file and the controller. Run `python3 experiments/campaign2/freeze_manifest.py
       --write`.

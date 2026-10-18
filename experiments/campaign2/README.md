@@ -2,13 +2,13 @@
 
 Assets of campaign 2: the live test of the fixed SE-MPPI controller on a development
 pocket (`s1_utrap`), a held-out pocket (`s3_ctrap`), a second held-out pocket outside the family (`s4_ltrap`, an L-shaped dead end) and a trap-free control (`s0_open`).
-Design and rules: `PREREG.md` (draft until the tag). Campaign 1 is in
+Design and rules: `PREREG.md` (frozen at the tag `campaign2-controller`). Campaign 1 is in
 `../results_pilot_rerun/`.
 
 | File | Role |
 |---|---|
 | `PREREG.md` | hypotheses, fixed inputs, plan, definitions, stopping rules, outcome wording |
-| `plan.py` | configurations C1 to C4, the 76-trial plan, parameter overlays, stopping thresholds |
+| `plan.py` | configurations C1 to C4, the 88-trial plan, parameter overlays, stopping thresholds |
 | `run_campaign2.py` | driver (derived from `../results_pilot_rerun/run_rerun.py`) |
 | `recorder.py`, `probe_escape_path.py` | 10 Hz recorder with ground truth and the escape-path topic; shakedown probe |
 | `analyze.py` | every number from the raw files; writes `results.json.gz`, `RESULTS.md`, `logs/*.log.gz` |
@@ -28,7 +28,7 @@ Run inside the `semppi_rerun` environment with the workspace (`nav2_se_controlle
 `se_mppi_utrap`) sourced, from the repository root.
 
 ```bash
-python3 experiments/campaign2/run_campaign2.py --list             # the 76-trial plan
+python3 experiments/campaign2/run_campaign2.py --list             # the 88-trial plan
 python3 experiments/campaign2/run_campaign2.py --block shakedown  # one trial, not counted
 python3 experiments/campaign2/freeze_manifest.py --write          # before the tag; commit it with PREREG.md, then tag
 python3 experiments/campaign2/run_campaign2.py --block A          # Phase A (gate)
