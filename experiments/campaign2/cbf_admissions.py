@@ -6,7 +6,7 @@ Three things, read from committed files only:
 
 * ``admissions``: for every SE-MPPI trial (C2, C4; evidence trials included), whether the
   diagnostics field ``cbf_obstacles`` (the number of obstacles the tracker passed to the CBF in
-  the cycle of the message) was above zero in any diagnostics message, and its maximum. The
+  the last control cycle before the message; stored per cycle, published by a 1 s wall timer) was above zero in any diagnostics message, and its maximum. The
   controller publishes diagnostics once per wall-clock second, so this samples about one cycle in
   ten: a trial counted as zero may still have had admissions between samples. The counts are
   therefore lower bounds.

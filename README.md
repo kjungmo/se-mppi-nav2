@@ -125,7 +125,7 @@ coordinated gain.
    (`gap_weight: 0`), kept for ablation.
 3. **Look-ahead-point CBF safety filter (OSQP).** A per-cycle CBF-QP on tracked
    dynamic obstacles (static structure is left to MPPI's cost critic) filters the
-   nominal `(v, ω)`; on a failed or relaxed barrier it brakes forward velocity.
+   nominal `(v, ω)`; on a failed or relaxed barrier it brakes the linear velocity (forward or reverse).
    The barrier acts on a look-ahead point, not on the robot body.
 4. **Escape–safety coordination.** The coordinator raises the CBF class-𝒦 gain
    on detected entrapment (α_base → α_escape) with a time-to-collision override.
@@ -550,7 +550,7 @@ cannot act: the controller logs a WARN at configure and on every change, and the
 
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
-forced the forward velocity to zero in the last second (QP failure or barrier
+set the linear velocity (forward or reverse) to zero in the last second (QP failure or barrier
 slack), and ERROR when the QP has failed on every cycle for more than 2 s (40
 cycles at Nav2's default 20 Hz, inside the default 10 s progress-checker
 allowance). It turns WARN while `vx_min` > 0 with `se_enabled` (the escape cannot
