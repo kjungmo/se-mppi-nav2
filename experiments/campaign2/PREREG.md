@@ -62,7 +62,7 @@ headless closed-loop test green on the development geometries, this file and
 repository commit, `git describe`, the sha256 of the freeze manifest, the commit of the tag,
 the install prefixes of `nav2_se_controller` and `se_mppi_utrap`, the sha256 of the installed
 controller libraries, the build stamp, and the output of `git status` for the tracked inputs in
-its `meta.json`. No source change after trial 1. A fix restarts the campaign as attempt 2 with
+its `meta.json`. No source change after trial 1 (except amendment 3). A fix restarts the campaign as attempt 2 with
 its own raw root, and both attempts are reported ("Attempts, interruption and restart").
 
 **Parameters.** `experiments/sim/nav2_se_campaign2.yaml` is set V of campaign 1
@@ -628,6 +628,16 @@ placed before the trial that fired the rule.
    signal 11 (SIGSEGV)`. The `component_container_isolated-5` process ended with exit code -6. The
    trial ended at wall time 1792603424.14. In 16 trials so far, this is the only such death
    (`process has died` over all `trials/*/launch.log`).
+   Three facts keep this from being read as a death during the drive. First, the lifecycle
+   message does not mean that `map_server` was silent for 4000 ms. The 4000 ms is the bond timeout
+   printed in the message. The raw `launch.log` shows that `map_server` ran its pre-shutdown and
+   "Destroying bond" at 1792603420.1339, after its own SIGINT, and the drive had ended at 417.13.
+   Second, the container that died hosts `controller_server`, which runs the controller under test.
+   Its cleanup ("Cleaned up MPPI Controller", 1792603420.2718) was logged before the abort. Third,
+   where the SIGSEGV happened is not known. The `Magick:` prefix comes from the image library's
+   process-wide signal handler and does not name the code that faulted. A teardown crash in the
+   controller's own shutdown would be classified `TEARDOWN_CRASH` too. The counts by configuration
+   in item 6 are there to show such a pattern if one appears.
 3. *The decision (lead).* A launched process that exits with a code other than 0, -2, -15 and -9 is a
    `CONTROLLER_CRASH` and stops the campaign, as before, unless the files show that it died after the
    driver began the teardown of that trial. If they show it, the death is a `TEARDOWN_CRASH`. It is
@@ -661,7 +671,15 @@ placed before the trial that fired the rule.
    `d96cc1c2...` and the tag commit `012f4f1d...`. The tag moves with this amendment, so later trials
    carry another pair. `MIXED_ATTEMPTS` and the driver's check for foreign trial directories accept
    exactly that earlier pair beside one current pair (`provenance.AMENDED_PRIOR_IDENTITIES`). A
-   third pair is still foreign and still stops. The earlier trials ran on the same controller,
+   third pair is still foreign and still stops. The earlier pair is accepted only for a trial whose
+   `wall_start` is before 1792604073 (2026-10-22 02:34:33 KST, the commit time of this amendment).
+   A later trial with the earlier pair is foreign and gives `MIXED_ATTEMPTS`.
+   *Departure from the rule "No source change after trial 1" (Sec. "Before the freeze").* This
+   amendment changes source after counted trials and does not restart the campaign. It is a
+   departure from that rule and is listed in the deviation list of the results. It is not a fix in
+   the sense of that rule. The controller, the plan, the worlds and the parameters are unchanged.
+   The driver only adds two wall-clock stamps after the drive. The analyzer only reclassifies a
+   recorded death. The earlier trials ran on the same controller,
    parameters, worlds and plan as the later ones. Only the analyzer, the driver's teardown records,
    the provenance module, the manifest module, the tests and this file differ.
 8. *Two driver notes of 2026-10-22 (`DEVIATIONS_LEAD.md`, item 2).* After trial

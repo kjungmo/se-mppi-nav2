@@ -187,7 +187,16 @@ AMENDED_PRIOR_IDENTITIES = (
 )
 
 
+# Amendment 3 accepts the prior pair only for trials that started before the amendment was made
+# (the commit time of the amended tag, 2026-10-22 02:34:33 KST). A later trial that still carries
+# the prior pair (a stale checkout or build) is foreign.
+AMENDMENT3_CUTOFF_WALL = 1792604073
+
+
 def is_amended_prior_identity(meta: dict) -> bool:
+    start = meta.get('wall_start')
+    if not isinstance(start, (int, float)) or isinstance(start, bool) or start >= AMENDMENT3_CUTOFF_WALL:
+        return False
     return any(all(meta.get(k) == v for k, v in prior.items()) for prior in AMENDED_PRIOR_IDENTITIES)
 
 

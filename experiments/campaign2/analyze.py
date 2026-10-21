@@ -434,6 +434,7 @@ def analyze_trial(tdir: str, boxes: list, chassis: tuple, scenario: str | None =
     }
     rec['freeze_manifest_sha256'] = meta.get('freeze_manifest_sha256')
     rec['controller_tag_commit'] = meta.get('controller_tag_commit')
+    rec['wall_start'] = meta.get('wall_start')
     if meta.get('interrupted'):
         rec.update(outcome='INVALID', invalid_reason='driver did not finish the trial (interrupted)')
         return rec
@@ -838,7 +839,8 @@ def evaluate_stops(records: list, invalid_attempts: dict | None = None,
     ids = {(t.get('freeze_manifest_sha256'), t.get('controller_tag_commit')) for t in records
            if not provenance.is_amended_prior_identity(
                {'freeze_manifest_sha256': t.get('freeze_manifest_sha256'),
-                'controller_tag_commit': t.get('controller_tag_commit')})}
+                'controller_tag_commit': t.get('controller_tag_commit'),
+                'wall_start': t.get('wall_start')})}
     if len(ids) > 1:
         stops.append(('MIXED_ATTEMPTS', 'registered trials carry more than one freeze manifest or '
                       'controller tag commit; a restart needs its own raw root (--attempt 2)'))
@@ -1036,6 +1038,11 @@ def render(result: dict) -> str:
                      f"| {r['teardown_window'][0]:.3f}..{r['teardown_window'][1]:.3f} "
                      f"| {r['stamp_after_window_start_s']} | {r['stamp_before_trial_end_s']} |")
         L.append('')
+    L += ['## Deviations from the registered rules', '',
+          '- Amendment 3 (2026-10-22), written after the stopping rule CONTROLLER_CRASH fired once: '
+          'it departs from "No source change after trial 1". The analyzer, the driver\'s time stamps '
+          'in meta.json, the provenance module and the manifest module changed. The controller, plan, '
+          'worlds and parameters did not. Trials recorded before it carry the earlier freeze identity.', '']
 
     def table(title, trials):
         out = ['', f'## {title}', '',

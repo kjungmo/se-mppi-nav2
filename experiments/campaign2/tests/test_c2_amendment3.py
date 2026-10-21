@@ -15,6 +15,7 @@ from test_c2_analyze import T0, analyze_one, drive_to_goal, make_trial
 
 FIX = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 's4_ltrap_C3_rep0')
 CONT = 'component_container_isolated-5'
+EARLY = 1792603361.0           # a start before the amendment (attempt 1, Phase B)
 
 
 def fixture_text(name):
@@ -225,7 +226,7 @@ THIRD = {'freeze_manifest_sha256': 'x' * 64, 'controller_tag_commit': 'x' * 40}
 
 def ident_rec(ident):
     return {'trial_id': 't', 'scenario': 's1_utrap', 'config': 'C4', 'outcome': 'REACHED',
-            'success': True, **ident}
+            'success': True, 'wall_start': EARLY, **ident}
 
 
 def stop_codes(*idents):
@@ -247,9 +248,20 @@ def test_any_other_identity_beside_them_is_still_mixed():
 
 
 def test_the_driver_accepts_a_trial_of_the_prior_identity_and_refuses_a_third():
-    assert pv.foreign_reason(dict(PRIOR), NEW) is None
-    assert pv.foreign_reason(dict(THIRD), NEW) is not None
+    assert pv.foreign_reason(dict(PRIOR, wall_start=EARLY), NEW) is None
+    assert pv.foreign_reason(dict(THIRD, wall_start=EARLY), NEW) is not None
     assert pv.foreign_reason({}, NEW) is not None
+
+
+def test_the_prior_identity_is_accepted_only_for_a_trial_that_started_before_the_amendment():
+    late = pv.AMENDMENT3_CUTOFF_WALL + 1.0
+    assert pv.foreign_reason(dict(PRIOR, wall_start=late), NEW) is not None       # driver
+    assert pv.foreign_reason(dict(PRIOR), NEW) is not None                        # no start recorded
+    assert pv.foreign_reason(dict(PRIOR, wall_start='x'), NEW) is not None
+    recs = [ident_rec(NEW), dict(ident_rec(PRIOR), wall_start=late)]
+    assert 'MIXED_ATTEMPTS' in [c for c, _ in an.evaluate_stops(recs)]            # analyzer
+    recs = [ident_rec(NEW), dict(ident_rec(PRIOR), wall_start=None)]
+    assert 'MIXED_ATTEMPTS' in [c for c, _ in an.evaluate_stops(recs)]
 
 
 def test_the_prior_identity_is_the_recorded_one():
