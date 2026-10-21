@@ -60,6 +60,7 @@ FROZEN = [
 ]
 FROZEN_GLOBS = [
     'experiments/campaign2/tests/*.py',
+    'experiments/campaign2/tests/fixtures/**/*',
     'src/nav2_se_controller/src/*.cpp',
     'src/nav2_se_controller/include/**/*.hpp',
     'src/nav2_se_controller/CMakeLists.txt',
@@ -70,7 +71,8 @@ FROZEN_GLOBS = [
 def files() -> list:
     out = list(FROZEN)
     for pat in FROZEN_GLOBS:
-        out += [os.path.relpath(p, REPO) for p in glob.glob(os.path.join(REPO, pat), recursive=True)]
+        out += [os.path.relpath(p, REPO) for p in glob.glob(os.path.join(REPO, pat), recursive=True)
+                if os.path.isfile(p)]
     return sorted(set(out))
 
 

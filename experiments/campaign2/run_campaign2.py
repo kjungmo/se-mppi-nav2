@@ -298,8 +298,13 @@ def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_i
         meta['drive_wall_end'] = time.time()
         ok = True
     finally:
+        # Amendment 3: the wall time of the first teardown signal, and of the first SIGINT to
+        # the launch process group, so that a death during the teardown can be told from one before.
+        meta['teardown_wall_start'] = time.time()
         for p in extras:
             rr.stop_group(p, grace=5.0)
+        if launch is not None:
+            meta['launch_sigint_wall'] = time.time()
         rr.stop_group(launch)
         meta['swept_pids'] = rr.sweep_tag(tag)
         meta['wall_end'] = time.time()

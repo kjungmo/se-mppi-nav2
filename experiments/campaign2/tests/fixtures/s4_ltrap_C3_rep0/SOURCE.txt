@@ -1,0 +1,12 @@
+Excerpts, unedited, of the raw files of trial correct__s4_ltrap__C3__rep0
+(/mnt/d/wsl/se-mppi/campaign2/trials/correct__s4_ltrap__C3__rep0/, attempt 1, 2026-10-22).
+
+launch_excerpt.log   lines 390-428 of launch.log (428 lines; sha256 of the full file
+                     ffbca9515916ed707690d6b0a7749848848fe4e17df8095828844f639a7a89d5)
+drive_tail.log       the last 4 lines of drive.log
+meta_excerpt.json    the keys of meta.json that the teardown rule reads, with their recorded values
+                     (sha256 of the full file c18d01b43752c42253db270fcde128dc870e628e9b7d76e5f81209f2a70bf244)
+
+The trial: Nav2 reported the goal failed at ros time 1792603416.8. The driver's teardown began
+after the drive ended (1792603417.13). component_container_isolated-5 logged signal_handler at
+1792603420.133, and the launch logged its death (exit code -6) after that line.

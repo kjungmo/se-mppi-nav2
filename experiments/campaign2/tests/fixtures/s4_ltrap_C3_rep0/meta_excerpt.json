@@ -1,0 +1,12 @@
+{
+  "trial_id": "correct__s4_ltrap__C3__rep0",
+  "wall_start": 1792603361.3293228,
+  "complete": true,
+  "freeze_manifest_sha256": "d96cc1c24798536d7e64bb43eef1f15436d77086c7fd9bbb7667fdadfef17f00",
+  "controller_tag_commit": "012f4f1db11de8ce607854578cb99ab932bf3969",
+  "drive_wall_start": 1792603371.35865,
+  "drive_returncode": 1,
+  "drive_wall_end": 1792603417.132994,
+  "swept_pids": [],
+  "wall_end": 1792603424.1386836
+}

@@ -1,0 +1,39 @@
+[component_container_isolated-5] [INFO] [1792603415.127038006] [controller_server]: Passing new path to controller.
+[component_container_isolated-5] [INFO] [1792603416.127034784] [controller_server]: Passing new path to controller.
+[component_container_isolated-5] [ERROR] [1792603416.827124138] [controller_server]: Failed to make progress
+[component_container_isolated-5] [INFO] [1792603416.827962197] [controller_server]: Optimizer reset
+[component_container_isolated-5] [WARN] [1792603416.828012152] [controller_server]: [follow_path] [ActionServer] Aborting handle.
+[component_container_isolated-5] [WARN] [1792603416.855888097] [bt_navigator]: [navigate_to_pose] [ActionServer] Aborting handle.
+[component_container_isolated-5] [ERROR] [1792603416.856207543] [bt_navigator]: Goal failed
+[component_container_isolated-5] [INFO] [1792603420.133710466] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[component_container_isolated-5] [INFO] [1792603420.133798973] [map_server]: Running Nav2 LifecycleNode rcl preshutdown (map_server)
+[parameter_bridge-4] [INFO] [1792603420.133733463] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[component_container_isolated-5] [INFO] [1792603420.133847646] [map_server]: Deactivating
+[component_container_isolated-5] [INFO] [1792603420.133861722] [map_server]: Destroying bond (map_server) to lifecycle manager.
+[robot_state_publisher-2] [INFO] [1792603420.133823784] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[component_container_isolated-5] [INFO] [1792603420.144552159] [map_server]: Cleaning up
+[component_container_isolated-5] [INFO] [1792603420.144623945] [map_server]: Destroying bond (map_server) to lifecycle manager.
+[component_container_isolated-5] [INFO] [1792603420.144634706] [amcl]: Running Nav2 LifecycleNode rcl preshutdown (amcl)
+[component_container_isolated-5] [INFO] [1792603420.144674141] [amcl]: Deactivating
+[component_container_isolated-5] [INFO] [1792603420.144684621] [amcl]: Destroying bond (amcl) to lifecycle manager.
+[component_container_isolated-5] [INFO] [1792603420.155529039] [amcl]: Cleaning up
+[component_container_isolated-5] [INFO] [1792603420.164285917] [amcl]: Destroying bond (amcl) to lifecycle manager.
+[component_container_isolated-5] [INFO] [1792603420.164344077] [controller_server]: Running Nav2 LifecycleNode rcl preshutdown (controller_server)
+[component_container_isolated-5] [INFO] [1792603420.164360689] [controller_server]: Deactivating
+[component_container_isolated-5] [INFO] [1792603420.164398811] [MPPIController]: Deactivated MPPI Controller: FollowPath
+[component_container_isolated-5] [INFO] [1792603420.164416665] [local_costmap.local_costmap]: Deactivating
+[INFO] [gz-1]: process has finished cleanly [pid 1940134]
+[INFO] [parameter_bridge-4]: process has finished cleanly [pid 1940140]
+[INFO] [robot_state_publisher-2]: process has finished cleanly [pid 1940136]
+[component_container_isolated-5] [INFO] [1792603420.253360513] [controller_server]: Destroying bond (controller_server) to lifecycle manager.
+[component_container_isolated-5] [INFO] [1792603420.264047837] [controller_server]: Cleaning up
+[component_container_isolated-5] [INFO] [1792603420.271778774] [MPPIController]: Cleaned up MPPI Controller: FollowPath
+[component_container_isolated-5] [INFO] [1792603420.272007919] [local_costmap.local_costmap]: Cleaning up
+[component_container_isolated-5] [INFO] [1792603420.301228598] [controller_server]: Destroying bond (controller_server) to lifecycle manager.
+[component_container_isolated-5] [INFO] [1792603420.301276148] [lifecycle_manager_localization]: [34m[1mHave not received a heartbeat from map_server.[0m[0m
+[component_container_isolated-5] [ERROR] [1792603420.301335420] [lifecycle_manager_localization]: CRITICAL FAILURE: SERVER map_server IS DOWN after not receiving a heartbeat for 4000 ms. Shutting down related nodes.
+[component_container_isolated-5] [INFO] [1792603420.301277961] [lifecycle_manager_localization]: Running Nav2 LifecycleManager rcl preshutdown (lifecycle_manager_localization)
+[component_container_isolated-5] [INFO] [1792603420.301398179] [lifecycle_manager_localization]: [34m[1mTerminating bond timer...[0m[0m
+[component_container_isolated-5] [INFO] [1792603420.301362982] [lifecycle_manager_localization]: [34m[1mTerminating bond timer...[0m[0m
+[component_container_isolated-5] Magick: abort due to signal 11 (SIGSEGV) "Segmentation Fault"...
+[ERROR] [component_container_isolated-5]: process has died [pid 1940142, exit code -6, cmd '/home/cona/micromamba/envs/semppi_rerun/lib/rclcpp_components/component_container_isolated --ros-args --log-level info --ros-args -r __node:=nav2_container --params-file /tmp/launch_params_t2wi8y1w --params-file /tmp/launch_params_yoor0_i_ -r /tf:=tf -r /tf_static:=tf_static'].

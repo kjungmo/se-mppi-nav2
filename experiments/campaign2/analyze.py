@@ -42,6 +42,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, PILOT_DIR)
 import hostload  # noqa: E402  (campaign 1, unchanged)
 import plan as plan_mod  # noqa: E402
+import provenance  # noqa: E402
 
 
 def _load_pilot():
@@ -182,6 +183,63 @@ DIED_RE = re.compile(r'process has died \[pid \d+, exit code (?P<code>-?\d+)')
 # order, so a container that was killed shows -2, -15 or -9, and one that exited cleanly 0.
 # Any other exit code (SIGSEGV -11, SIGABRT -6, a positive status) is a crash.
 TEARDOWN_EXIT_CODES = (0, -2, -15, -9)
+# Amendment 3 (PREREG.md). A non-teardown exit code is a TEARDOWN_CRASH, not a CONTROLLER_CRASH,
+# only if launch.log shows the process itself received the driver's teardown signal first:
+# the process logged ``signal_handler(SIGINT...)`` with a stamp inside the teardown window of
+# meta.json, and that line comes before the launch's ``process has died`` line for it.
+# Anything else, including a missing window, a missing line or an odd line shape, stays a crash.
+SIGNAL_LINE_RE = re.compile(
+    r'^\[(?P<name>[^\]\n]+)\] \[INFO\] \[(?P<stamp>\d+\.\d+)\] \[rclcpp\]: signal_handler\(SIGINT',
+    re.M)
+DIED_PREFIX_RE = re.compile(r'\[ERROR\] \[(?P<name>[^\]\n]+)\]: ')
+
+
+def teardown_window(meta: dict):
+    """(first teardown signal wall time, end of trial wall time) from meta.json, or None.
+
+    Lower bound: the first SIGINT to the launch group, else the start of the teardown (both
+    recorded since amendment 3), else the end of the drive (trials recorded before it: the
+    teardown cannot begin earlier). Upper bound: the end of the trial.
+    """
+    lo = meta.get('launch_sigint_wall') or meta.get('teardown_wall_start') or meta.get('drive_wall_end')
+    hi = meta.get('wall_end')
+    if lo is None or hi is None:
+        return None
+    return float(lo), float(hi)
+
+
+def classify_deaths(text: str, window) -> tuple:
+    """(crashes, teardown_crashes): the non-teardown exit codes of ``text``, split by amendment 3.
+
+    Each entry: {'process', 'exit_code', and for a teardown crash the evidence}. If the order
+    cannot be shown, the death is a crash (fail safe: a crash stops the campaign).
+    """
+    signals = [(m.start(), m.group('name'), float(m.group('stamp')))
+               for m in SIGNAL_LINE_RE.finditer(text)]
+    crashes, teardown = [], []
+    for m in DIED_RE.finditer(text):
+        code = int(m.group('code'))
+        if code in TEARDOWN_EXIT_CODES:
+            continue
+        line_start = text.rfind('\n', 0, m.start()) + 1
+        pm = DIED_PREFIX_RE.fullmatch(text[line_start:m.start()])
+        name = pm.group('name') if pm else None
+        entry = {'process': name, 'exit_code': code}
+        sig = None
+        if name is not None and window is not None:
+            lo, hi = window
+            sig = next((s for s in signals if s[1] == name and s[0] < line_start
+                        and lo <= s[2] <= hi), None)
+        if sig is None:
+            crashes.append(entry)
+        else:
+            entry.update(signal_handler_stamp=sig[2], teardown_window=[window[0], window[1]],
+                         stamp_after_window_start_s=round(sig[2] - window[0], 3),
+                         stamp_before_trial_end_s=round(window[1] - sig[2], 3),
+                         evidence='the process logged signal_handler(SIGINT) inside the teardown '
+                                  'window, before the launch logged its death')
+            teardown.append(entry)
+    return crashes, teardown
 KEY_LINE_RE = re.compile(
     r'SE escape |escape-cost injection|critic-side probe|'
     r'Failed to make progress|Running (?:spin|backup|wait)\b|'
@@ -217,8 +275,10 @@ def world_boxes(path: str) -> list:
 # --------------------------------------------------------------------------- #
 # Log parsing
 # --------------------------------------------------------------------------- #
-def parse_launch_log(text: str, t0: float | None) -> dict:
-    """Escape episodes, hops and Nav2 recovery counters from a launch log."""
+def parse_launch_log(text: str, t0: float | None, window=None) -> dict:
+    """Escape episodes, hops and Nav2 recovery counters from a launch log.
+
+    ``window``: see ``teardown_window``; without it every non-teardown exit code is a crash."""
     def rel(stamp):
         return None if t0 is None else float(stamp) - t0
 
@@ -254,6 +314,7 @@ def parse_launch_log(text: str, t0: float | None) -> dict:
              'horizon_ray': m.group('kind') == 'horizon ray'}
             for m in WAYPOINT_RE.finditer(text)]
     optfails = [float(m.group('stamp')) for m in OPTFAIL_RE.finditer(text)]
+    crashes, teardown_crashes = classify_deaths(text, window)
     done = [e['duration_s'] for e in episodes if e['duration_s'] is not None]
     return {
         'escape_enter': len(enters),
@@ -280,8 +341,8 @@ def parse_launch_log(text: str, t0: float | None) -> dict:
         'bt_clear_global': len(CLEAR_GLOBAL_RE.findall(text)),
         'vx_min_warning': bool(VX_MIN_WARN_RE.search(text)),
         'process_exit_codes': [int(m.group('code')) for m in DIED_RE.finditer(text)],
-        'process_crash': any(int(m.group('code')) not in TEARDOWN_EXIT_CODES
-                             for m in DIED_RE.finditer(text)),
+        'process_crash': bool(crashes),
+        'teardown_crashes': teardown_crashes,
     }
 
 
@@ -388,7 +449,7 @@ def analyze_trial(tdir: str, boxes: list, chassis: tuple, scenario: str | None =
     drive = pilot.drive_stats(read_text(os.path.join(tdir, 'drive.log')), pilot.vx_min_of(params))
     rec.update({k: drive[k] for k in ('nav2_result', 'watchdog_fired', 'n_telemetry_lines')})
     t0, t1 = drive['t0'], drive['t1']
-    rec.update(parse_launch_log(launch, t0))
+    rec.update(parse_launch_log(launch, t0, teardown_window(meta)))
     rec.update(parse_escape_path_log(read_text(os.path.join(tdir, 'escape_path.jsonl'))))
     diag = [json.loads(ln) for ln in
             read_text(os.path.join(tdir, 'diagnostics.jsonl')).splitlines() if ln.strip()]
@@ -767,12 +828,17 @@ def evaluate_stops(records: list, invalid_attempts: dict | None = None,
     for t in list(records) + list(superseded or []):
         if t.get('process_crash'):
             stops.append(('CONTROLLER_CRASH', f'{t["trial_id"]}: a launched process died with exit '
-                          f'code {t["process_exit_codes"]} (not a teardown signal)'))
+                          f'code {t["process_exit_codes"]} (not a teardown signal), and the log does '
+                          'not show that it died after the teardown began'))
     for t in records:
         if t['outcome'] == 'SETUP_FAIL':
             stops.append(('SETUP_FAIL', f'{t["trial_id"]}: the stack did not become active '
                           '(controller crash or refusal to configure)'))
-    ids = {(t.get('freeze_manifest_sha256'), t.get('controller_tag_commit')) for t in records}
+    # Amendment 3 accepts the identity of the trials recorded before it beside the current one.
+    ids = {(t.get('freeze_manifest_sha256'), t.get('controller_tag_commit')) for t in records
+           if not provenance.is_amended_prior_identity(
+               {'freeze_manifest_sha256': t.get('freeze_manifest_sha256'),
+                'controller_tag_commit': t.get('controller_tag_commit')})}
     if len(ids) > 1:
         stops.append(('MIXED_ATTEMPTS', 'registered trials carry more than one freeze manifest or '
                       'controller tag commit; a restart needs its own raw root (--attempt 2)'))
@@ -819,6 +885,32 @@ def superseded_records(raw_root: str) -> list:
     return [t for t in load_dir(raw_root, 'trials') if '.' in t['trial_id']]
 
 
+def teardown_crash_report(trials: list, superseded: list) -> dict:
+    """Amendment 3: every TEARDOWN_CRASH per trial with its timing evidence, and the counts
+    by configuration and by scenario (registered trials and superseded attempts, marked)."""
+    rows = []
+    for t in list(trials) + list(superseded):
+        for e in t.get('teardown_crashes') or []:
+            rows.append(dict(e, trial_id=t['trial_id'], scenario=t['scenario'], config=t['config'],
+                             registered='.' not in t['trial_id'], outcome=t.get('outcome')))
+    def count(key):
+        out = {}
+        for r in rows:
+            out[r[key]] = out.get(r[key], 0) + 1
+        return dict(sorted(out.items()))
+    return {'rows': rows, 'total': len(rows), 'by_config': count('config'),
+            'by_scenario': count('scenario'),
+            'by_cell': _by_cell(rows)}
+
+
+def _by_cell(rows: list) -> dict:
+    out = {}
+    for r in rows:
+        k = f'{r["scenario"]}/{r["config"]}'
+        out[k] = out.get(k, 0) + 1
+    return dict(sorted(out.items()))
+
+
 def build(raw_root: str) -> dict:
     everything = load_dir(raw_root, 'trials')
     trials = [t for t in everything if '.' not in t['trial_id']]
@@ -855,6 +947,7 @@ def build(raw_root: str) -> dict:
         'h3_control': h3(cells),
         'decision': decision(cells),
         'superseded_attempts': superseded,
+        'teardown_crashes': teardown_crash_report(trials, superseded),
         'shakedown': load_dir(raw_root, 'shakedown'),
         'stops': evaluate_stops(trials, {
             f'{k[0]}/{k[1]}': count_invalid_attempts(raw_root, k) for k in groups},
@@ -927,6 +1020,22 @@ def render(result: dict) -> str:
           f"Reached {h['reached']} of {h['n_valid']} valid trials; escape ENTER lines: {h['escape_enter_total']}.", '']
     if result['stops']:
         L += ['## Stopping rules triggered', ''] + [f'- {c}: {m}' for c, m in result['stops']] + ['']
+    tc = result.get('teardown_crashes') or teardown_crash_report([], [])
+    L += ['## Teardown crashes (PREREG.md, amendment 3)', '',
+          'A launched process died with a non-teardown exit code after it had received the driver\'s '
+          'teardown signal. The trial keeps its outcome. Count: ' + str(tc['total'])
+          + '; by configuration: ' + (', '.join(f'{k} {v}' for k, v in tc['by_config'].items()) or 'none')
+          + '; by scenario: ' + (', '.join(f'{k} {v}' for k, v in tc['by_scenario'].items()) or 'none')
+          + '; by cell: ' + (', '.join(f'{k} {v}' for k, v in tc['by_cell'].items()) or 'none') + '.', '']
+    if tc['rows']:
+        L += ['| Trial | Registered | Outcome | Process | Exit code | signal_handler stamp | Teardown window start..end | After window start (s) | Before trial end (s) |',
+              '|---|---|---|---|---|---|---|---|---|']
+        for r in tc['rows']:
+            L.append(f"| {r['trial_id']} | {fmt(r['registered'])} | {fmt(r['outcome'])} | {r['process']} "
+                     f"| {r['exit_code']} | {r['signal_handler_stamp']:.3f} "
+                     f"| {r['teardown_window'][0]:.3f}..{r['teardown_window'][1]:.3f} "
+                     f"| {r['stamp_after_window_start_s']} | {r['stamp_before_trial_end_s']} |")
+        L.append('')
 
     def table(title, trials):
         out = ['', f'## {title}', '',

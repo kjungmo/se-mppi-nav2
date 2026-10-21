@@ -5,7 +5,8 @@ analysis code are fixed at base commit `7e629d2` and listed with their sha256 in
 `FREEZE_MANIFEST.json`. The freeze commit is the commit that holds this file and the manifest. It
 carries the annotated tag `campaign2-controller` (`git rev-parse campaign2-controller^{commit}`); a
 commit cannot name its own hash, so the tag is the pointer. The plan has **88 trials** (Phase A 9,
-Phase B 79). No counted trial has run. One shakedown trial on `s0_open` ran and is recorded below; it
+Phase B 79). Counted trials began on 2026-10-22; amendments 2 and 3 (below) were written during the
+run and say what they changed. One shakedown trial on `s0_open` ran and is recorded below; it
 counts for nothing. Later edits to this file are dated amendments placed before the trials they
 affect.
 
@@ -514,7 +515,10 @@ exits with code 3 and deletes nothing when one fires.
   so a container killed by the driver shows -9; a kill by the kernel during a drive shows the
   same code and is not detected by this rule) or a refusal to configure (`SETUP_FAIL`: the
   stack was not active after two launches). **The crash rule also scans the superseded attempts**
-  (`.invalidN`, `.abortedN`): a crash in an attempt that was repeated is still a crash.
+  (`.invalidN`, `.abortedN`): a crash in an attempt that was repeated is still a crash. Since
+  amendment 3, a death that the log shows to come after the driver's teardown began is a
+  `TEARDOWN_CRASH`: it is reported and never stops the campaign. Any death whose order is not
+  shown is still a `CONTROLLER_CRASH`.
 - **Stack broken.** Stock MPPI (C1 or C3) fails on `s0_open`: the rule fires as soon as a stock
   cell has 2 or more valid failures, because with six trials per cell at most 4 of 6 can then be
   reached (the earlier form, "4 of 6 or fewer after the sixth trial", is certain at that point).
@@ -561,7 +565,9 @@ is told.
 
 ## Amendments
 
-Every amendment is dated and placed before the trials it affects. No counted trial has run.
+Every amendment is dated and placed before the trials it affects. Amendment 1 and amendment 2 were
+written before any counted trial. Amendment 3 was written after counted trials had run, and after
+a stopping rule fired once; it says so.
 
 **Amendment 1, 2026-10-18 (lead decisions E-1 to E-3, `LEAD_DECISIONS_2.md`).**
 
@@ -604,6 +610,75 @@ Every amendment is dated and placed before the trials it affects. No counted tri
    stopping rules are unchanged. Besides this file, the manifest and the new test, the only changed
    frozen file is `run_campaign2.py` (the import lookup). The tag `campaign2-controller` moves to the
    commit that holds this amendment and the renewed manifest. The tag was never pushed.
+
+**Amendment 3, 2026-10-22 (teardown crash, written after the crash rule fired once).**
+
+This amendment was written after a stopping rule had fired on a counted trial. It changes how that
+rule reads the evidence. It is dated and placed before the remaining Phase B trials. It is not
+placed before the trial that fired the rule.
+
+1. *What fired.* Phase B, attempt 1, 2026-10-22 02:23:49 KST. The rule `CONTROLLER_CRASH` stopped the
+   driver after trial `correct__s4_ltrap__C3__rep0` (C3 on `s4_ltrap`). The raw files are in
+   `/mnt/d/wsl/se-mppi/campaign2/trials/correct__s4_ltrap__C3__rep0/`.
+2. *The evidence.* The trial itself is complete and host-valid. Nav2 reported the goal as failed at
+   about 39.6 s of the drive (`SMOKE_RESULT=TaskResult.FAILED`, "Failed to make progress").
+   The drive ended at wall time 1792603417.13. At 1792603420.133 every process logged
+   `signal_handler(SIGINT/SIGTERM)`: the driver's teardown. During the lifecycle shutdown, the
+   lifecycle manager logged "CRITICAL FAILURE: SERVER map_server IS DOWN", then `Magick: abort due to
+   signal 11 (SIGSEGV)`. The `component_container_isolated-5` process ended with exit code -6. The
+   trial ended at wall time 1792603424.14. In 16 trials so far, this is the only such death
+   (`process has died` over all `trials/*/launch.log`).
+3. *The decision (lead).* A launched process that exits with a code other than 0, -2, -15 and -9 is a
+   `CONTROLLER_CRASH` and stops the campaign, as before, unless the files show that it died after the
+   driver began the teardown of that trial. If they show it, the death is a `TEARDOWN_CRASH`. It is
+   reported for that trial and never stops the campaign. The trial keeps its outcome.
+4. *The test, exactly.* A death is a `TEARDOWN_CRASH` only if all of these hold. If one does not
+   hold, or cannot be checked, it stays a `CONTROLLER_CRASH`.
+   1. `meta.json` has the end of the trial (`wall_end`) and a start of the teardown window.
+      The start is `launch_sigint_wall` (the time before the first SIGINT to the launch group),
+      else `teardown_wall_start`, else `drive_wall_end`. The first two are recorded from now on.
+      Trials recorded before this amendment have only `drive_wall_end`. The teardown cannot begin
+      before the drive ends, so this start is earlier than the true one and the test is weaker for
+      those trials, never wrong.
+   2. The dying process itself logged `signal_handler(SIGINT` in `launch.log`. The ROS stamp of that
+      line, a wall time, is inside the window.
+   3. That line comes before the launch's `process has died` line for the same process name. A
+      process that died earlier cannot log a signal that came later.
+   A missing field, a missing line, a line of another process, a stamp outside the window or a line
+   shape that does not match all give `CONTROLLER_CRASH`. The `process has died` line has no time of
+   its own. The order in the file and the process's own stamped line are the evidence.
+5. *The record of rep0.* The rule was applied to the existing raw files of
+   `correct__s4_ltrap__C3__rep0` without any edit. Its `signal_handler` line is stamped
+   1792603420.134, 3.0 s after `drive_wall_end` and 4.0 s before `wall_end`, and it comes before the
+   death line (exit code -6). The result is `TEARDOWN_CRASH`. A fixture of those lines is in
+   `tests/fixtures/s4_ltrap_C3_rep0/`.
+6. *Reporting.* The crash scan of the superseded attempts (`.invalidN`, `.abortedN`) stays. Every
+   `TEARDOWN_CRASH` is listed per trial in `RESULTS.md` and `results.json.gz` with its exit code, the
+   `signal_handler` stamp and the window. The count by configuration, by scenario and by cell is
+   reported there too, and again wherever the results are reported. No claim about the cause is made.
+   The crash is reported as observed: one C3 trial on `s4_ltrap`, during the shutdown.
+7. *Identity of the trials.* The trials recorded before this amendment carry the freeze-manifest hash
+   `d96cc1c2...` and the tag commit `012f4f1d...`. The tag moves with this amendment, so later trials
+   carry another pair. `MIXED_ATTEMPTS` and the driver's check for foreign trial directories accept
+   exactly that earlier pair beside one current pair (`provenance.AMENDED_PRIOR_IDENTITIES`). A
+   third pair is still foreign and still stops. The earlier trials ran on the same controller,
+   parameters, worlds and plan as the later ones. Only the analyzer, the driver's teardown records,
+   the provenance module, the manifest module, the tests and this file differ.
+8. *Two driver notes of 2026-10-22 (`DEVIATIONS_LEAD.md`, item 2).* After trial
+   `correct__s1_utrap__C4__rep0` (01:44 KST), the provenance check refused the next trial:
+   "installed but not in the repository: launch/__pycache__/utrap_bench.launch.cpython-312.pyc".
+   Python had written the bytecode cache when the launch read the installed, frozen
+   `utrap_bench.launch.py`. At 01:45 the lead deleted the `__pycache__` directory and made
+   `install/se_mppi_utrap/share/se_mppi_utrap/launch` read-only (`chmod a-w`). No frozen file, code,
+   parameter or environment variable changed. The installed files equalled the frozen hashes
+   afterwards. Trial `rep0` stays a counted trial: it ran on a verified install. A rebuild of the
+   workspace for this amendment repeats the same two steps. This note only records them.
+9. *Unchanged.* The plan, the worlds, the controller, the parameters, the thresholds, the other
+   stopping rules and the analysis metrics are unchanged. The changed frozen files are `analyze.py`,
+   `provenance.py`, `run_campaign2.py` (two time stamps in `meta.json`), `freeze_manifest.py` (the
+   fixtures join the manifest), the new test file `tests/test_c2_amendment3.py` and the fixtures.
+   The tag `campaign2-controller` moves to the commit that holds this amendment and the renewed
+   manifest. The tag was never pushed.
 
 ## Shakedown (not a registered trial)
 

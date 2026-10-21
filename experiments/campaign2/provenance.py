@@ -178,9 +178,22 @@ def identity(repo: str, manifest_path: str) -> dict:
     }
 
 
+# Identities that PREREG.md amendments accept beside the current one. Amendment 3 (2026-10-22)
+# moved the tag after trials of attempt 1 were recorded; those trials carry this pair. Only
+# this exact pair is accepted. Any other manifest hash or tag commit is still foreign.
+AMENDED_PRIOR_IDENTITIES = (
+    {'freeze_manifest_sha256': 'd96cc1c24798536d7e64bb43eef1f15436d77086c7fd9bbb7667fdadfef17f00',
+     'controller_tag_commit': '012f4f1db11de8ce607854578cb99ab932bf3969'},
+)
+
+
+def is_amended_prior_identity(meta: dict) -> bool:
+    return any(all(meta.get(k) == v for k, v in prior.items()) for prior in AMENDED_PRIOR_IDENTITIES)
+
+
 def foreign_reason(meta: dict, ident: dict | None) -> str | None:
     """Why a trial's meta.json does not belong to the attempt with identity ``ident``."""
-    if ident is None:
+    if ident is None or is_amended_prior_identity(meta):
         return None
     for k, v in ident.items():
         if meta.get(k) != v:
