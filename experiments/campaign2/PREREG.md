@@ -625,8 +625,10 @@ placed before the trial that fired the rule.
    `/mnt/d/wsl/se-mppi/campaign2/trials/correct__s4_ltrap__C3__rep0/`.
 2. *The evidence.* The trial itself is complete and host-valid. Nav2 reported the goal as failed at
    about 39.6 s of the drive (`SMOKE_RESULT=TaskResult.FAILED`, "Failed to make progress").
-   The drive ended at wall time 1792603417.13. At 1792603420.133 every ROS 2 process logged
-   `signal_handler(SIGINT/SIGTERM)`: the driver's teardown. During the lifecycle shutdown, the
+   The drive ended at wall time 1792603417.13. At 1792603420.133 every ROS 2 process of the launch logged
+   `signal_handler(SIGINT/SIGTERM)`: the driver's teardown. The order matches the driver's stop order
+   (recorder, then the ground-truth bridge, then the launch, about 1.5 s apart): the drive ended at
+   417.13, the bridge logged its SIGINT at 418.633 and the launch at 420.133. During the lifecycle shutdown, the
    lifecycle manager logged "CRITICAL FAILURE: SERVER map_server IS DOWN", then `Magick: abort due to
    signal 11 (SIGSEGV)`. The `component_container_isolated-5` process ended with exit code -6. The
    trial ended at wall time 1792603424.14. In 16 trials so far, this is the only such death
@@ -652,7 +654,9 @@ placed before the trial that fired the rule.
       else `teardown_wall_start`, else `drive_wall_end`. The first two are recorded from now on.
       Trials recorded before this amendment have only `drive_wall_end`. The teardown cannot begin
       before the drive ends, so this start is earlier than the true one and the test is weaker for
-      those trials, never wrong.
+      those trials, never wrong. This holds because the driver is the only sender of SIGINT to the launch: the
+      campaign launch files have no `on_exit`, `Shutdown` or `OnProcessExit` handler, so the launch
+      cannot shut itself down.
    2. The dying process itself logged `signal_handler(SIGINT` in `launch.log`. The ROS stamp of that
       line, a wall time, is inside the window.
    3. That line comes before the launch's `process has died` line for the same process name. A
