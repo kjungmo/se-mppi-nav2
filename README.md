@@ -14,11 +14,11 @@ Jungmo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
 [![Sponsor](https://img.shields.io/github/sponsors/kjungmo?logo=githubsponsors&color=ea4aaa)](https://github.com/sponsors/kjungmo)
 
 <p align="center">
-  <img src="docs/papers/latex/figures/success_bars.png" width="880" alt="Randomized 2D benchmark: success / collision / timeout per family across configs A–F⁻">
+  <img src="docs/papers/latex/figures/success_bars_v2.png" width="880" alt="Randomized 2D benchmark of the shipped algorithm: success / collision / timeout per family across configs A–F⁻">
 </p>
 
-<p align="center"><em>Randomized 1,200-trial benchmark on a Python 2D mirror of the controller's
-primitives, not on the Nav2 controller (Wilson 95% error bars on success, N = 50 per cell).
+<p align="center"><em>Randomized 1,200-trial benchmark on a Python 2D mirror of the shipped
+algorithm, not on the Nav2 controller (Wilson 95% error bars on success, N = 50 per cell).
 On the trap families the detect-and-switch escape configs (C, E, F) separate from the
 mirror's plain MPPI (A), CBF-only (D), and no-gap (F⁻), which time out at 0% success.</em></p>
 
@@ -56,21 +56,34 @@ repository is the code, data and manuscript of a **preprint**.
 
 What is measured and what is not:
 
-- **Measured, in a Python 2D mirror of the controller's primitives (not the Nav2
-  controller):** in a randomized, paired 1,200-trial benchmark the
-  detection-and-escape layer lifts success from **0% to 88–90%** on a static
-  U-trap family and from **0% to 62–78%** on a narrow-dynamic family, and
-  disabling the mirror's free-space gap subgoal returns both to 0%.
+- **Live, in simulation, one host (pre-registered campaign 2).** SE-MPPI without
+  recoveries reached the goal in 5 of 6 on s1 and 5 of 6 on the held-out s4; stock
+  without recoveries in 0 of 6; with Nav2's default recovery tree, stock 0 of 6 and
+  SE-MPPI 3 of 6, on one simulated host (Fisher exact p = 0.0152 for each of the first
+  two contrasts). s1 is the development scenario; s4, an L-shaped dead end outside
+  the development family, carries the claim. A third pocket, s3, has a near mirror
+  twin in the development family and gave 4 of 6 against 0 of 6 (p = 0.0606, not
+  significant). Six repetitions per cell, no real robot. The first version of the plugin
+  reached the goal in none of 44 valid live trials; the four defects behind that are
+  named in the paper.
+- **The repaired escape needs four additions to the design we advised ourselves**,
+  found on a development family of pockets (56 of 56 geometries pass with them,
+  14 to 19 of 56 without in the headless sweeps; see the paper and
+  [`experiments/campaign2/PREREG.md`](experiments/campaign2/PREREG.md)).
+- **Measured, in a Python 2D mirror of the shipped algorithm (not the Nav2
+  controller):** in a randomized, paired 1,200-trial benchmark the escape layer lifts
+  success on the static U-trap family from **0% to 80%** (40 of 50), and to 58% (29 of 50)
+  in the arm without the four additions; the design-stage numbers of the first version
+  are in the paper's appendix only.
 - **Null:** the escape–safety coordination is statistically indistinguishable
   from an independent escape+CBF stack (McNemar p = 1 in every family). It is
-  claimed as a mechanism, not as an empirical gain.
+  claimed as a mechanism, not as an empirical gain, and campaign 2 does not test it.
 - **Conditional, not a certificate:** by a standard argument for time-varying CBF
   gains the gain schedule keeps the barrier's safe set forward invariant, but
   only for a look-ahead point and the tracked dynamic obstacles, assuming the
   barrier inequality holds between control updates and the QP uses no slack. In
   the benchmark the QP uses slack at least once in most trials with moving
   obstacles.
-- **Live Nav2 + Gazebo:** see [Live runs](#live-runs) below.
 
 ## System architecture
 
@@ -121,8 +134,8 @@ coordinated gain.
    Deployment tests live separately in `src/nav2_se_controller/test/deployment/`
    (the controller on a lifecycle node inside the stock MPPI optimizer, runtime
    parameter changes, `/diagnostics`).
-   The benchmark data were generated at tag `paper-v1` (commit b21b0a5); the
-   Python mirror that produced them is unchanged since. The paper describes the
+   The design-stage benchmark data were generated at tag `paper-v1` (commit b21b0a5);
+   the re-run on the mirror of the shipped algorithm ran at commit 742a3df. The paper describes the
    C++ controller at the commit of the live re-run (recorded in every
    `experiments/results_pilot_rerun/trials/*/meta.json`), which adds the rollout
    guard, 55 deployment tests in 6 files (`test/deployment/`) and fixes to the
@@ -134,11 +147,12 @@ coordinated gain.
 7. **Gazebo U-trap testbed + live Nav2 integration.** A committed testbed
    (`experiments/se_mppi_utrap/`) and a one-command sim launcher run the
    controller inside a live ROS 2 Jazzy + Nav2 + Gazebo Harmonic stack.
-   *Note, 2026-10-11:* the live runs committed so far (`experiments/results_pilot/`,
-   July 2026) were made on a `nav2_mppi_controller` build with flipped rollouts
-   (see [Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds),
-   PR #6). Whether that caused their outcome is not established; they have not
-   been repeated on a corrected build.
+   The live runs of July 2026 (`experiments/results_pilot/`) were made on a
+   `nav2_mppi_controller` build with flipped rollouts (see
+   [Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds));
+   the paper does not use them. Campaign 1 (`experiments/results_pilot_rerun/`) repeated
+   them on a corrected build with no goal reached, and campaign 2
+   (`experiments/campaign2/`) tested the repaired controller.
 
 ## Requirements
 
@@ -574,74 +588,87 @@ cd experiments/prototype && python3 run_validation.py
 ## Benchmark artifacts
 
 The controlled quantitative comparison is a **randomized benchmark on a Python
-2D mirror of the controller's primitives**: a separate NumPy/SciPy/OSQP
-implementation of an MPPI sampler, a repulsive potential, a gap raycast, the
-look-ahead-point CBF-QP, the α coordination with TTC override, and a
-monotone-progress entrapment detector, run on seed-deterministic randomized
-scenarios so that success carries confidence intervals and paired tests. It is
-**not** the Nav2 controller, and it differs from it in documented ways (the
-paper's appendix lists them: distance-to-goal progress instead of a path, the
-gap used as a temporary subgoal, analytic circular geometry, a summed potential,
-a three-term cost instead of Nav2's critic stack, true obstacle states). It
-imports nothing from ROS or Nav2, so the `nav2_mppi_controller` defect described
-above cannot affect it. A full-scale 3D physics benchmark (BARN / DynaBARN /
-HuNavSim against the deployable baselines) is specified but not run.
+2D mirror of the shipped algorithm**: a separate NumPy/SciPy/OSQP
+implementation of an MPPI sampler, a repulsive potential, the horizon-ray escape with
+anchor-path progress, the look-ahead-point CBF-QP and the α coordination with TTC
+override, run on seed-deterministic randomized scenarios so that success carries
+confidence intervals and paired tests. It is **not** the Nav2 controller, and it differs
+from it in documented ways (the paper's appendix lists them: analytic circular geometry,
+a three-term cost instead of Nav2's critic stack, true obstacle states, no progress
+checker or behaviour tree). It imports nothing from ROS or Nav2, so the
+`nav2_mppi_controller` defect described above cannot affect it. A full-scale 3D physics
+benchmark (BARN / DynaBARN / HuNavSim against the deployable baselines) is specified but
+not run.
 
 The benchmark needs only Python with NumPy, SciPy, Matplotlib and OSQP, which
 `scripts/setup_ros2_env.sh` does not install:
 `python3 -m pip install -r experiments/requirements.txt` (any Python
 environment; ROS is not needed).
 
-**Regenerate** (from
-[`docs/papers/2026_2d-benchmark-results.md`](docs/papers/2026_2d-benchmark-results.md);
-the committed data uses `N=50`):
+**Regenerate** both arms (the shipped algorithm `v2`, and the design as advised without the
+four additions, `v2_advised`; the committed data uses `N=50`):
 
 ```bash
-python3 -m experiments.benchmark2d.runner \
-    --families utrap clutter dynamic narrowdyn -n <N> --workers 6 --max-steps 400
-python3 -m experiments.benchmark2d.report      # tables + stats
-python3 -c "from experiments.benchmark2d import figures, aggregate; \
-    r=aggregate.aggregate('experiments/results_2d/trials.csv','experiments/results_2d'); \
-    figures.plot_all(r['summary'], r['stats'], 'experiments/results_2d/figures')"
+python3 -m experiments.benchmark2d.runner --variant v2 \
+    --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
+    --out experiments/results_2d_v2/trials.csv
+python3 -m experiments.benchmark2d.report \
+    --trials experiments/results_2d_v2/trials.csv --out-dir experiments/results_2d_v2
+python3 -m experiments.benchmark2d.runner --variant v2_advised \
+    --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
+    --out experiments/results_2d_v2_advised/trials.csv
+python3 -m experiments.benchmark2d.report \
+    --trials experiments/results_2d_v2_advised/trials.csv --out-dir experiments/results_2d_v2_advised
 ```
 
-**Success rate, % (Wilson 95% CI), N = 50 per cell** — condensed from
-[`experiments/results_2d/tables.md`](experiments/results_2d/tables.md)
+**Success rate, % (Wilson 95% CI), N = 50 per cell, shipped algorithm** — condensed from
+[`experiments/results_2d_v2/tables.md`](experiments/results_2d_v2/tables.md)
 (4 families × 50 seeds × 6 configs = 1,200 paired trials):
 
 | Config | U-trap | Clutter | Dynamic | Narrow-dyn |
 |---|---|---|---|---|
-| A · stock            | 0 [0, 7]    | 52 [39, 65] | 80 [67, 89] | 0 [0, 7]    |
-| C · escape           | 90 [79, 96] | 62 [48, 74] | 76 [63, 86] | 78 [65, 87] |
-| D · CBF              | 0 [0, 7]    | 52 [39, 65] | 82 [69, 90] | 0 [0, 7]    |
-| E · escape+CBF (indep.) | 88 [76, 94] | 62 [48, 74] | 78 [65, 87] | 64 [50, 76] |
-| **F · SE-MPPI (coord.)** | **88 [76, 94]** | **62 [48, 74]** | **78 [65, 87]** | **62 [48, 74]** |
-| F⁻ · no-gap          | 0 [0, 7]    | 52 [39, 65] | 84 [71, 92] | 0 [0, 7]    |
+| A · stock            | 0 [0,7]    | 52 [39,65] | 80 [67,89] | 0 [0,7]    |
+| C · escape           | 80 [67,89] | 72 [58,83] | 80 [67,89] | 72 [58,83] |
+| D · CBF              | 0 [0,7]    | 52 [39,65] | 82 [69,90] | 0 [0,7]    |
+| E · escape+CBF (indep.) | 80 [67,89] | 72 [58,83] | 84 [71,92] | 60 [46,72] |
+| **F · SE-MPPI (coord.)** | **80 [67,89]** | **72 [58,83]** | **84 [71,92]** | **60 [46,72]** |
+| F⁻ · no-gap          | 0 [0,7]    | 52 [39,65] | 84 [71,92] | 0 [0,7]    |
 
-In the mirror the escape layer is decisive on both trap families and survives
-Holm correction (U-trap 0% → 88–90%, adjusted p = 1.4×10⁻⁹; narrow-dynamic
-0% → 62–78%, adjusted p = 1.1×10⁻⁶), and F⁻ collapsing to 0% shows that the
-mirror's free-space gap subgoal is load-bearing (the C++ critic's gap cost has
-not been ablated). The **key E-vs-F contrast (independent vs. coordinated α) is
-null in every family** (McNemar p = 1): in this benchmark the coordination
-produces no measurable outcome difference over independent escape+CBF, which we
-report as an honest null and delimit where coordination should matter.
+Without the four additions (`v2_advised`, [`experiments/results_2d_v2_advised/`](experiments/results_2d_v2_advised/)),
+F scores 58 [44,71] on U-trap, 62 [48,74] on clutter, 84 [71,92] on dynamic and 44 [31,58]
+on narrow-dyn. The escape layer is decisive on both trap families and survives Holm
+correction (U-trap 0% → 80%, adjusted p = 1.1×10⁻⁸; narrow-dynamic 0% → 60%, adjusted
+p = 1.9×10⁻⁶), and F⁻ collapsing to 0% shows that the free-space opening search is load-bearing.
+The **key E-vs-F contrast (independent vs. coordinated α) is null in every family**
+(McNemar p = 1): in this benchmark the coordination produces no measurable outcome
+difference over independent escape+CBF. The design-stage benchmark of the first version
+(`experiments/results_2d/`, tag `paper-v1`) is kept as data and in the paper's appendix;
+`experiments/results_2d_v2/COMPARE_V1.md` compares it with the re-run.
+
+**Live campaign 2** (`experiments/campaign2/`): the pre-registration with its three
+amendments (`PREREG.md`), the frozen file hashes, the driver and analyzer, `RESULTS.md`,
+`results.json.gz` and the log excerpts. `ODOM_GAP.md` documents the 13 trials in which Nav2
+reported `SUCCEEDED` while the Gazebo ground truth was more than 0.5 m from the goal; they count as
+not reached.
 
 ## Evaluation gallery
 
-| Finite-wall escape (mechanism, 2D mirror) | Escape–safety coordination (2D mirror) | Coordination contrast E vs. F (2D mirror) |
+| Finite-wall escape (mechanism, design-stage 2D mirror) | Escape–safety coordination (design-stage 2D mirror) | Coordination contrast E vs. F (2D mirror, shipped algorithm) |
 |---|---|---|
-| <img src="docs/papers/latex/figures/utrap_escape.png" width="260" alt="U-trap escape"> | <img src="docs/papers/latex/figures/coordination.png" width="260" alt="Escape–safety coordination trace"> | <img src="experiments/results_2d/figures/e_vs_f.png" width="260" alt="E vs F coordination contrast per family"> |
-| The mirror's plain MPPI stalls in front of a finite wall while the escape layer detects the stall and rounds the wall via the gap subgoal. | During the escape phase the coordinated gain rises α: 2 → 6 while the QP slack stays below 2×10⁻⁶ — the escape is admitted without relaxing the barrier in this single run. | The independent (E) and coordinated (F) stacks are statistically indistinguishable in every family (McNemar p = 1): a null result. |
+| <img src="docs/papers/latex/figures/utrap_escape.png" width="260" alt="U-trap escape"> | <img src="docs/papers/latex/figures/coordination.png" width="260" alt="Escape–safety coordination trace"> | <img src="docs/papers/latex/figures/e_vs_f_v2.png" width="260" alt="E vs F coordination contrast per family"> |
+| The design-stage mirror's plain MPPI stalls in front of a finite wall while the escape layer detects the stall and rounds the wall via the gap subgoal. | During the escape phase the coordinated gain rises α: 2 → 6 while the QP slack stays below 2×10⁻⁶ — the escape is admitted without relaxing the barrier in this single run. | The independent (E) and coordinated (F) stacks are statistically indistinguishable in every family (McNemar p = 1): a null result. |
 
 ## Paper and citation
 
 The manuscript is a preprint: **"SE-MPPI: Coordinating Online Local-Minima
 Escape with Control-Barrier-Function Safety in a Nav2-Native Controller."** The
-submission version is [`docs/papers/arxiv_ref/main.pdf`](docs/papers/arxiv_ref/main.pdf)
-(source in [`docs/papers/arxiv_ref/`](docs/papers/arxiv_ref/)); a shorter two-column
-copy with the same claims and numbers is
-[`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf).
+current manuscript is
+[`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) (source in
+[`docs/papers/latex/`](docs/papers/latex/)); it describes the shipped controller, the
+headless development test, the mirror re-run and the pre-registered live campaign. The
+older package in [`docs/papers/arxiv_ref/`](docs/papers/arxiv_ref/) is the design-stage
+version at the tag `paper-v1`; it predates the repair and is kept for the record
+(`docs/papers/arxiv_ref/STATUS.md`).
 
 If you use SE-MPPI in your research, please cite:
 
@@ -663,8 +690,10 @@ Machine-readable metadata is in [`CITATION.cff`](CITATION.cff).
 
 | Document | Contents |
 |---|---|
-| [`docs/papers/arxiv_ref/main.pdf`](docs/papers/arxiv_ref/main.pdf) | The preprint (PDF, submission version); [`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) is the two-column copy. |
-| [`experiments/results_pilot_rerun/`](experiments/results_pilot_rerun/) | Live Nav2 + Gazebo re-run: pre-registration, raw trials, analysis. |
+| [`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) | The current preprint (PDF). [`docs/papers/arxiv_ref/main.pdf`](docs/papers/arxiv_ref/main.pdf) is the earlier design-stage version. |
+| [`experiments/campaign2/`](experiments/campaign2/) | Pre-registered live campaign 2: pre-registration with amendments, driver, analysis, results. |
+| [`experiments/results_pilot_rerun/`](experiments/results_pilot_rerun/) | Live campaign 1 (negative result): pre-registration, raw trials, analysis, root cause. |
+| [`docs/architecture/2026-10_escape-v2.md`](docs/architecture/2026-10_escape-v2.md) | The repair of the four defects and the additions to the advised design. |
 | [`docs/papers/2026_2d-benchmark-results.md`](docs/papers/2026_2d-benchmark-results.md) | Randomized 2D benchmark write-up (methodology, tables, interpretation). |
 | [`docs/papers/references.bib`](docs/papers/references.bib) · [`docs/papers/reference-verification-report.md`](docs/papers/reference-verification-report.md) | Verified bibliography and its verification report. |
 | [`docs/architecture/2026-06_safe-escape-mppi-design.md`](docs/architecture/2026-06_safe-escape-mppi-design.md) | Controller architecture and module design. |
