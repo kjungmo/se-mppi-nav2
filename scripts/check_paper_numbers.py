@@ -427,6 +427,30 @@ if not ARXIV:
     check(round(t4['median1'], 1) == 48.3 and round(t4['median2'], 1) == 34.3 and round(t4['p'], 4) == 0.0079,
           'transfer time medians 48.3 / 34.3 / p 0.0079 broken')
     check('48.3' in tex and '34.3' in tex and '0.0079' in tex, 'transfer time quote missing')
+    import statistics
+    simmed = {sc: statistics.median(t['time_to_goal_sim_s'] for t in c2['trials']
+                                    if t['scenario'] == sc and t['config'] == 'C4' and t['reached'])
+              for sc in ('s1_utrap', 's4_ltrap')}
+    check(f"{simmed['s4_ltrap']:.1f}" == '46.7' and f"{simmed['s1_utrap']:.1f}" == '33.1'
+          and 'median wall-clock time to goal' in flat and '$46.7$~s and $33.1$~s' in flat,
+          f'transfer sim-time medians {simmed} / wall-clock label broken')
+    check(all(t['diagnostics_last'] and int(t['diagnostics_last']['qp_failures']) == 0 for t in c2['trials'])
+          and 'QP failure counter is $0$ in all 88' in flat, 'qp_failures = 0 in all 88 trials broken')
+    check('no pocket trial reached the goal without an escape' in flat
+          and all(not t['reached_without_escape'] for t in c2['trials'] if t['scenario'] != 's0_open'),
+          'reached-without-escape claim broken')
+    # live robot radius: the launch log and the waypoint arithmetic
+    import gzip as _gz
+    lg = _gz.open(EXP / 'campaign2/logs/trials__correct__s1_utrap__C4__rep0.log.gz', 'rt').read()
+    check('robot_radius=0.234' in lg, 'live controller radius 0.234 not in the committed launch log')
+    rr = 0.234
+    check(f'{2.0 - rr - 0.05:.3f}' == '1.716' and f'{0.6 - rr - 0.05:.3f}' == '0.316' and f'{2.5 + rr + 0.05:.3f}' == '2.784'
+          and '$2.0-0.234-0.05=1.716$~m' in tex and '$0.6-0.234-0.05=0.316$~m' in tex and '$2.5+r+0.05=2.784$~m' in tex,
+          'robot-radius arithmetic (1.716 / 0.316 / 2.784) broken')
+    rl = (EXP / 'campaign2/sweeps/robot_radius_lines.txt').read_text()
+    cnts = re.findall(r'configured=(\d+) robot_radius_0.114=(\d+)', rl)
+    check(len(cnts) == 7 and all(a == b for a, b in cnts) and f'{0.234 - 0.114:.2f}' == '0.12'
+          and '$0.12$~m farther out' in flat, 'rig radius 0.114 excerpt / 0.12 m offset broken')
 
     # ---- PREREG: branch wording verbatim, amendment facts ----
     prereg = (EXP / 'campaign2/PREREG.md').read_text()
@@ -541,8 +565,14 @@ if not ARXIV:
     check(br['odom_minus_gt_m']['n'] == 21 and r2(br['odom_minus_gt_m']['min']) == '0.09' and r2(br['odom_minus_gt_m']['max']) == '0.54'
           and r2(br['amcl_minus_gt_m']['min']) == '0.06' and r2(br['amcl_minus_gt_m']['max']) == '0.54',
           'reached SE trials: 21 trials, odometry 0.09-0.54, AMCL 0.06-0.54 broken')
-    check('in the 21 SE pocket trials that reached the goal, the odometry is $0.09$ to $0.54$~m and the AMCL estimate $0.06$ to $0.54$~m' in flat,
+    check('in the 21 SE pocket trials that reached the goal (19 registered and 2 evidence trials), the odometry is $0.09$ to $0.54$~m and the AMCL estimate $0.06$ to $0.54$~m' in flat,
           'limitations: reached-trial drift quote missing')
+    se_poc = [t for t in c2['trials'] if t['config'] in ('C2', 'C4') and t['scenario'] != 's0_open']
+    se_reg_reached = sum(t['reached'] for t in se_poc if not t['scenario'].endswith('evidence'))
+    se_ev_reached = sum(t['reached'] for t in se_poc if t['scenario'].endswith('evidence'))
+    check(len(se_poc) == 34 and se_reg_reached == 19 and se_ev_reached == 2,
+          f'SE pocket trials {len(se_poc)} / reached {se_reg_reached} registered + {se_ev_reached} evidence; paper says 34 / 19 + 2')
+    check('all 34 SE pocket trials (30 registered, 4 evidence)' in flat, '34 = 30 + 4 split missing')
     c1s1 = og['by_cell']['s1_utrap/C1']
     check(r2(c1s1['amcl_minus_gt_m']['min']) == '0.23' and r2(c1s1['amcl_minus_gt_m']['max']) == '0.38' and c1s1['odom_minus_gt_m']['max'] <= 0.03,
           's1 C1: AMCL gap 0.23-0.38, odometry gap <= 0.03 broken')
@@ -552,6 +582,19 @@ if not ARXIV:
     check(round(st['max'], 2) == 1.00 and round(c3w, 2) == 0.45 and bc[cls['SE']]['peak_abs_cmd_wz_rad_s']['max'] <= 1.9 + 1e-9
           and round(bc[cls['SE']]['peak_abs_cmd_wz_rad_s']['max'], 1) == 1.9, 'peak turn-rate quotes (1.9 / 1.00 / 0.45) broken')
     check('at or below $1.00$~rad/s (C1) and $0.45$~rad/s (C3)' in flat, 'peak turn-rate prose missing')
+    # controller output (nav) vs command to the base (cmd), SE pocket trials
+    sep = [r_ for r_ in og['all_rows'] if r_['config'] in ('C2', 'C4') and r_['scenario'] != 's0_open']
+    cmdw = [r_['peak_abs_cmd_wz_rad_s'] for r_ in sep]
+    at_lim = [r_ for r_ in sep if r_['peak_abs_nav_wz_rad_s'] >= 1.9 - 1e-9]
+    check(len(sep) == 34 and len(at_lim) == 11 and all(r_['scenario'] == 's3_ctrap' for r_ in at_lim)
+          and f'{min(cmdw):.2f}' == '1.23' and f'{max(cmdw):.2f}' == '1.90',
+          f'turn rate: controller output at 1.9 in {len(at_lim)} of {len(sep)}; base command {min(cmdw):.3f}-{max(cmdw):.3f}')
+    stn = [r_ for r_ in og['all_rows'] if r_['config'] in ('C1', 'C3') and r_['scenario'] != 's0_open']
+    check(round(max(r_['peak_abs_nav_wz_rad_s'] for r_ in stn if r_['config'] == 'C1'), 2) == 1.00
+          and round(max(r_['peak_abs_nav_wz_rad_s'] for r_ in stn if r_['config'] == 'C3'), 2) == 0.45,
+          'stock controller-output turn-rate bounds 1.00 / 0.45 broken')
+    check('reached its limit (\\texttt{wz\\_max} $1.9$~rad/s) in 11 of 34 trials, all on s3' in flat
+          and 'peaked at $1.23$ to $1.90$~rad/s' in flat, 'turn-rate prose (11 of 34, 1.23-1.90) missing')
     lp = og['left_pocket']
     check(lp[cls['SE']] == {'n': 34, 'left_pocket_s_set': 34} and lp[cls['stock']]['left_pocket_s_set'] == 0 and lp[cls['s0']]['left_pocket_s_set'] == 0,
           'left_pocket_s: set in all 34 SE pocket trials and in no stock one broken')

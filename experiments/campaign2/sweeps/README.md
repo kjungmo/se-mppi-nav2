@@ -21,4 +21,6 @@ within 150 s, and has no contact and no `NoValidControl` throw. `reached=1` alon
 
 Not archived: the sweeps of the implementer and of the reviewer, and the stalled `off3` (3 rows).
 The sweeps cannot be seeded: MPPI's noise is not seedable from the test, so a rerun gives
-different counts. Commands: `../../../README.md` and Appendix A of the paper.
+different counts. Commands: Appendix A of the paper (Headless development test) and `../PREREG.md`
+(the switch-off string and the sweep setting, lines 198-204). `robot_radius_lines.txt` holds the controller start lines of
+the raw logs (the rig logs `robot_radius=0.114`).

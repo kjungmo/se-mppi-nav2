@@ -73,6 +73,13 @@ experiments/
 
 > 구성(B)의 상시 비용(always-on)은 런타임 파라미터 `EscapeCritic.always_on`(기본 false)로 켠다 — 이미 구현·배선됨(`escape_critic.cpp:39`). 위 표는 요약이고, **실행 가능한 정식 오버레이 정의는 `experiments/configs/ablations.yaml`가 기준**이다 (A–F + F⁻/F″/F_static/F_no_conformal 모두 즉시 실행 가능).
 
+> **주의 (출시 컨트롤러 기준):** 오버레이 `C_escape_detect`와 `F_minus_gap`은 출시된 C++ 컨트롤러에서 이름대로 동작하지 않습니다.
+> 1. `C_escape_detect`는 `se_enabled: false`를 씁니다. 이 경우 컨트롤러가 매 주기 공유 갇힘 플래그를 지우고, 크리틱은 그 플래그를 따르므로 탈출 비용을 넣지 않습니다. 결과는 stock(A)과 같습니다.
+> 2. `F_minus_gap`의 `EscapeCritic.use_gap_search: false`는 크리틱의 로그 탐침만 끕니다. 개구부 탐색은 컨트롤러 안에 있으므로 결과는 F와 같습니다.
+> 3. 논문의 C와 F⁻는 Python 2D 미러에만 있습니다. Nav2에서 두 구성의 결과는 보고하지 않습니다.
+> 4. 컨트롤러가 크리틱을 구동하는 동안 `EscapeCritic.progress_stall_window`와 `EscapeCritic.use_gap_search`는 탈출 동작에 영향을 주지 않습니다(`nav2_se_campaign2.yaml`은 동결 파일이라 주석을 달지 않았습니다).
+> 5. 미러 docstring(`se_mppi_v2.py`)은 추가 규칙 (d)가 수평선 후보에만 걸린다고 적지만, 스위치는 대체(fallback) 임계값도 함께 끕니다. 논문 본문이 맞습니다. 미러 코드는 재현 출처를 지키려고 고치지 않았습니다.
+
 ## 메트릭 수집
 
 각 run에서 로깅: 궤적(map→base), `/cmd_vel`, α, CBF slack/hard_safe,

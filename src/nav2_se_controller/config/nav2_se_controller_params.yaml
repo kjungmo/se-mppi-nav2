@@ -142,9 +142,12 @@ controller_server:
         "PreferForwardCritic", "EscapeCritic"]
       EscapeCritic:
         enabled: true
+        # No effect while SafeEscapeController drives the critic (the controller's
+        # se_progress_stall_window decides entrapment).
         progress_stall_window: 30
         # The gap bearing cost is off (0): the escape routes through the escape
         # path above. Greater than 0 adds the legacy cost (ablation only).
         gap_weight: 0.0
+        # Unused while use_apf is true (its default): the APF repulsion has no weight.
         repulsion_weight: 2.0
         repulsion_power: 1

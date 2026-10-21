@@ -97,8 +97,9 @@ progress along the task's anchor path) drives the escape path, the sampling-time
 `EscapeCritic` and the output-time escape–safety coordinator; the coordinator
 resolves the CBF gain α (with a time-to-collision override), and the CBF safety
 filter — fed by the `DynamicObstacleTracker` — projects the command onto the
-CBF-safe set via a small QP before it reaches `cmd_vel`, which Nav2's
-`collision_monitor` guards as a final reactive layer. The escape and safety
+CBF-safe set via a small QP before it reaches `cmd_vel`. Nav2's `collision_monitor`
+can guard it as a final reactive layer on a robot; in every live result reported here its
+only polygon was disabled, so it guarded nothing. The escape and safety
 layers thus act at complementary points, unified by one entrapment signal and the
 coordinated gain.
 
@@ -609,16 +610,18 @@ environment; ROS is not needed).
 four additions, `v2_advised`; the committed data uses `N=50`):
 
 ```bash
-python3 -m experiments.benchmark2d.runner --variant v2 \
-    --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
-    --out experiments/results_2d_v2/trials.csv
-python3 -m experiments.benchmark2d.report \
-    --trials experiments/results_2d_v2/trials.csv --out-dir experiments/results_2d_v2
-python3 -m experiments.benchmark2d.runner --variant v2_advised \
-    --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
-    --out experiments/results_2d_v2_advised/trials.csv
-python3 -m experiments.benchmark2d.report \
-    --trials experiments/results_2d_v2_advised/trials.csv --out-dir experiments/results_2d_v2_advised
+# The runner resumes by default and skips scenarios already in its output file,
+# so write to a fresh directory with --no-resume and compare with the committed rows.
+for arm in v2 v2_advised; do
+  python3 -m experiments.benchmark2d.runner --variant $arm \
+      --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
+      --no-resume --out /tmp/mirror_$arm/trials.csv
+  python3 -m experiments.benchmark2d.report \
+      --trials /tmp/mirror_$arm/trials.csv --out-dir /tmp/mirror_$arm
+  sort /tmp/mirror_$arm/trials.csv > /tmp/new.csv
+  sort experiments/results_2d_$arm/trials.csv > /tmp/old.csv
+  cmp /tmp/new.csv /tmp/old.csv && echo "$arm: identical"
+done
 ```
 
 **Success rate, % (Wilson 95% CI), N = 50 per cell, shipped algorithm** — condensed from
@@ -638,7 +641,8 @@ Without the four additions (`v2_advised`, [`experiments/results_2d_v2_advised/`]
 F scores 58 [44,71] on U-trap, 62 [48,74] on clutter, 84 [71,92] on dynamic and 44 [31,58]
 on narrow-dyn. The escape layer is decisive on both trap families and survives Holm
 correction (U-trap 0% → 80%, adjusted p = 1.1×10⁻⁸; narrow-dynamic 0% → 60%, adjusted
-p = 1.9×10⁻⁶), and F⁻ collapsing to 0% shows that the free-space opening search is load-bearing.
+p = 1.9×10⁻⁶). F⁻ (the gap search off) falls to 0% on both trap families, as expected by
+construction: without the opening search the escape has no direction to take.
 The **key E-vs-F contrast (independent vs. coordinated α) is null in every family**
 (McNemar p = 1): in this benchmark the coordination produces no measurable outcome
 difference over independent escape+CBF. The design-stage benchmark of the first version
