@@ -5,8 +5,8 @@ analysis code are fixed at base commit `7e629d2` and listed with their sha256 in
 `FREEZE_MANIFEST.json`. The freeze commit is the commit that holds this file and the manifest. It
 carries the annotated tag `campaign2-controller` (`git rev-parse campaign2-controller^{commit}`); a
 commit cannot name its own hash, so the tag is the pointer. The plan has **88 trials** (Phase A 9,
-Phase B 79). Counted trials began on 2026-10-22; amendments 2 and 3 (below) were written during the
-run and say what they changed. One shakedown trial on `s0_open` ran and is recorded below; it
+Phase B 79). Counted trials began on 2026-10-22; amendment 2 followed a failed start in which no trial
+ran, and amendment 3 (below) was written after counted trials had run; each says what it changed. One shakedown trial on `s0_open` ran and is recorded below; it
 counts for nothing. Later edits to this file are dated amendments placed before the trials they
 affect.
 
@@ -514,8 +514,11 @@ exits with code 3 and deletes nothing when one fires.
   the teardown codes 0, -2, -15 and -9; the driver stops a trial with SIGINT, SIGTERM, SIGKILL,
   so a container killed by the driver shows -9; a kill by the kernel during a drive shows the
   same code and is not detected by this rule) or a refusal to configure (`SETUP_FAIL`: the
-  stack was not active after two launches). **The crash rule also scans the superseded attempts**
-  (`.invalidN`, `.abortedN`): a crash in an attempt that was repeated is still a crash. Since
+  stack was not active after two launches). **The crash rule also scans the superseded attempts that
+  finished** (`.invalidN` attempts whose trial is complete and active): a crash in such an attempt is
+  still a crash. It does not read the `launch.log` of an interrupted or incomplete attempt
+  (`.abortedN`) or of a setup-failed trial; this gap has existed since the freeze (see amendment 3,
+  item 6). Since
   amendment 3, a death that the log shows to come after the driver's teardown began is a
   `TEARDOWN_CRASH`: it is reported and never stops the campaign. Any death whose order is not
   shown is still a `CONTROLLER_CRASH`.
@@ -622,7 +625,7 @@ placed before the trial that fired the rule.
    `/mnt/d/wsl/se-mppi/campaign2/trials/correct__s4_ltrap__C3__rep0/`.
 2. *The evidence.* The trial itself is complete and host-valid. Nav2 reported the goal as failed at
    about 39.6 s of the drive (`SMOKE_RESULT=TaskResult.FAILED`, "Failed to make progress").
-   The drive ended at wall time 1792603417.13. At 1792603420.133 every process logged
+   The drive ended at wall time 1792603417.13. At 1792603420.133 every ROS 2 process logged
    `signal_handler(SIGINT/SIGTERM)`: the driver's teardown. During the lifecycle shutdown, the
    lifecycle manager logged "CRITICAL FAILURE: SERVER map_server IS DOWN", then `Magick: abort due to
    signal 11 (SIGSEGV)`. The `component_container_isolated-5` process ended with exit code -6. The
@@ -662,7 +665,11 @@ placed before the trial that fired the rule.
    1792603420.134, 3.0 s after `drive_wall_end` and 4.0 s before `wall_end`, and it comes before the
    death line (exit code -6). The result is `TEARDOWN_CRASH`. A fixture of those lines is in
    `tests/fixtures/s4_ltrap_C3_rep0/`.
-6. *Reporting.* The crash scan of the superseded attempts (`.invalidN`, `.abortedN`) stays. Every
+6. *Reporting.* The crash scan stays as it was: it reads the `launch.log` of registered trials and of
+   `.invalidN` attempts that are complete and active. It does not read the `launch.log` of an
+   interrupted or incomplete attempt (`.abortedN`) or of a setup-failed trial. This gap is older than
+   this amendment, was found on 2026-10-22 and is not changed here; those logs are kept, and any
+   crash in them is not detected by the stopping rule. Every
    `TEARDOWN_CRASH` is listed per trial in `RESULTS.md` and `results.json.gz` with its exit code, the
    `signal_handler` stamp and the window. The count by configuration, by scenario and by cell is
    reported there too, and again wherever the results are reported. No claim about the cause is made.
@@ -672,7 +679,8 @@ placed before the trial that fired the rule.
    carry another pair. `MIXED_ATTEMPTS` and the driver's check for foreign trial directories accept
    exactly that earlier pair beside one current pair (`provenance.AMENDED_PRIOR_IDENTITIES`). A
    third pair is still foreign and still stops. The earlier pair is accepted only for a trial whose
-   `wall_start` is before 1792604073 (2026-10-22 02:34:33 KST, the commit time of this amendment).
+   `wall_start` is before 1792604073 (2026-10-22 02:34:33 KST, the commit time of the first commit of this amendment, `8b37c91`; the
+   tag later moved to the corrected commit; no trial ran in between).
    A later trial with the earlier pair is foreign and gives `MIXED_ATTEMPTS`.
    *Departure from the rule "No source change after trial 1" (Sec. "Before the freeze").* This
    amendment changes source after counted trials and does not restart the campaign. It is a

@@ -188,7 +188,8 @@ AMENDED_PRIOR_IDENTITIES = (
 
 
 # Amendment 3 accepts the prior pair only for trials that started before the amendment was made
-# (the commit time of the amended tag, 2026-10-22 02:34:33 KST). A later trial that still carries
+# (2026-10-22 02:34:33 KST, the commit time of the first commit of the amendment, 8b37c91; the tag
+# later moved to a corrected commit and no trial ran in between). A later trial that still carries
 # the prior pair (a stale checkout or build) is foreign.
 AMENDMENT3_CUTOFF_WALL = 1792604073
 
