@@ -67,8 +67,11 @@ def plot_success_bars(summary, out_path):
         ax.set_ylabel('rate')
         n = idx[cfgs[0]]['n_trials'] if cfgs else 0
         ax.set_title(f'{fam}  (N={n}/config, success CI = Wilson 95%)', fontsize=10)
-        ax.legend(fontsize=8)
-    fig.tight_layout()
+    # One legend for all panels, below them: inside a panel it covered the bars of the
+    # `dynamic` family (success 0.80 to 0.84).
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=3, fontsize=9, frameon=False)
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
     _save(fig, out_path)
     return out_path
 
@@ -100,7 +103,6 @@ def plot_e_vs_f(summary, stats, out_path):
         ax.set_ylim(0, 1.0)
         ax.set_ylabel('rate')
         ax.set_title(f'E vs F — {fam}', fontsize=10)
-        ax.legend(fontsize=8, loc='upper left')
         # McNemar annotation from stats
         comp = next((c for c in stats.get(fam, {}).get('comparisons', [])
                      if c['baseline'] == e_cfg), None)
@@ -109,7 +111,9 @@ def plot_e_vs_f(summary, stats, out_path):
                         f"(b={comp['mcnemar_b']}, c={comp['mcnemar_c']})",
                         xy=(0.5, 0.97), xycoords='axes fraction', ha='center',
                         va='top', fontsize=8, color='#333333')
-    fig.tight_layout()
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=2, fontsize=9, frameon=False)
+    fig.tight_layout(rect=(0, 0.07, 1, 1))
     _save(fig, out_path)
     return out_path
 
@@ -171,3 +175,32 @@ def plot_all(summary, stats, out_dir, *, montage=None):
                           montage=montage),
     ]
     return paths
+
+
+def main():
+    """Write ``success_bars<suffix>.png`` and ``e_vs_f<suffix>.png`` from a trials file.
+
+        python3 -m experiments.benchmark2d.figures \
+            --trials experiments/results_2d_v2/trials.csv \
+            --out-dir docs/papers/latex/figures --suffix _v2
+
+    The two figures are a deterministic function of the trials file. The trajectory montage,
+    which reruns the controller, is not written here (use ``plot_traj_montage``).
+    """
+    import argparse
+    import tempfile
+
+    from .aggregate import aggregate
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--trials', required=True)
+    ap.add_argument('--out-dir', required=True)
+    ap.add_argument('--suffix', default='')
+    a = ap.parse_args()
+    with tempfile.TemporaryDirectory() as tmp:    # aggregate() also writes summary.csv, stats.json
+        res = aggregate(a.trials, tmp)
+    print(plot_success_bars(res['summary'], os.path.join(a.out_dir, f'success_bars{a.suffix}.png')))
+    print(plot_e_vs_f(res['summary'], res['stats'], os.path.join(a.out_dir, f'e_vs_f{a.suffix}.png')))
+
+
+if __name__ == '__main__':
+    main()

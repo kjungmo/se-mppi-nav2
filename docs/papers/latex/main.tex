@@ -40,13 +40,16 @@ controller plugin that integrates online local-minima detection-and-escape
 for MPPI with a control-barrier-function (CBF) safety filter for tracked
 dynamic obstacles. A first version of the plugin reached the goal in none
 of its 44 valid live trials on a correct build; we report the four
-defects that explain this and the repaired controller, whose escape
-needs four additions to the advised design that we found necessary on a
-development family of pockets and disclose with the measured ablation. In
+defects that we identify as the cause (one inferred, not logged) and the
+repaired controller. Its escape carries four additions to the advised
+design: two of them, avoid lists and a movement watchdog, we found
+necessary on a development family of pockets, and two are safeguards for
+other configurations. We disclose all four with the measured ablation. In
 a pre-registered live campaign, SE-MPPI without recoveries reached the goal
-in 5 of 6 on s1 and 5 of 6 on the held-out s4, which lies outside the
-development family; stock without recoveries in 0 of 6; with Nav2's default
-recovery tree, stock 0 of 6 and SE-MPPI 3 of 6, on one simulated host
+in 5 of 6 on s1 (Wilson 95\% interval $[0.44, 0.97]$) and 5 of 6 on the
+held-out s4, which lies outside the development family; stock without
+recoveries in 0 of 6 on each; with Nav2's default recovery tree, on s1,
+stock 0 of 6 and SE-MPPI 3 of 6, on one simulated host
 (Fisher exact $p=0.0152$ for each of the first two contrasts and $p=0.1818$
 for the third, which is descriptive). s1 is the development scenario; s4
 carries the claim. A third pocket, s3, that has a near mirror twin in the
@@ -159,7 +162,8 @@ such.
   plugin did not reach the goal in a live simulated stack. We name the
   four defects behind that (Sec.~\ref{sec:history}), describe the repaired
   controller that ships (Sec.~\ref{sec:method}), disclose the four
-  additions to the advised escape that its development required, and test
+  additions to the advised escape (two found necessary in development, two
+  safeguards for other configurations), and test
   it in a pre-registered live campaign on one simulated host
   (Sec.~\ref{sec:campaign2}). The campaign supports a narrow claim: the
   repaired controller without Nav2 recoveries reached the goal in 5 of 6
@@ -180,15 +184,24 @@ such.
   between samples, and requires a slack-free QP. In our 2D benchmark the
   schedule is empirically indistinguishable from an independent
   escape+CBF stack (Sec.~\ref{sec:evsf}), and the live campaign does not
-  test it, because its pockets contain no dynamic obstacle.
+  test it: its pockets contain no moving body (Sec.~\ref{sec:c2results}
+  reports the phantom obstacles and forced stops that occurred
+  nevertheless, which were not a designed test of the coordination).
 \item \textbf{C4 (dynamic safety).} Integration of a look-ahead-point CBF
   safety filter for a differential-drive robot, fed by a costmap-based
-  dynamic-obstacle tracker, as a QP at the controller's output.
+  dynamic-obstacle tracker, as a QP at the controller's output. The live
+  campaign ran it with the occupancy-based static/dynamic classification, the
+  horizon prediction and the conformal margin at their code defaults (on); the
+  2D mirror has none of the three (Sec.~\ref{sec:tracking}).
 \item \textbf{C5 (reproducibility).} An open Apache-2.0
-  implementation,\footnote{Code, benchmark scripts, raw trial data and
-  the campaign pre-registration:
-  \url{https://github.com/kjungmo/se-mppi-nav2} (Apache-2.0); see the
-  Appendix for the commands.} a Python 2D mirror of the shipped
+  implementation,\footnote{Code, benchmark scripts and the campaign
+  pre-registration: \url{https://github.com/kjungmo/se-mppi-nav2}
+  (Apache-2.0); the raw trial data of campaign 2 are the archive
+  \texttt{experiments/campaign2/raw\_trials.tar.gz}; see the Appendix for
+  the commands. At the time of writing, the tag, the commits and the archive
+  cited in this paper exist only in the author's local repository. A release
+  ref will be published before submission; the commit of the local tag
+  \texttt{campaign2-controller} (\texttt{6a50723}) is the provenance.} a Python 2D mirror of the shipped
   algorithm with a randomized $1{,}200$-trial benchmark and paired
   significance tests, a headless closed-loop development test with a
   written family rule, and the frozen, hash-checked pre-registration of
@@ -338,8 +351,9 @@ implementation detail deferred to follow-up work
 (Sec.~\ref{sec:limitations}, SE-Predict) and is \emph{not} a contribution of
 this paper. That margin draws on the established line of
 conformal-prediction-for-safe-control work
-\cite{acp_yang,conformal_hri,lindemann,dixit,ua_pcbf}; Paper~1's claims are
-C1--C4 and stand without it.
+\cite{acp_yang,conformal_hri,lindemann,dixit,ua_pcbf}; the claims of this
+paper (C1--C4) stand without it. The live campaign ran with the margin
+enabled (Sec.~\ref{sec:tracking}).
 
 \textbf{Positioning.} Table~\ref{tab:positioning} places the reviewed
 systems against four factors: \textbf{(a)}~shipping as a Nav2 controller
@@ -468,15 +482,17 @@ sampling-time shaping of the path and the costs, and output-time projection
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.85\textwidth]{figures/architecture.png}
-\caption{SE-MPPI architecture / data flow. Global plan, local costmap, and
+\caption{SE-MPPI architecture / data flow, as intended. Global plan, local costmap, and
 odometry feed the \texttt{SafeEscapeController} plugin: the reused MPPI
 optimizer (with the \texttt{EscapeCritic}) emits the nominal command, a
 shared entrapment signal drives both the critic and the escape--safety
 coordinator, the coordinator resolves the CBF gain $\alpha$ (with TTC
 override), and the CBF safety filter -- fed by the
 \texttt{DynamicObstacleTracker} -- projects the command to
-\texttt{cmd\_vel}, which Nav2's \texttt{collision\_monitor} guards as a
-final reactive layer. The hand-off of an escape path to the optimizer
+\texttt{cmd\_vel}. The intended chain ends in Nav2's
+\texttt{collision\_monitor} as a final reactive layer; in the live campaign
+the only \texttt{collision\_monitor} polygon was disabled, so that stage was
+not active (Sec.~\ref{sec:limitations}). The hand-off of an escape path to the optimizer
 (Sec.~\ref{sec:escape}) is not drawn.}
 \label{fig:architecture}
 \end{figure*}
@@ -496,7 +512,9 @@ length beyond the best so far. A replan to the same goal is only a
 \emph{candidate}: it becomes the anchor, and counts as an event, once the
 signed advance along the chain of candidates reaches $0.5$~m. Entrapment is
 declared when no event occurs for $W=30$ control cycles ($3$~s at $10$~Hz)
-and is suppressed within a goal tolerance of $0.5$~m. The escape is decided
+and is suppressed within a goal tolerance of $0.5$~m. The window counts
+control cycles, not seconds: at the $20$~Hz of the released parameter file the
+same $30$ cycles are $1.5$~s. The escape is decided
 at the start of a cycle from the detector state at the end of the previous
 cycle, a lag of one cycle. The \texttt{EscapeCritic} and the coordinator read
 the same shared atomic state through a registry keyed by the controller
@@ -524,18 +542,23 @@ While the robot is entrapped, the controller applies three rules. Table~\ref{tab
 
 \textbf{(1) Opening selection.} The controller casts $36$ rays over the local costmap
 out to a sensing horizon of $2.0$~m (or the costmap edge). Among the rays that reach
-the horizon and clear the robot by at least $0.6$~m, and that do not lead to an avoided
+the horizon, whose free length (to the first cell with cost at least $253$, the inscribed
+band, not the wall) is at least $0.6$~m, and that do not lead to an avoided
 place (Sec.~\ref{sec:extras}), it takes the ray closest to the goal bearing. If there is
-none, it takes the longest ray that clears $0.6$~m and does not lead to an avoided
-place. If excluding rays leaves nothing, it repeats the choice without the avoid list.
+none, it takes the longest ray whose free length is at least $0.6$~m and that does not lead
+to an avoided place. Both uses of the $0.6$~m threshold are part of addition (d)
+(Sec.~\ref{sec:extras}); the advice had no threshold on the longest-ray fallback. If excluding rays leaves nothing, it repeats the choice without the avoid list.
 A hysteresis of $0.5$~rad keeps the previous bearing unless a new ray is closer to the
 goal bearing by more than that. The horizon test matters: from the mouth of a pocket the
 ray back into the pocket is longer than the rays along the walls, so a plain
 longest-ray rule re-enters the pocket.
 
 \textbf{(2) Escape path.} The waypoint lies on the selected bearing at
-$\min(c-r-0.05,\,2.5)$~m, with $c$ the clearance of the ray and $r$ the robot
-radius, and is taken only if that distance is at least $0.2$~m. The controller builds a
+$\min(c-r-0.05,\,2.5)$~m, with $c$ the free length of the ray and $r=0.22$~m the circumscribed radius of the
+footprint, and is taken only if that distance is at least $0.2$~m. The floor of $0.2$~m and
+the size $6$ of the failed list (below) are compiled constants, not YAML values. The cap of
+$2.5$~m is inactive while the sensing horizon $2.0$~m is at most $2.5+r+0.05=2.77$~m, as
+here: the longest hop is $2.0-0.22-0.05=1.73$~m. The controller builds a
 path from the robot to the waypoint and hands it to MPPI through
 \texttt{MPPIController::setPlan}, before the optimizer call; the goal, alignment and
 path-following critics then pull the rollouts toward the waypoint. The path of the
@@ -547,13 +570,24 @@ a goal. The path is published on a topic of its own for logging.
 \textbf{(3) Hops.} The waypoint stays frozen until the robot is within $0.4$~m of it,
 $15$~s have passed, the robot has moved less than $0.15$~m in $3$~s, or the straight line
 to it is blocked. Each new selection is a hop. A waypoint that was not reached is
-remembered as failed for the episode.
+remembered as failed for the episode. As the code reads, the waypoint is appended to the
+failed list in every cycle in which a re-selection fires, also when the selection is then
+not taken (no usable ray, or a waypoint closer than $0.2$~m), so the six entries can hold
+copies of one waypoint. The mirror has the same quirk. We did not remove the duplicates
+and did not measure their effect; the campaign ran with them.
 
 \textbf{Repulsion cost.} The \texttt{EscapeCritic} keeps the distance-field repulsive cost of
 the classical form \cite{khatib_apf},
-$U=\tfrac12\eta\,(1/d - 1/d_0)^2$ for $d<d_0$, where $d$ is the Dijkstra
-distance to the nearest obstacle cell (excluding unknown space), which
-keeps rollouts off the trapping surface during the turn. The critic's own
+$U=\tfrac12\eta\,(1/d - 1/d_0)^2$ for $d<d_0$, with $\eta=1$ (the compiled default
+\texttt{apf\_eta}; the campaign file does not set it) and $d_0=0.6$~m
+(\texttt{apf\_influence\_dist}). Here $d$ is the Dijkstra distance (8-connected grid) to the
+nearest cell with cost at least $253$ (the inscribed band, which lies one robot radius from the
+wall, not the wall; unknown space is not an obstacle), clamped below at half a cell
+($0.025$~m). The cost of a rollout is the mean of $U$ over its steps that lie on the map
+(steps off the map are skipped). It keeps rollouts off the trapping surface during the turn.
+No weight multiplies it: \texttt{repulsion\_weight} ($2.0$ in the parameter file) is unused
+while \texttt{use\_apf} is true. The parameter file is frozen, so the comment that would say
+so is not added there. The critic's own
 gap-bearing cost, which rewards rollout endpoints that head toward the
 selected opening and is a form of the free-space subgoal and gap guidance of
 GP-MPPI \cite{gp_mppi} and Potential Gap \cite{potential_gap}, is off in the shipped
@@ -565,15 +599,18 @@ free-space behavior is unchanged (detect-and-switch, not always-on, as in DRPA-M
 
 \begin{table}[t]
 \centering
-\caption{Escape parameters of the shipped controller (all set in
-\texttt{experiments/sim/nav2\_se\_campaign2.yaml}). ``Advised'' marks values fixed by
+\caption{Escape parameters of the shipped controller (set in
+\texttt{experiments/sim/nav2\_se\_campaign2.yaml}, except the two compiled constants, the
+$0.2$~m floor and the failed-list size $6$). ``Advised'' marks values fixed by
 our design advice before any code existed; ``addition'' marks the rules and values of
-Sec.~\ref{sec:extras}. The $0.6$~m clearance is an advised value whose use on
-horizon candidates is an addition.}
+Sec.~\ref{sec:extras}. The $0.6$~m value is the advised default of
+\texttt{se\_gap\_min\_clearance}; its use as a threshold, on horizon rays and on the
+longest-ray fallback, is addition (d). (\texttt{PREREG.md}, line 147, lists only the use on
+horizon candidates as an addition; the frozen file is not edited.)}
 \label{tab:params}
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{llp{0.36\columnwidth}}
+\begin{tabular}{p{0.34\columnwidth}p{0.22\columnwidth}p{0.28\columnwidth}}
 \toprule
 Parameter & Value & Origin \\
 \midrule
@@ -583,7 +620,7 @@ rays / horizon & 36 / 2.0 m & advised \\
 waypoint cap & 2.5 m & advised \\
 re-select radius / period & 0.4 m / 15 s & advised \\
 hysteresis & 0.5 rad & advised \\
-minimum ray clearance & 0.6 m & advised; use on horizon rays: addition \\
+minimum ray clearance & 0.6 m & advised value; threshold: (d) \\
 movement watchdog & 3 s / 0.15 m & addition \\
 avoid radius, stall pose & 1.0 m & addition \\
 avoid radius, hop origins; hops & 0.6 m; 3 & addition \\
@@ -597,9 +634,11 @@ waypoint floor; failed list & 0.2 m; 6 & addition \\
 \label{sec:extras}
 
 The design we advised ourselves before writing code contained the rules above except
-four additions. We found them necessary on a development family of pockets
-(Sec.~\ref{sec:devtest}) and accepted them as the shipped algorithm; every statement in
-this paper about SE-MPPI is a statement about the controller with them.
+four additions. We found (a) and (b) necessary on a development family of pockets
+(Sec.~\ref{sec:devtest}). The floor (c) and the threshold (d) are safeguards for other
+configurations; under the shipped parameters (c) never acts and (d) never acts on horizon
+rays. We accepted all four as the shipped algorithm; every statement in this paper about
+SE-MPPI is a statement about the controller with them.
 
 \begin{enumerate}
 \item[(a)] \textbf{Avoid lists.} The selection excludes rays that lead to the pose where
@@ -615,13 +654,22 @@ this paper about SE-MPPI is a statement about the controller with them.
   binary cost threshold called free but whose inflation cost was about $160$; the advised
   $15$~s period is too slow for Nav2's $10$~s progress checker.
 \item[(c)] \textbf{Waypoint floor.} A candidate waypoint closer than $0.2$~m is not taken.
-\item[(d)] \textbf{Clearance on horizon candidates.} The $0.6$~m clearance threshold also
-  applies to rays that reach the horizon.
+  Inert here: a selected ray has a free length of at least $0.6$~m, so the waypoint is at
+  least $0.6-0.22-0.05=0.33$~m away.
+\item[(d)] \textbf{Clearance threshold.} The $0.6$~m threshold on the free length of a ray
+  applies to the horizon candidates and to the longest-ray fallback; the advice had no
+  threshold on the fallback. On horizon rays it is inert here: the local costmap is $3$~m
+  wide, so a ray that reaches the horizon or the costmap edge is at least $1.5$~m long. On the
+  fallback it excludes rays shorter than $0.6$~m. The mirror's switch for the additions removes
+  the threshold from both places. Restoring it on the fallback in the advised arm changed no
+  outcome on the U-trap family ($29$ of $50$, no seed differs;
+  \texttt{experiments/results\_2d\_v2\_advised/}\allowbreak\texttt{FALLBACK\_THRESHOLD.md}).
 \end{enumerate}
 
 \textbf{Measured ablation.} We switched off (a) and (b) through their parameters (both avoid
-radii $0.0$~m, stall time $10^{6}$~s). The floor (c), the horizon clearance (d) and the failed-waypoint list have no
-parameter, so the ablation leaves them on. The test is the headless sweep of
+radii $0.0$~m, stall time $10^{6}$~s). The floor (c), the threshold (d) and the failed-waypoint list have no
+parameter, so the ablation leaves them on; (c) does not act under these parameters, and (d)
+acts only on the fallback. The test is the headless sweep of
 Sec.~\ref{sec:devtest} over the 56 valid development geometries, one run each. MPPI's
 noise cannot be seeded from the test, so each sweep is one process and the sweeps are
 independent. Table~\ref{tab:ablation} gives the count per sweep. Without the additions
@@ -633,7 +681,10 @@ test result.
 \centering
 \caption{Headless development sweeps: geometries passed of 56, one run each, per sweep
 (process). ``Off'' switches off additions (a) and (b) as described in the text.
-Source: \texttt{experiments/campaign2/PREREG.md}.}
+Source: \texttt{experiments/campaign2/PREREG.md}. The confirmation sweeps ran at commit
+\texttt{b7e012a} (controller sources of \texttt{507173a}); their per-geometry rows are in
+\texttt{experiments/campaign2/sweeps/}. The implementer and reviewer sweeps are not archived,
+and no sweep can be seeded.}
 \label{tab:ablation}
 \footnotesize
 \begin{tabular}{lcc}
@@ -694,7 +745,9 @@ box-clamped nominal turn) -- stop rather than drive
 into an imminent collision. Static structure is intentionally
 \textbf{excluded} from the CBF (handled by the MPPI obstacle critic and
 costmap inflation); only obstacles that are moving and small enough to be
-a movable body are admitted, which we found essential in a real costmap
+a movable body are admitted (a track must pass the occupancy-persistence veto
+\texttt{is\_dynamic}, move at least $0.1$~m/s and have a radius of at most $1.0$~m),
+which we found essential in a real costmap
 (Sec.~\ref{sec:integration}).
 
 Because this condition is checked once per control cycle (a sampled-data
@@ -810,12 +863,19 @@ and bounded-prediction-error robustness is the subject of follow-up work
 \subsection{Dynamic-obstacle tracking}
 \label{sec:tracking}
 
-The tracker clusters costmap cells above a lethal threshold, associates
+The tracker clusters costmap cells at or above the inscribed-obstacle cost ($253$), associates
 each current cluster to at most one previous cluster within a gate (so a
 split/merge cannot manufacture a phantom velocity), and estimates a
 clamped constant velocity. Its output $\{p_o, R_o, v_o\}$ feeds the
 coordinator (TTC) and the CBF filter. The constant-velocity model is a
 deliberate, replaceable baseline (Sec.~\ref{sec:limitations}).
+
+\textbf{Configuration that ran live.} The campaign parameter file does not set
+\texttt{se\_classify\_static}, \texttt{se\_predict\_horizon} or \texttt{se\_conformal}. Their
+code defaults are true, so every live SE trial ran with the occupancy-based static/dynamic
+classification (the \texttt{is\_dynamic} veto above), the horizon prediction and the online
+conformal margin on. The 2D mirror has none of the three. The statements of this paper about the
+tracker and the CBF filter hold for this configuration only.
 
 \section{Implementation (Nav2-Native)}
 \label{sec:implementation}
@@ -943,7 +1003,10 @@ use of signed zeros as the suspected cause and was closed on 2026-10-10. The
 plugin carries a check, \texttt{check\_mppi\_rollout}, that compares $24{,}576$ rollout points of
 the library it loads with the closed form at a tolerance of 1~mm, and
 \texttt{SafeEscapeController} refuses to configure on a library that fails
-it. The July 2026 runs used an affected build; whether that decided
+it. The check guards only \texttt{SafeEscapeController}: any other controller that loads the
+same library is unguarded. Run \texttt{check\_mppi\_rollout} on every target install (the apt
+binaries are untested), and never set \texttt{se\_enforce\_rollout\_check} to false on a
+moving robot. The July 2026 runs used an affected build; whether that decided
 their outcome is not established. We did not use any result obtained on an
 affected build in the claims below.
 
@@ -953,7 +1016,7 @@ affected build in the claims below.
 Three integration faults surfaced that only a live stack reveals, each
 reported as a deployment lesson:
 \begin{itemize}
-\item \textbf{Static walls in the CBF.} Feeding every lethal cluster
+\item \textbf{Static walls in the CBF.} Feeding every inscribed-cost cluster
   (including static walls) into the CBF makes the barrier infeasible
   everywhere and freezes the robot -- fixed by scoping the CBF to genuinely
   dynamic obstacles (Sec.~\ref{sec:cbf}).
@@ -988,6 +1051,13 @@ $1.0$~s as the behavior tree does, and emulates the controller server by catchin
 \texttt{NoValidControl} and applying zero velocity. It is the development loop for the
 escape.
 
+\textbf{Robot radius in the rig.} The controller in the rig took its robot radius,
+$0.114$~m (logged as \texttt{robot\_radius=0.114} in the sweeps), from the default footprint
+of \texttt{Costmap2DROS}, which the rig does not set. The rig's drawn costmap and its contact
+model use $0.22$~m, as does the live stack. The radius enters the waypoint distance and the
+CBF disc, so for the same ray the waypoint of the rig lies $0.11$~m farther out than the live
+one. We did not change the rig.
+
 \textbf{Family rule.} The test pockets are generated from a written rule, fixed in a
 committed file before the first run
 (\texttt{test/deployment/UTRAP\_DEV\_GEOMETRIES.md}). A pocket has width $w\in\{1.3,
@@ -1012,7 +1082,7 @@ pose of the live development scenario \texttt{s1\_utrap}; that is a use of a liv
 of a parameter, and the reason \texttt{s1\_utrap} is a development scenario and not a test.
 
 \textbf{The twin of s3.} The held-out campaign pocket \texttt{s3\_ctrap} was specified before
-the tuning and authored by a separate agent from the geometry alone; it was not driven live and not
+the tuning and authored by a separately prompted coding assistant from the geometry alone; it was not driven live and not
 run headless. It is not outside the family: reflected about $y=0$ it matches the family member
 \texttt{w22\_d15\_r-25\_a6} to within $0.1$~m in width, $0.05$~m in depth and $0.09$ in the
 wall ratio. The additions were worked on until that twin passed. We therefore do not use
@@ -1031,8 +1101,9 @@ with simulated one-second straight replans, the horizon-ray selection with hyste
 the frozen-waypoint hops, the one-cycle lag, and a zero-command mode when every
 rollout collides. A flag switches the four additions of Sec.~\ref{sec:extras} on
 (the shipped algorithm, variant \texttt{v2}) or off (the design as advised, variant
-\texttt{v2\_advised}). A test calls the C++ selection, ray cast and progress chain through a shim
-and compares them with the mirror. The mirror still differs from the controller in the ways
+\texttt{v2\_advised}). A test calls the C++ selection, ray cast, progress chain and detector through a shim
+and compares them with the mirror; the hop state machine and the one-cycle lag were
+checked by reading only. The mirror still differs from the controller in the ways
 the Appendix lists: it computes geometry analytically against circular obstacles, gives
 the CBF and the TTC the true obstacle states, and uses its own cost. It does not run
 Nav2's progress checker or behavior tree, so it is a controller-level benchmark. We
@@ -1137,9 +1208,8 @@ Narrow-dyn & 0/30 & $1.9\!\times\!10^{-6}$\,* & 0/0 & 1 \\
 families the effect survives Holm correction (Table~\ref{tab:bench2d-stats}): success rises
 from $0\%$ (stock~A, CBF-only~D, and no-gap~F$^{-}$ all time out in the pocket) to $80\%$
 on \texttt{utrap} (40/50 discordant pairs, $p_\text{adj}=1.1\times10^{-8}$) and to $60$--$72\%$ on
-\texttt{narrowdyn} (30/50 discordant for F, $p_\text{adj}=1.9\times10^{-6}$). That
-\textbf{F$^{-}$ scores $0\%$} on both trap families shows that, in the mirror, the
-detect-and-switch mechanism escapes only \emph{with} the free-space opening search.
+\texttt{narrowdyn} (30/50 discordant for F, $p_\text{adj}=1.9\times10^{-6}$). \textbf{F$^{-}$ scores $0\%$} on both trap families, as expected by construction: with the
+opening search off, the escape has no path to follow.
 Table~\ref{tab:bench2d-arms} gives the headline of this section: with the four additions
 the U-trap success is $80\%$ (40 of 50), and without them $58\%$ (29 of 50). On
 \texttt{narrowdyn} the arms give $60\%$ and $44\%$. This benchmark therefore does not
@@ -1242,12 +1312,14 @@ only the controller can get the robot out. Four scenarios:
   scenario.
 \item \texttt{s3\_ctrap}: a three-wall pocket with an oblique back wall, $2.1$~m wide
   and $1.45$~m deep, rotated $25^\circ$. Held out in a limited sense: not driven live, not run headless,
-  authored by an agent that did not see the tuning, but it has a near mirror twin in the
+  authored by a separately prompted coding assistant that saw only the geometric
+  specification, but it has a near mirror twin in the
   development family (Sec.~\ref{sec:devtest}). Reported, not decision-bearing.
-\item \texttt{s4\_ltrap}: an L-shaped dead end (Fig.~\ref{fig:s4}). The lead specified it
-  before anyone ran anything on it; an agent that saw only the geometric
-  specification, and not the controller, the family rule, the tuning or the campaign-1
-  analysis, wrote the world. Its corridor is $2.05$~m deep against $1.85$~m for
+\item \texttt{s4\_ltrap}: an L-shaped dead end (Fig.~\ref{fig:s4}). The author specified it
+  before anything was run on it; a separately prompted coding assistant that saw only the
+  geometric specification, and not the controller, the family rule, the tuning or the
+  campaign-1 analysis, wrote the world. The specifier (the author) knew the design, so only
+  the world file was authored blind. Its corridor is $2.05$~m deep against $1.85$~m for
   \texttt{s1\_utrap}, the deepest development pocket: $0.20$~m, 11 percent deeper, and
   it has a closed bent leg, a shape the family does not contain. It lies inside the family's
   span in width ($1.3$~m) and rotation ($-15^\circ$). It also fails the family's rule V1
@@ -1258,7 +1330,9 @@ only the controller can get the robot out. Four scenarios:
 Four configurations cross the controller with the behavior tree: C1, stock MPPI with
 Nav2's default recovery tree; C2, SE-MPPI with that tree; C3, stock MPPI with a
 replanning-only tree in which the first \texttt{FollowPath} failure ends the goal and
-the progress-checker allowance is $30$~s; C4, SE-MPPI with that tree. The parameter file is
+the progress-checker allowance is $30$~s; C4, SE-MPPI with that tree. Stock MPPI in C1 and C3 is the \texttt{SafeEscapeController}
+plugin with \texttt{se\_enabled} false: it passes the MPPI command through unchanged and
+still enforces the rollout check; it is not a separate stock plugin. The parameter file is
 the campaign-1 file with reversing allowed (\texttt{vx\_min} $-0.35$), Nav2's default
 \texttt{failure\_tolerance} of $0$ and progress checker ($0.5$~m in $10$~s), and the MPPI
 block unchanged ($10$~Hz, $28$ steps, $dt=0.1$, batch $1500$, inflation $0.45$~m). C1 and
@@ -1271,12 +1345,21 @@ one-minute load average is below $2.0$ at two checks $30$~s apart and the busy C
 $30$~s is below $0.5$ core, and it is valid if the foreign CPU averages at most $1.0$ core and
 stays at most $3.0$ cores in every $30$~s window.
 
+\textbf{Host and tolerances.} Every trial ran on one workstation, under WSL2, with an AMD
+Ryzen 5 5500GT (12 threads) and simulated time (\texttt{use\_sim\_time}). The parameter file
+loosens tolerances for the lag of the simulated transform tree: \texttt{transform\_tolerance}
+$0.5$~s on the controller, the costmaps, the behavior server and the collision monitor ($1.0$~s
+for AMCL), and \texttt{source\_timeout} $5.0$~s of the collision monitor. Do not copy these
+values to a robot. The only \texttt{collision\_monitor} polygon is disabled
+(\texttt{enabled: False}), so the live results had no active \texttt{collision\_monitor}
+zone.
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.8\columnwidth]{figures/s4_ltrap_geometry.png}
 \caption{The second held-out pocket \texttt{s4\_ltrap} (wall footprints in black, centre
 lines dashed red), the straight start--goal line, and the mouth centre. Plot written by the
-author of the world, \texttt{experiments/campaign2/s4\_ltrap\_geometry.png}.}
+coding assistant that wrote the world, \texttt{experiments/campaign2/s4\_ltrap\_geometry.png}.}
 \label{fig:s4}
 \end{figure}
 
@@ -1292,7 +1375,9 @@ a level of $0.05$, no correction, no pooling over scenarios. Only two of them de
 branch, each once. The hypothesis on a pocket is \emph{yes} if and only if the Fisher $p$ of C4 against
 C3 on it is below $0.05$ and C4 reached the goal more often. The branch \emph{demonstrated} requires
 yes on s1 and yes on s4; s3 does not change the branch; no on s1 is \emph{not demonstrated}
-whatever s4 shows. With six trials a cell, C4 at 5 of 6 against C3 at 0 of 6 gives $p=0.0152$ and
+whatever s4 shows. Requiring both s1 and s4 to be \emph{yes} is an intersection-union test, so
+the probability of the branch \emph{demonstrated} when neither pocket has an effect is at most
+$0.05$ without a correction. With six trials a cell, C4 at 5 of 6 against C3 at 0 of 6 gives $p=0.0152$ and
 4 of 6 gives $p=0.0606$. The comparison of C2 with C1, the control, the transfer contrasts and all
 time comparisons are descriptive. The wording for each branch was copied before the trials from the
 design advice into the pre-registration.
@@ -1300,7 +1385,7 @@ design advice into the pre-registration.
 \textbf{Amendments and deviations.} Every amendment is dated in the pre-registration. We list them
 all, because one was written after counted trials had run.
 \begin{enumerate}
-\item \emph{Amendment 1 (2026-10-18, before any trial).} The lead accepted additions (a) to (d)
+\item \emph{Amendment 1 (2026-10-18, before any trial).} The author accepted additions (a) to (d)
   as the shipped algorithm and added \texttt{s4\_ltrap}, with C3 and C4 on it, because \texttt{s3\_ctrap}
   has a twin in the development family; the plan grew from 76 to 88 trials and the decision rule moved
   the claim of transfer to s4.
@@ -1310,7 +1395,7 @@ all, because one was written after counted trials had run.
   regression test; the analysis rules, plan, worlds, controller and thresholds did not change.
 \item \emph{Provenance refusal (2026-10-22, after the first counted trial).} After the first trial
   (C4 on s1, repetition 0) the provenance check refused the next one, because Python had written a
-  bytecode cache into the installed, frozen launch directory. The lead deleted the cache and made the
+  bytecode cache into the installed, frozen launch directory. The author deleted the cache and made the
   directory read-only. No frozen file, code, parameter or environment variable changed, and the trial
   stayed counted, because it ran on a verified install.
 \item \emph{Amendment 3 (2026-10-22), post hoc.} The stopping rule for a controller crash fired after the
@@ -1324,7 +1409,13 @@ all, because one was written after counted trials had run.
   the analyzer, the driver's two teardown time stamps, the provenance module and the manifest module
   changed; the controller, plan, worlds and parameters did not. The tag moved with it, so trials
   recorded before it carry the earlier freeze identity, which the analysis accepts for exactly that
-  earlier set.
+  earlier set. It was written after 16 counted trials, all at the tag commit
+  \texttt{012f4f1}: the C4 cell on s1 was complete at 5 of 6, and C3 on s1 had failed in
+  repetitions 0 to 2. The registered rule required stopping the campaign or restarting it as
+  attempt 2; we did neither. From \texttt{012f4f1} to \texttt{6a50723}, the diff of
+  \texttt{analyze.py} touches the classification of crashes, the identity check that accepts
+  the earlier trials, one recorded start time and the report sections; it does not touch the
+  outcome logic (reached, contact, cells, contrasts, decision).
 \end{enumerate}
 
 \subsubsection{Results}
@@ -1395,7 +1486,7 @@ The pre-registration says to read ``the held-out s3'' and ``s3 carries the claim
 \texttt{s4\_ltrap}, and $k'$ as the count of C4 on s4 (amendment 1). Filled with the counts
 of Table~\ref{tab:c2cells}: SE-MPPI without recoveries reached the goal in 5 of 6 on s1 and 5 of 6 on the
 held-out s4; stock without recoveries in 0 of 6; with Nav2's default recovery tree, stock 0 of 6 and
-SE-MPPI 3 of 6, on one simulated host. The Fisher exact $p$ values are in Table~\ref{tab:c2contrasts},
+SE-MPPI 3 of 6, on one simulated host (the two counts under the default tree are on s1). The Fisher exact $p$ values are in Table~\ref{tab:c2contrasts},
 and the Wilson intervals in Table~\ref{tab:c2cells}. s1 is the development scenario; s4 carries the claim.
 The earlier statement that no live run has reached its goal is replaced, and the host attribution of the
 July runs is withdrawn (campaign 1: real-time factor between $0.93$ and $0.97$).
@@ -1408,6 +1499,17 @@ $[0.44,0.97]$. Three results are not significant and are not claims of effect: C
 requires that both be reported); C2 against C1 on s1 (3 of 6 against 0 of 6, $p=0.1818$) and on s3 (2 of 6 against
 0 of 6, $p=0.4545$). In particular the live data do not show that SE-MPPI helps inside Nav2's default
 recovery tree beyond what six trials can resolve: the direction is favourable and the intervals overlap.
+\textbf{Forced stops without a moving body.} No pocket held a moving body, yet the brake
+fallback of Sec.~\ref{sec:cbf} (forward velocity forced to zero for one control cycle of
+$0.1$~s) fired in the SE pocket trials of s3 and s4. The count of forced-stop cycles at the last
+diagnostics message of each trial was, per repetition: s3 C2 $5, 9, 9, 7, 8, 16$; s3 C4
+$8, 8, 7, 5, 12, 8$; s4 C4 $1, 1, 0, 6, 0, 2$; and zero in every s1 trial and on \texttt{s0\_open}.
+The filter returns the nominal command unchanged when the tracker admits no obstacle, so a forced
+stop means that the tracker admitted phantom obstacles: costmap clusters that passed the
+\texttt{is\_dynamic} veto and the speed threshold while the robot turned in the pocket. This was
+not a designed test of the coordination, and we did not test whether the stops changed any
+outcome. Deployment warning: a robot that turns in a pocket can be stopped by obstacles that do
+not exist; read the forced-stop counter of the diagnostics on the target map.
 On the trap-free control \texttt{s0\_open} all 24 trials reached the goal and SE-MPPI logged no
 escape. The transfer contrasts are descriptive: C4 reached the goal in the same number of trials on s4 as on s1
 (5 of 6), but its median time to goal over reached trials was $48.3$~s on s4 against $34.3$~s on s1
@@ -1423,10 +1525,40 @@ box; the distance it printed at the end of these trials was between $0.00$ and $
 position. Table~\ref{tab:odomgap} (from \texttt{experiments/campaign2/odom\_gap.py}, a post hoc script
 outside the freeze) shows that in these trials the ground truth and the localization estimate disagree
 by $0.33$ to $1.56$~m and that the wheel odometry, shifted to the start pose, disagrees with the ground truth by $0.29$ to
-$1.59$~m. Wheel odometry and the AMCL estimate, which on the empty map has no features and follows odometry, drift after the turns
-and reversals of an escape. We did not isolate the physical cause (wheel slip, the odometry plugin or another).
+$1.59$~m. Wheel odometry and the AMCL estimate drift away from the ground truth in the SE pocket trials,
+after the turns and reversals of an escape. Table~\ref{tab:odomclass} extends the comparison to
+all 88 trials (post hoc, same script). We did not isolate the physical cause (wheel slip, the
+odometry plugin or another). The estimate does not simply follow the odometry: in the six C1
+trials on s1 the AMCL estimate is $0.23$ to $0.38$~m from the ground truth while the odometry is
+at most $0.03$~m from it. In the SE pocket trials the commanded turn rate reaches the limit of the
+controller (\texttt{wz\_max} $1.9$~rad/s); the stock pocket trials stay at or below $1.00$~rad/s
+(C1) and $0.45$~rad/s (C3). The pocket-exit time \texttt{left\_pocket\_s} is set in all 34 SE
+pocket trials and in none of the 30 stock pocket trials.
 These trials count as not reached, so the counts in Table~\ref{tab:c2cells} are conservative with respect to
-Nav2's own report: counting Nav2's \texttt{SUCCEEDED} would give 6 of 6 for every SE-MPPI cell, which we do not claim.
+Nav2's own report: counting Nav2's \texttt{SUCCEEDED} would give 6 of 6 for every SE-MPPI cell, which we do not claim. Deployment warning: the limits of this campaign (\texttt{wz\_max}
+$1.9$~rad/s; velocity smoother $2.0$~rad/s and $3.2$~rad/s$^2$) are those of the simulated robot,
+a robot with other limits needs its own measurement, and Nav2's success message after an escape
+should not be trusted without an independent check of the pose.
+
+\begin{table}[t]
+\centering
+\caption{End of the drive, all 88 trials, by class: range of the distance of the wheel odometry
+(shifted to the start pose) and of the AMCL estimate from the ground truth (m), and of the peak
+commanded turn rate (rad/s). Post hoc; source: \texttt{experiments/campaign2/ODOM\_GAP.json}.
+The SE class includes the 4 evidence trials.}
+\label{tab:odomclass}
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular}{lcccc}
+\toprule
+Class & Trials & Odometry & AMCL & Peak turn rate \\
+\midrule
+SE-MPPI in a pocket & 34 & 0.088--1.594 & 0.062--1.559 & 1.228--1.900 \\
+Stock in a pocket & 30 & 0.001--0.131 & 0.003--0.375 & 0.039--1.000 \\
+\texttt{s0\_open}, all & 24 & 0.001--0.006 & 0.013--0.043 & 0.038--0.043 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[t]
 \centering
@@ -1448,13 +1580,18 @@ AMCL vs ground truth & 0.328 & 1.559 \\
 \end{tabular}
 \end{table}
 
-\textbf{Teardown crash.} One process died with a non-teardown exit code: in \texttt{s4\_ltrap} C3 repetition 0
-the container that hosts the controller server exited with code $-6$ after a
-\texttt{SIGSEGV} message from the image library's signal handler, $3.0$~s after the drive ended and $4.0$~s
-before the trial ended, after the driver's teardown signal. This is the only such death in the campaign, and it is
-the death on which amendment 3 was decided; it is classified a teardown crash by that amendment and listed per
-trial in \texttt{RESULTS.md}. It is in a stock-controller trial that had already ended in
-\texttt{NOT\_REACHED\_ABORTED}. We make no claim about its cause.
+\textbf{Teardown crash.} One process died with a non-teardown exit code, in \texttt{s4\_ltrap}
+C3 repetition 0, a stock-controller trial that had already ended in \texttt{NOT\_REACHED\_ABORTED}.
+The driver's teardown signal reached the processes $3.0$~s after the drive ended and $4.0$~s before
+the trial ended. The launch log then shows, in this order: the cleanup of the MPPI controller; the
+bond-timeout path of the localization lifecycle manager (``SERVER map\_server IS DOWN'',
+``Terminating bond timer''); a \texttt{SIGSEGV} message from the image library's signal handler,
+which carries no timestamp; and the exit of the composed container
+(\texttt{component\_container\_isolated}) with code $-6$. This is the only such death in the
+campaign, and the one on which amendment 3 was decided; that amendment classifies it a teardown
+crash, and \texttt{RESULTS.md} lists it per trial. We make no claim about its cause. On a robot, a
+crash of the composed container stops all navigation nodes that it hosts; use a respawn policy or a
+non-composed bringup.
 
 
 \section{Limitations}
@@ -1462,7 +1599,8 @@ trial in \texttt{RESULTS.md}. It is in a stock-controller trial that had already
 
 \begin{itemize}
 \item \textbf{Simulation only, one host, no real robot.} Every live result is a
-  simulated robot in Gazebo on one workstation (real-time factor $0.93$ to $0.97$). We
+  simulated robot in Gazebo on one workstation (WSL2, Ryzen 5 5500GT, 12 threads, simulated
+  time; real-time factor $0.93$ to $0.97$). We
   ran no real robot and no second host. The claim is limited to the pre-registered
   wording: counts, Fisher $p$ values and Wilson intervals, on one simulated host.
 \item \textbf{Six repetitions per cell.} The decisive contrasts are 5 of 6 against 0 of 6
@@ -1492,11 +1630,18 @@ trial in \texttt{RESULTS.md}. It is in a stock-controller trial that had already
   reversals of an escape, and the goal checker works from that estimate. We count these trials as not reached,
   which makes the live counts conservative, but a deployment that relies on the estimate would
   see the controller report success before the robot is at the goal. We did not isolate the cause.
+  Reached trials drifted too: in the 21 SE pocket trials that reached the goal, the odometry is
+  $0.09$ to $0.54$~m and the AMCL estimate $0.06$ to $0.54$~m from the ground truth at the end of
+  the drive, so the reached count mixes escape with end-of-drive localization error.
 \item \textbf{The no-valid-control update cannot act under Nav2's default failure tolerance.} With
   \texttt{failure\_tolerance} $0$, as in all configurations of campaign 2, the controller server resets every
   controller when the optimizer throws, so the detector update on a throw (defect 2 of
   Sec.~\ref{sec:history}) acts only with a tolerance of $-1$. Campaign 2 did not exercise it, and
   its pass rule in the headless test requires zero throws.
+\item \textbf{Pre-registration is self-hosted.} The pre-registration was not deposited with a
+  third party. The freeze dates can be checked only through the local commit history
+  (\texttt{ac0a4eb} for the freeze, \texttt{c6a144e} and \texttt{012f4f1} for amendment 2,
+  \texttt{6a50723} for amendment 3); the tag moved twice. The reader must trust that history.
 \item \textbf{Option B is out of scope.} The controller does not emit its own command when
   every rollout collides, for example when the footprint is already inside the inflated band. Then the
   optimizer throws, the detector runs and an escape path is handed to MPPI, but MPPI still cannot produce a
@@ -1506,10 +1651,19 @@ trial in \texttt{RESULTS.md}. It is in a stock-controller trial that had already
   evidence and departs from the rule of no source change after trial~1. Its effect is that the remaining trials ran.
   The cause of the crash is not known. The crash scan also does not read the launch log of an interrupted
   or incomplete attempt, a gap older than the amendment.
+\item \textbf{Released defaults and loosened tolerances were not evaluated live.} The released
+  parameter file uses $20$~Hz, $56$ steps of $0.05$~s and batch $1000$; the campaign used $10$~Hz,
+  $28$ steps of $0.1$~s and batch $1500$. The stall window is $30$ cycles in both, so it is
+  $3$~s in the campaign and $1.5$~s at $20$~Hz. We did not evaluate the released defaults live. The
+  campaign also loosened \texttt{transform\_tolerance} ($0.5$~s) and \texttt{source\_timeout}
+  ($5.0$~s); do not copy them to a robot. The only \texttt{collision\_monitor} polygon was
+  disabled, so no \texttt{collision\_monitor} zone was active in any live result.
 \item \textbf{Builds.} The live results come from the correct RoboStack build of the MPPI library
   (Table~\ref{tab:builds}). Some distributed binaries roll trajectories out in the wrong direction; the
   July 2026 runs and 4 trials of campaign 1 used one, and we do not use them. The check the plugin carries covers the batch
-  rollout integration, the known defect, and not every function of the library. Humble's
+  rollout integration, the known defect, and not every function of the library, and it guards only \texttt{SafeEscapeController}. Run
+  \texttt{check\_mppi\_rollout} on every target install (apt binaries are untested), and never
+  set \texttt{se\_enforce\_rollout\_check} to false on a moving robot. Humble's
   distribution was not evaluated: every reported result comes from the Jazzy stack or the 2D mirror.
 \item \textbf{Mirror versus controller.} The mirror transcribes the shipped escape, but it differs
   from the C++ controller in its progress signal with simulated replans, its analytic circular
@@ -1520,8 +1674,11 @@ trial in \texttt{RESULTS.md}. It is in a stock-controller trial that had already
 \item \textbf{Coordination benefit is unmeasured, not established.} The escape--safety
   coordination (C3) has the conditional invariance property of Sec.~\ref{sec:coordination} but
   produced no outcome difference over an independent escape+CBF stack in the mirror
-  (Sec.~\ref{sec:evsf}), and campaign 2 does not test it: its pockets hold no dynamic obstacle, so the
-  CBF sees nothing. The idea of adapting the CBF gain online is not new
+  (Sec.~\ref{sec:evsf}), and campaign 2 does not test it: its pockets hold no moving body. The tracker
+  nevertheless admitted phantom obstacles in the s3 and s4 pocket trials, and the brake fallback
+  forced stops (up to $16$ cycles in one trial; Sec.~\ref{sec:c2results}). That was not a designed
+  test of the coordination. Deployment warning: a robot that turns in a pocket can be stopped by
+  obstacles that do not exist. The idea of adapting the CBF gain online is not new
   \cite{kim_adaptive_cbf,br_mppi,rt_cbf}. Demonstrating an outcome-level benefit requires a
   regime where the $\alpha$ choice decides which escapes are admitted.
 \item \textbf{Braking is not a safe fallback when cornered.} In the cramped narrow-dynamic pocket the
@@ -1531,7 +1688,8 @@ trial in \texttt{RESULTS.md}. It is in a stock-controller trial that had already
 \item \textbf{Look-ahead-point vs.\ full-body safety.} The Proposition of
   Sec.~\ref{sec:coordination} concerns the look-ahead point $P$, not the full robot body. Body safety is
   therefore \textbf{approximate}: the offset $L\approx r$ places $P$ at the robot's leading edge, and the
-  costmap obstacle critic plus \texttt{collision\_monitor} cover the residual. A full-body guarantee
+  costmap obstacle critic covers the residual; in the live campaign no \texttt{collision\_monitor}
+  zone was active, so it covered nothing. A full-body guarantee
   would require inflating the margin by $L$, which we avoid because it over-constrains sub-meter gaps and
   would degrade the success rate. On the \texttt{dynamic} family the look-ahead filter left body-grazing
   collisions essentially unchanged ($20\%\!\to\!16\%$, descriptive).
@@ -1542,10 +1700,13 @@ trial in \texttt{RESULTS.md}. It is in a stock-controller trial that had already
 \item \textbf{Constant-velocity tracker.} The dynamic-obstacle model evaluated in this paper is a
   replaceable constant-velocity baseline; rotating or accelerating agents are mispredicted and prediction
   uncertainty is unquantified, and an obstacle that leaves the tracked, unpruned set $\mathcal{O}$ also
-  leaves the barrier (Sec.~\ref{sec:coordination}). The released controller has since added an occupancy-based
+  leaves the barrier (Sec.~\ref{sec:coordination}). The controller that ran live carries an occupancy-based
   static/dynamic classification, persistent tracks with horizon prediction, and an online conformal bound
-  that inflates the CBF effective radius; these are the subject of follow-up work (SE-Predict) and none is
-  present in the mirror behind the quantitative results reported here.
+  that inflates the CBF effective radius. The campaign parameter file does not set
+  \texttt{se\_classify\_static}, \texttt{se\_predict\_horizon} or \texttt{se\_conformal}; their code
+  defaults are true, so all three were on in every live SE trial. They are the subject of follow-up work
+  (SE-Predict) and none is present in the mirror behind the quantitative results reported here. C4 and the
+  tracker description of this paper hold for this configuration only.
 \item \textbf{Baselines and scale.} We ran no full-scale 3D physics benchmark (BARN, DynaBARN, HuNavSim)
   and no run of DRPA-MPPI, GP-MPPI, a gap-based planner or an adaptive-gain CBF
   \cite{drpa_mppi,gp_mppi,safer_gap,kim_adaptive_cbf}; we make no comparison to them. The only
@@ -1567,10 +1728,11 @@ respect to the tracked dynamic obstacles forward invariant, assuming the barrier
 control updates and the QP uses no slack.
 
 The first version did not reach the goal live: 0 of 44 valid trials on a correct build. Four defects
-explain it, and the repaired controller needs four additions to the advised escape, found on a
-development family and disclosed with their ablation. In the pre-registered campaign on one simulated
-host, SE-MPPI without recoveries reached the goal in 5 of 6 on s1 and 5 of 6 on the held-out s4; stock
-without recoveries in 0 of 6; with Nav2's default recovery tree, stock 0 of 6 and SE-MPPI 3 of 6.
+explain it (one is inferred, not logged), and the repaired controller carries four additions to the advised escape, two found necessary on a
+development family and two safeguards for other configurations, all disclosed with their ablation. In the pre-registered campaign on one simulated
+host, SE-MPPI without recoveries reached the goal in 5 of 6 on s1 (Wilson 95\% interval $[0.44, 0.97]$)
+and 5 of 6 on the held-out s4; stock without recoveries in 0 of 6 on each; with Nav2's default recovery
+tree, on s1, stock 0 of 6 and SE-MPPI 3 of 6.
 The Fisher exact $p$ of the two decisive contrasts is $0.0152$. s1 is the development scenario;
 s4 carries the claim. The third pocket, s3, gave 4 of 6 against 0 of 6 ($p=0.0606$), which is not
 significant. The result does not rest on a real robot, a second host or more than six repetitions per cell.
@@ -1603,36 +1765,65 @@ for the CBF-QP \cite{osqp} and the toolchain. A new environment must resolve to 
 \texttt{jazzy\_25} package set, whose \texttt{nav2\_mppi\_controller} is 1.3.13 build
 \texttt{\_25}; \texttt{ros2 run nav2\_se\_controller check\_mppi\_rollout} must print OK.
 The package list of the campaign environment is
-\texttt{experiments/results\_pilot\_rerun/env\_correct.txt}.
+\texttt{experiments/results\_pilot\_rerun/env\_correct.txt}. The Python 2D mirror, the benchmark,
+its report and the figure script need no ROS; their environment is
+\texttt{experiments/benchmark2d/environment.yml} (Python 3.12.13, numpy 2.4.6, osqp 1.1.3,
+scipy 1.18.0, matplotlib 3.11.0).
 
-\textbf{Tags and commits.} The controller of the headless sweeps and of campaign 2 is the commit
-of the local tag \texttt{campaign2-controller}
-(\texttt{6a5072324d2ca60785049279588b5bd7204c86ea}), which holds the frozen pre-registration and the
-manifest of sha256 values; the tag was never pushed. The mirror re-run ran at commit
-\texttt{742a3df16d2d9f0adb617b9c020dc64962b2dfe1}, whose message names the campaign-2 analysis
-outputs; the re-run results are committed in \texttt{0388854d74d6880002972b5932eafd7a44abb8d7}.
-The design-stage benchmark of Appendix~\ref{app:v1} was generated at the tag \texttt{paper-v1}
-(\texttt{b21b0a546f36804a2af7d44e0f2e98ba1c235cac}).
-
-\textbf{Mirror re-run (both arms).} Python environment \texttt{ros2} (numpy 2.4.6, osqp 1.1.3);
-the trial results are deterministic.
+\textbf{Tags and commits.} The commits, the tag and the raw-data archive named here are local
+to the author's repository at the time of writing and are not published (the tag was never
+pushed). A release ref will be published before submission; the commit of the local tag
+\texttt{campaign2-controller} is the provenance. The controller of the live campaign is that
+commit. Trials 1 to 16 of campaign 2 ran at \texttt{012f4f1} (the tag before amendment 3), the
+later ones at \texttt{6a50723}; \texttt{src/}, \texttt{experiments/sim} and the campaign worlds
+are identical at the two commits. The confirmation sweeps of Table~\ref{tab:ablation} ran at
+\texttt{b7e012a}, whose controller sources are those of \texttt{507173a}; against the tag,
+\texttt{src/} at \texttt{b7e012a} differs in one comment of the test rig. The full hashes are
+below. The mirror re-run ran at the second commit, whose message names the campaign-2 analysis
+outputs; its results are committed in the third. The design-stage benchmark of
+Appendix~\ref{app:v1} was generated at the tag \texttt{paper-v1}.
 
 {\scriptsize
 \begin{verbatim}
-python3 -m experiments.benchmark2d.runner --variant v2 \
-  --families utrap clutter dynamic narrowdyn -n 50 \
-  --workers 6 --max-steps 400 \
-  --out experiments/results_2d_v2/trials.csv
-python3 -m experiments.benchmark2d.report \
+campaign2-controller
+  6a5072324d2ca60785049279588b5bd7204c86ea
+mirror re-run (code)
+  742a3df16d2d9f0adb617b9c020dc64962b2dfe1
+mirror re-run (results)
+  0388854d74d6880002972b5932eafd7a44abb8d7
+paper-v1
+  b21b0a546f36804a2af7d44e0f2e98ba1c235cac
+\end{verbatim}
+}
+
+\textbf{Mirror re-run (both arms).} Environment: \texttt{experiments/benchmark2d/environment.yml}.
+The trial results are deterministic. The runner resumes by default and skips scenarios already
+in its output file, so a rerun needs \texttt{--no-resume} and a fresh output directory; the
+commands below write to \texttt{/tmp} and compare with the committed files.
+
+{\scriptsize
+\begin{verbatim}
+for arm in v2 v2_advised; do
+  python3 -m experiments.benchmark2d.runner --variant $arm \
+    --families utrap clutter dynamic narrowdyn -n 50 \
+    --workers 6 --max-steps 400 --no-resume \
+    --out /tmp/mirror_$arm/trials.csv
+  python3 -m experiments.benchmark2d.report \
+    --trials /tmp/mirror_$arm/trials.csv \
+    --out-dir /tmp/mirror_$arm
+  python3 -m experiments.benchmark2d.compare_v1_v2 \
+    /tmp/mirror_$arm/trials.csv \
+    > /tmp/mirror_$arm/COMPARE_V1.md
+  # committed: experiments/results_2d_$arm
+  sort /tmp/mirror_$arm/trials.csv > /tmp/new.csv
+  sort experiments/results_2d_$arm/trials.csv > /tmp/old.csv
+  cmp /tmp/new.csv /tmp/old.csv && echo "$arm: identical"
+done
+python3 -m experiments.benchmark2d.figures \
   --trials experiments/results_2d_v2/trials.csv \
-  --out-dir experiments/results_2d_v2
-python3 -m experiments.benchmark2d.runner \
-  --variant v2_advised --families utrap clutter \
-  dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
-  --out experiments/results_2d_v2_advised/trials.csv
-python3 -m experiments.benchmark2d.report \
-  --trials experiments/results_2d_v2_advised/trials.csv \
-  --out-dir experiments/results_2d_v2_advised
+  --out-dir docs/papers/latex/figures --suffix _v2
+python3 -m experiments.benchmark2d.\
+  advised_fallback_threshold -n 50
 \end{verbatim}
 }
 
@@ -1642,18 +1833,36 @@ $1{,}200$ trials; every row equals a row of the committed \texttt{experiments/re
 (row order differs, because the pool returns scenarios in completion order); the note is
 \texttt{experiments/results\_2d\_v2\_smoke/FULL\_RERUN.md}. Each arm's directory holds
 \texttt{trials.csv}, \texttt{tables.md}, \texttt{stats.json}, \texttt{summary.csv} and
-\texttt{COMPARE\_V1.md}.
+\texttt{COMPARE\_V1.md} (written by \texttt{compare\_v1\_v2}, as above). The figures
+\texttt{success\_bars\_v2.png} and \texttt{e\_vs\_f\_v2.png} are written by the \texttt{figures}
+command above from the shipped arm's \texttt{trials.csv}; the last command writes
+\texttt{FALLBACK\_THRESHOLD.md} of the advised arm (Sec.~\ref{sec:extras}).
 
 \textbf{Headless development test.} \texttt{test/deployment/test\_closed\_loop\_utrap.cpp},
 with the family rule in \texttt{test/deployment/UTRAP\_DEV\_GEOMETRIES.md}; the sweep over all
-56 valid geometries runs with \texttt{SE\_UTRAP\_SWEEP=all}. The additions are switched off with the variable below; the values need a decimal point, because the rig reads \texttt{0} as an integer.
+56 valid geometries runs with \texttt{SE\_UTRAP\_SWEEP=all}. The additions are switched off with
+\texttt{SE\_UTRAP\_PARAMS}; the values need a decimal point, because the rig reads \texttt{0} as an
+integer. In the ROS environment, from the repository root (the commands name the test and the
+variables as the build files define them; they were not rerun for this revision):
 
 {\scriptsize
 \begin{verbatim}
+colcon build --packages-select nav2_se_controller
+source install/setup.bash
+# additions on
+SE_UTRAP_SWEEP=all colcon test --packages-select nav2_se_controller \
+  --ctest-args -R test_closed_loop_utrap --event-handlers console_direct+
+# additions off
+SE_UTRAP_SWEEP=all \
 SE_UTRAP_PARAMS="se_escape_avoid_radius=0.0,\
-se_escape_avoid_hop_radius=0.0,se_escape_stall_time=1e6"
+se_escape_avoid_hop_radius=0.0,se_escape_stall_time=1e6" \
+colcon test --packages-select nav2_se_controller \
+  --ctest-args -R test_closed_loop_utrap --event-handlers console_direct+
 \end{verbatim}
 }
+
+\noindent One sweep is one process; the sweeps cannot be seeded. The rows of the confirmation-2
+sweeps that Table~\ref{tab:ablation} quotes are in \texttt{experiments/campaign2/sweeps/}.
 
 \textbf{Live campaign 2.} From the repository root, in the campaign environment with the
 workspace sourced:
@@ -1665,15 +1874,22 @@ python3 experiments/campaign2/run_campaign2.py --block A
 python3 experiments/campaign2/run_campaign2.py --block B
 python3 experiments/campaign2/analyze.py --pack
 python3 experiments/campaign2/analyze.py --check
-python3 experiments/campaign2/odom_gap.py
-python -m pytest experiments/campaign2/tests
+python3 experiments/campaign2/odom_gap.py --raw RAW --out-dir OUT
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m pytest experiments/campaign2/tests
 \end{verbatim}
 }
 
-\noindent The raw trial files (about 88 directories) are outside the repository; the committed
-analysis outputs are \texttt{results.json.gz}, \texttt{RESULTS.md} and the log excerpts in
-\texttt{experiments/campaign2/logs/}. \texttt{analyze.py --check} compares them with a fresh
-analysis of the raw data and passes only in the environment that wrote them: another Python can differ
+\noindent The raw trial files are the archive \texttt{experiments/campaign2/raw\_trials.tar.gz}
+(sha256 in the file next to it): $88$ trial directories ($84$ registered trials, namely $24$ on
+\texttt{s0\_open}, $24$ on \texttt{s1\_utrap}, $24$ on \texttt{s3\_ctrap} and $12$ on
+\texttt{s4\_ltrap}, and $4$ evidence trials on \texttt{s1\_utrap\_evidence}), the $5$ entries of
+the shakedown directory and the driver logs. Unpack it into an empty directory and pass its
+\texttt{campaign2\_raw} directory as \texttt{RAW}. The commands above use the original raw root
+\texttt{/mnt/d/wsl/se-mppi/campaign2} by default; \texttt{odom\_gap.py} also writes its two
+output files into the repository directory by default, so pass \texttt{--out-dir} to write elsewhere.
+The other committed analysis outputs are \texttt{results.json.gz}, \texttt{RESULTS.md} and the log
+excerpts in \texttt{experiments/campaign2/logs/}. \texttt{analyze.py --check} compares them with a
+fresh analysis of the raw data (\texttt{--raw RAW}) and passes only in the environment that wrote them: another Python can differ
 in the last digit of some floats, while \texttt{RESULTS.md} is byte-identical in both.
 \texttt{PREREG.md} holds the pre-registration with its amendments, \texttt{SHAKEDOWN.md} the one trial on
 \texttt{s0\_open} that counts for nothing, and \texttt{FREEZE\_MANIFEST.json} the hashes of the frozen files.
@@ -1682,7 +1898,9 @@ in the last digit of some floats, while \texttt{RESULTS.md} is byte-identical in
 this paper against the committed artifacts: the mirror arms (\texttt{stats.json}, \texttt{summary.csv}),
 the campaign (\texttt{results.json.gz}, \texttt{ODOM\_GAP.json}, the wording of \texttt{PREREG.md}),
 campaign 1 (\texttt{results.json}), the design-stage benchmark of Appendix~\ref{app:v1}, the test counts
-and the parameter file.
+and the parameter file. It also checks the prose counts of the abstract, of the introduction (C2) and of the
+conclusion against \texttt{results.json.gz}, the per-class drift table against \texttt{ODOM\_GAP.json}, the
+forced-stop counts, the raw archive with its hash, and the committed sweep rows.
 
 \textbf{2D mirror versus the Nav2 controller.} The 2D mirror
 (\texttt{experiments/prototype/se\_mppi\_v2.py} for the shipped escape, driven by

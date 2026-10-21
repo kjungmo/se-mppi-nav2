@@ -49,3 +49,22 @@ or controller build are not the frozen ones, when the build stamp does not name 
 `campaign2-controller`, when the raw root holds trials of another attempt (another freeze manifest
 or tag commit), or when it would drive `s3_ctrap` or `s4_ltrap` or run block B before Phase A is complete.
 `PREREG.md` ("Provenance", "Attempts, interruption and restart") says why.
+
+## Raw trial data
+
+`raw_trials.tar.gz` (sha256 in `raw_trials.tar.gz.sha256`) holds the raw files of the campaign:
+88 trial directories under `trials/` (84 registered trials: 24 on `s0_open`, 24 on `s1_utrap`, 24
+on `s3_ctrap`, 12 on `s4_ltrap`; and 4 evidence trials on `s1_utrap_evidence`), the 5 entries of
+`shakedown/`, the driver logs and `DEVIATIONS_LEAD.md`. Unpack it into an empty directory and pass
+the root to the scripts:
+
+```bash
+mkdir /tmp/c2raw && tar -C /tmp/c2raw -xzf experiments/campaign2/raw_trials.tar.gz
+python3 -I experiments/campaign2/analyze.py --check --raw /tmp/c2raw/campaign2_raw
+python3 experiments/campaign2/odom_gap.py --raw /tmp/c2raw/campaign2_raw --out-dir /tmp/c2gap
+```
+
+`odom_gap.py` writes `ODOM_GAP.json` and `ODOM_GAP.md` into `--out-dir`; its default is this
+directory, which overwrites the committed files. Its default `--raw` is the `/mnt/d` path of the
+host that ran the campaign. `analyze.py --check` passes only in the environment that wrote the
+committed outputs.

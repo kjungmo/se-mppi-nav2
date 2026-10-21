@@ -468,6 +468,133 @@ if not ARXIV:
     for tok in ('0.10 m / 0.5 m', '36 / 2.0 m', '2.5 m', '0.4 m / 15 s', '0.5 rad', '3 s / 0.15 m', '1.0 m', '0.6 m; 3', '0.2 m; 6', '$-0.35$', '$1500$'):
         check(tok in tex, f'parameter quote {tok!r} missing from the paper')
 
+    # ---- prose counts of the abstract, intro C2 and conclusion against results.json.gz ----
+    def section(a, b):
+        i = tex.index(a)
+        return re.sub(r'\s+', ' ', tex[i:tex.index(b, i)])
+    abstract = section('\\begin{abstract}', '\\end{abstract}')
+    intro_c2 = section('\\item \\textbf{C2 (repair and live evidence).}', '\\item \\textbf{C3 (algorithm).}')
+    concl = section('\\section{Conclusion}', '\\appendices')
+    cnt = lambda scen, cfg: cells[(scen, cfg)]['successes']
+    p4 = lambda name: f"{contr[name]['fisher_p']:.4f}"
+    s1c4, s4c4, s3c4 = cnt('s1_utrap', 'C4'), cnt('s4_ltrap', 'C4'), cnt('s3_ctrap', 'C4')
+    s1c3, s4c3, s3c3 = cnt('s1_utrap', 'C3'), cnt('s4_ltrap', 'C3'), cnt('s3_ctrap', 'C3')
+    s1c1, s1c2 = cnt('s1_utrap', 'C1'), cnt('s1_utrap', 'C2')
+    lo, hi = cells[('s1_utrap', 'C4')]['wilson95']
+    wil = f'$[{lo:.2f}, {hi:.2f}]$'
+    for name, txt in (('abstract', abstract), ('conclusion', concl)):
+        want = (f'reached the goal in {s1c4} of 6 on s1 (Wilson 95\\% interval {wil}) and {s4c4} of 6 on the held-out s4')
+        check(want in txt, f'{name}: SE-MPPI counts on s1/s4 or the Wilson interval differ from results.json.gz ({want})')
+        want = f'stock without recoveries in {s1c3} of 6 on each'
+        check(want in txt and s1c3 == s4c3, f'{name}: stock count without recoveries differs ({want})')
+        want = f'on s1, stock {s1c1} of 6 and SE-MPPI {s1c2} of 6'
+        check(want in txt, f'{name}: C1/C2 counts on s1 differ ({want})')
+    check(f'{s3c4} of 6 against {s3c3} of 6' in concl and f'($p={p4("C4 vs C3 on s3_ctrap")}$)' in concl,
+          'conclusion: s3 count or p differs')
+    check(f"$p={p4('C4 vs C3 on s1_utrap')}$" in abstract and p4('C4 vs C3 on s1_utrap') == p4('C4 vs C3 on s4_ltrap')
+          and f"$p={p4('C2 vs C1 on s1_utrap')}$" in abstract and f"$p={p4('C4 vs C3 on s3_ctrap')}$" in abstract,
+          'abstract: Fisher p values differ from results.json.gz')
+    check(f'in {s1c4} of 6 trials on the development pocket and in {s4c4} of 6 on a held-out pocket' in intro_c2
+          and s1c3 == 0 and 'stock MPPI reached it in none' in intro_c2, 'intro C2: counts differ from results.json.gz')
+    check(f'{s3c4} of 6 against {s3c3} of 6 ($p=0.0606$, not' in abstract.replace('\n', ' ') or
+          f'{s3c4} of 6 against {s3c3} of 6 ($p={p4("C4 vs C3 on s3_ctrap")}$' in abstract,
+          'abstract: s3 count differs')
+
+    # ---- amendment 3 disclosure: 16 counted trials at 012f4f1 ----
+    byt = sorted(c2['trials'], key=lambda t: t['wall_start'])
+    early = [t for t in byt if t['controller_tag_commit'].startswith('012f4f1')]
+    check(len(early) == 16 and byt[15]['trial_id'] == 'correct__s4_ltrap__C3__rep0' and
+          all(t['controller_tag_commit'].startswith('6a50723') for t in byt[16:]),
+          'amendment 3: the first 16 trials (up to s4 C3 rep0) are not exactly those at 012f4f1')
+    ph = [t for t in early if t['scenario'] == 's1_utrap']
+    check(sum(t['reached'] for t in ph if t['config'] == 'C4') == 5 and sum(1 for t in ph if t['config'] == 'C4') == 6
+          and [t['rep'] for t in ph if t['config'] == 'C3'] == [0, 1, 2] and not any(t['reached'] for t in ph if t['config'] == 'C3'),
+          'amendment 3: s1 C4 5 of 6 and s1 C3 reps 0-2 failed at 012f4f1 broken')
+    check('16 counted trials' in flat and '012f4f1' in tex and '6a50723' in tex, 'amendment 3 disclosure text missing')
+
+    # ---- forced stops without a moving body ----
+    fsd = {}
+    for t in sorted(c2['trials'], key=lambda t: t['trial_id']):
+        if t['scenario'].endswith('evidence'):
+            continue
+        fsd.setdefault((t['scenario'], t['config']), []).append(int(t['diagnostics_last']['forced_stops']))
+    lst = lambda k: ', '.join(str(v) for v in fsd[k])
+    for key, name in ((('s3_ctrap', 'C2'), 's3 C2'), (('s3_ctrap', 'C4'), 's3 C4'), (('s4_ltrap', 'C4'), 's4 C4')):
+        check(f'{name} ${lst(key)}$' in flat, f'forced-stop counts of {name} differ from results.json.gz: {fsd[key]}')
+    check(all(sum(v) == 0 for k, v in fsd.items() if k[0] in ('s0_open', 's1_utrap') or k[1] in ('C1', 'C3')),
+          'forced stops outside the SE pockets of s3/s4 are not all zero')
+    check(max(max(v) for v in fsd.values()) == 16 and 'up to $16$ cycles' in flat, 'forced-stop maximum 16 broken')
+
+    # ---- localization drift, all 88 trials (odom_gap.py) ----
+    check(og['all_n'] == 88 and len(og['all_rows']) == 88, 'ODOM_GAP.json does not cover 88 trials')
+    bc = og['by_class']
+    cls = {'SE': 'SE-MPPI in a pocket (C2, C4)', 'stock': 'stock controller in a pocket (C1, C3)',
+           's0': 'trap-free control (s0_open, all four configurations)'}
+    otab2 = table_rows('tab:odomclass')
+    for row, (k, n) in zip(otab2, (('SE', 34), ('stock', 30), ('s0', 24))):
+        g = bc[cls[k]]
+        rg = lambda key, d=3: f"{g[key]['min']:.{d}f}--{g[key]['max']:.{d}f}"
+        exp = [str(n), rg('odom_minus_gt_m'), rg('amcl_minus_gt_m'), rg('peak_abs_cmd_wz_rad_s')]
+        check(g['odom_minus_gt_m']['n'] == n and row[1:] == exp, f'tab:odomclass {k}: {row[1:]} differs from {exp}')
+    r2 = lambda v: f'{v:.2f}'
+    br = og['by_class_reached'][cls['SE']]
+    check(br['odom_minus_gt_m']['n'] == 21 and r2(br['odom_minus_gt_m']['min']) == '0.09' and r2(br['odom_minus_gt_m']['max']) == '0.54'
+          and r2(br['amcl_minus_gt_m']['min']) == '0.06' and r2(br['amcl_minus_gt_m']['max']) == '0.54',
+          'reached SE trials: 21 trials, odometry 0.09-0.54, AMCL 0.06-0.54 broken')
+    check('in the 21 SE pocket trials that reached the goal, the odometry is $0.09$ to $0.54$~m and the AMCL estimate $0.06$ to $0.54$~m' in flat,
+          'limitations: reached-trial drift quote missing')
+    c1s1 = og['by_cell']['s1_utrap/C1']
+    check(r2(c1s1['amcl_minus_gt_m']['min']) == '0.23' and r2(c1s1['amcl_minus_gt_m']['max']) == '0.38' and c1s1['odom_minus_gt_m']['max'] <= 0.03,
+          's1 C1: AMCL gap 0.23-0.38, odometry gap <= 0.03 broken')
+    check('$0.23$ to $0.38$~m from the ground truth while the odometry is at most $0.03$~m' in flat, 'C1 AMCL-gap quote missing')
+    st = bc[cls['stock']]['peak_abs_cmd_wz_rad_s']
+    c3w = max(og['by_cell'][f's{n}/C3']['peak_abs_cmd_wz_rad_s']['max'] for n in ('1_utrap', '3_ctrap', '4_ltrap'))
+    check(round(st['max'], 2) == 1.00 and round(c3w, 2) == 0.45 and bc[cls['SE']]['peak_abs_cmd_wz_rad_s']['max'] <= 1.9 + 1e-9
+          and round(bc[cls['SE']]['peak_abs_cmd_wz_rad_s']['max'], 1) == 1.9, 'peak turn-rate quotes (1.9 / 1.00 / 0.45) broken')
+    check('at or below $1.00$~rad/s (C1) and $0.45$~rad/s (C3)' in flat, 'peak turn-rate prose missing')
+    lp = og['left_pocket']
+    check(lp[cls['SE']] == {'n': 34, 'left_pocket_s_set': 34} and lp[cls['stock']]['left_pocket_s_set'] == 0 and lp[cls['s0']]['left_pocket_s_set'] == 0,
+          'left_pocket_s: set in all 34 SE pocket trials and in no stock one broken')
+
+    # ---- raw archive, sweeps, fallback threshold ----
+    import tarfile
+    arc = EXP / 'campaign2/raw_trials.tar.gz'
+    check(hashlib.sha256(arc.read_bytes()).hexdigest() == (EXP / 'campaign2/raw_trials.tar.gz.sha256').read_text().split()[0],
+          'raw_trials.tar.gz does not match its sha256 file')
+    with tarfile.open(arc) as tf:
+        names = tf.getnames()
+    tr = {n.split('/')[2] for n in names if n.startswith('campaign2_raw/trials/') and n.count('/') >= 2 and n.split('/')[2]}
+    reg = [n for n in tr if 'evidence' not in n]
+    bys = {}
+    for n in reg:
+        k = n.split('__')[1]
+        bys[k] = bys.get(k, 0) + 1
+    check(len(tr) == 88 and len(reg) == 84 and bys == {'s0_open': 24, 's1_utrap': 24, 's3_ctrap': 24, 's4_ltrap': 12},
+          f'raw archive: {len(tr)} trial directories, classes {bys}; paper says 88 = 84 (24/24/24/12) + 4 evidence')
+    sh = {n.split('/')[2] for n in names if n.startswith('campaign2_raw/shakedown/') and n.count('/') >= 2 and n.split('/')[2]}
+    check(len(sh) == 5, f'raw archive: shakedown has {len(sh)} entries, paper says 5')
+    sweep_rows = {}
+    for f in ('on1', 'on2', 'on3', 'off1', 'off2', 'off3b'):
+        txt = (EXP / f'campaign2/sweeps/confirmation2_{f}.txt').read_text()
+        m_ = re.search(r'UTRAP sweep passed (\d+) of 56', txt)
+        check(m_ is not None and txt.count('UTRAP geometry=') == 56, f'sweeps/confirmation2_{f}.txt: not 56 rows and a summary')
+        sweep_rows[f] = int(m_.group(1))
+    check([sweep_rows[k] for k in ('on1', 'on2', 'on3')] == [55, 56, 56] and [sweep_rows[k] for k in ('off1', 'off2', 'off3b')] == [16, 18, 14],
+          f'committed sweep rows {sweep_rows} differ from tab:ablation (55,56,56 / 16,18,14)')
+    ft = (EXP / 'results_2d_v2_advised/FALLBACK_THRESHOLD.md').read_text()
+    check('| as in the advised arm (no threshold) | 29 | 50 |' in ft and '| 0.6 m threshold restored | 29 | 50 |' in ft
+          and 'outcome differs between the two columns: 0.' in ft and '$29$ of $50$, no seed differs' in tex,
+          'FALLBACK_THRESHOLD.md: 29 of 50 in both columns, no seed differs, broken')
+
+    # ---- released parameter file against the campaign file (R4.5) ----
+    rel = (ROOT / 'src/nav2_se_controller/config/nav2_se_controller_params.yaml').read_text()
+    rv = lambda key: float(re.search(r'^\s*' + key + r':\s*([-\d.]+)', rel, re.M).group(1))
+    check((rv('controller_frequency'), rv('time_steps'), rv('model_dt'), rv('batch_size'), rv('se_progress_stall_window')) == (20.0, 56, 0.05, 1000, 30)
+          and (yv('controller_frequency'), yv('time_steps'), yv('model_dt'), yv('batch_size'), yv('se_progress_stall_window')) == (10.0, 28, 0.1, 1500, 30),
+          'released-vs-campaign parameter differences (20/56/0.05/1000 vs 10/28/0.1/1500, window 30) broken')
+    check(yv('transform_tolerance') in (0.5, 1.0) and yv('source_timeout') == 5.0 and 'enabled: False' in yml, 'loosened tolerances / disabled polygon broken')
+    check(yv('wz_max') == 1.9 and 'max_velocity: [0.5, 0.0, 2.0]' in yml and 'max_accel: [2.5, 0.0, 3.2]' in yml, 'wz limits 1.9 / 2.0 / 3.2 broken')
+
     # ---- campaign 1 ----
     c1 = json.loads((EXP / 'results_pilot_rerun/results.json').read_text())
     h = c1['headline']
