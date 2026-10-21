@@ -589,6 +589,51 @@ if not ARXIV:
           'forced stops outside the SE pockets of s3/s4 are not all zero')
     check(max(max(v) for v in fsd.values()) == 16 and 'up to $16$ cycles' in flat, 'forced-stop maximum 16 broken')
 
+    # ---- CBF admissions, loop rate, host load, collision_monitor log (cbf_admissions.py, R4 round) ----
+    import tempfile
+    adm_json = EXP / 'campaign2/CBF_ADMISSIONS.json'
+    adm = json.loads(adm_json.read_text())
+    with tempfile.TemporaryDirectory() as td:
+        subprocess.run([sys.executable, str(EXP / 'campaign2/cbf_admissions.py'), '--out-dir', td], check=True)
+        check(json.loads((Path(td) / 'CBF_ADMISSIONS.json').read_text()) == adm,
+              'CBF_ADMISSIONS.json differs from a fresh run of cbf_admissions.py')
+        check((Path(td) / 'CBF_ADMISSIONS.md').read_text() == (EXP / 'campaign2/CBF_ADMISSIONS.md').read_text(),
+              'CBF_ADMISSIONS.md differs from a fresh run of cbf_admissions.py')
+    a_ = adm['admissions']
+    bs = a_['by_scenario']
+    check(a_['se_trials'] == 46 and a_['se_trials_with_admission'] == 42 and a_['max_obstacles_in_a_message'] == 2
+          and bs['s0_open']['n'] == 12 and bs['s0_open']['with_admission'] == 8,
+          f'CBF admissions: {a_["se_trials_with_admission"]} of {a_["se_trials"]}, s0 {bs["s0_open"]}; paper says 42 of 46, 8 of 12, max 2')
+    check(all(b['with_forced_stop'] == 0 for k, b in bs.items() if k not in ('s3_ctrap', 's4_ltrap'))
+          and bs['s3_ctrap']['with_forced_stop'] > 0 and bs['s4_ltrap']['with_forced_stop'] > 0,
+          'CBF_ADMISSIONS: forced stops not confined to s3/s4')
+    for tok in ('in 42 of 46 SE-MPPI trials (evidence trials included), among them 8 of 12 on \\texttt{s0\\_open}, with at most 2 obstacles in a sample',
+                'admitted phantom obstacles in 42 of 46 SE-MPPI trials, including 8 of 12'):
+        check(tok in flat, f'CBF admission quote missing: {tok!r}')
+    lr_ = adm['loop_rate']
+    f2 = lambda v: f'{v:.2f}'
+    check(lr_['se_trials'] == 46 and (f2(lr_['cycles_per_wall_s']['min']), f2(lr_['cycles_per_wall_s']['max'])) == ('9.83', '10.00')
+          and (f2(lr_['cycles_per_sim_s']['min']), f2(lr_['cycles_per_sim_s']['max'])) == ('10.14', '10.42')
+          and 'ran $9.83$ to $10.00$ cycles per wall-clock second and $10.14$ to $10.42$ per simulated second' in flat,
+          f'loop-rate quote broken: {lr_}')
+    h_ = adm['host']
+    check(h_['all_trials'] == 88 and (f'{h_["own_cores_mean"]["min"]:.1f}', f'{h_["own_cores_mean"]["max"]:.1f}') == ('3.2', '4.2')
+          and (f2(h_['load1_max']['min']), f2(h_['load1_max']['max'])) == ('1.79', '8.35')
+          and f'{h_["rtf_min_10s_all"]["min"]:.3f}' == '0.882' and f'{h_["rtf_min_10s_se_pocket"]["min"]:.3f}' == '0.944'
+          and '$3.2$ to $4.2$ cores' in flat and '$1.79$ to $8.35$' in flat and 'was $0.882$ ($0.944$ in the SE-MPPI pocket trials)' in flat,
+          f'host-load quote broken: {h_}')
+    mc = h_['missed_control_cycles_nonzero']
+    check(set(mc) == {'s1_utrap/C1', 's3_ctrap/C1'} and sum(len(v) for v in mc.values()) == 12
+          and min(min(v) for v in mc.values()) == 2 and max(max(v) for v in mc.values()) == 5
+          and 'only the 12 C1 pocket trials logged missed control cycles ($2$ to $5$ each)' in flat,
+          f'missed control cycles quote broken: {mc}')
+    cml_ = adm['collision_monitor_log']
+    check(cml_['launch_logs'] == 88 and cml_['lines'] > 0 and cml_['lines_not_info'] == 0
+          and 'its log in the 88 trials holds no line above INFO level' in flat,
+          f'collision_monitor log quote broken: {cml_}')
+    check('14 to 19' not in flat and 'pass 14 to 18 of 56, and an earlier, unarchived implementer sweep passed 19' in flat,
+          'ablation range must be quoted as 14 to 18 (archived) plus 19 (unarchived)')
+
     # ---- localization drift, all 88 trials (odom_gap.py) ----
     check(og['all_n'] == 88 and len(og['all_rows']) == 88, 'ODOM_GAP.json does not cover 88 trials')
     bc = og['by_class']

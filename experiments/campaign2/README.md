@@ -68,3 +68,9 @@ python3 experiments/campaign2/odom_gap.py --raw /tmp/c2raw/campaign2_raw --out-d
 directory, which overwrites the committed files. Its default `--raw` is the `/mnt/d` path of the
 host that ran the campaign. `analyze.py --check` passes only in the environment that wrote the
 committed outputs.
+
+`cbf_admissions.py` (post hoc) reads the archive itself, with no unpacking:
+`python3 experiments/campaign2/cbf_admissions.py --out-dir /tmp/c2adm`. It writes
+`CBF_ADMISSIONS.json` and `CBF_ADMISSIONS.md`: obstacles admitted to the CBF per SE-MPPI trial,
+control cycles per wall-clock and per simulated second, host load, and the level of the
+`collision_monitor` log lines. `scripts/check_paper_numbers.py` reruns it and compares.

@@ -44,8 +44,11 @@ controller_server:
       # of the behaviour tree's path. Published on <plugin>/se_escape_path.
       # false: keep the behaviour tree's path (ablation).
       se_escape_path_substitution: true
-      se_escape_waypoint_cap: 2.5       # [m] longest hop
+      # Cap on the hop length; inactive while se_gap_max_range <= cap + robot radius + 0.05.
+      se_escape_waypoint_cap: 2.5       # [m]
       se_escape_reselect_radius: 0.4    # [m] pick the next hop within this of the waypoint
+      # The next two are converted to control cycles at controller_frequency, so they
+      # stretch in wall time when the control loop misses its rate.
       se_escape_reselect_period: 15.0   # [s] pick a new hop after this long
       se_escape_stall_time: 3.0         # [s] no movement of se_escape_stall_distance -> new hop
       se_escape_stall_distance: 0.15    # [m]
@@ -75,6 +78,8 @@ controller_server:
       # yet (repeated grids are skipped), so ~1-2 s of costmap updates is a good
       # default.
       se_classify_static: true
+      # Until then a newly seen cell (e.g. a wall entering the rolling window) is a
+      # dynamic candidate and can reach the CBF; read cbf_obstacles in the diagnostics.
       se_static_min_frames: 10          # frames of occupancy before a cell is static
       se_static_fraction: 0.5           # static-cell fraction to call a cluster static
       # Track + horizon prediction (SE-Predict N2). Horizons are published on

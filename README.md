@@ -71,7 +71,8 @@ What is measured and what is not:
   found on a development family of pockets. Two of them, (a) avoid lists and (b) a
   movement watchdog, were needed together for the headless development sweeps to pass
   (ablated jointly, confounded with position in the sweep): 55 or 56 of 56 geometries
-  pass per sweep with them, 14 to 19 of 56 without. The other two, (c) a waypoint floor
+  pass per sweep with them, 14 to 18 of 56 without in the three archived sweeps (19 in an
+  earlier, unarchived one). The other two, (c) a waypoint floor
   and (d) a clearance threshold, are safeguards for other configurations (see the paper and
   [`experiments/campaign2/PREREG.md`](experiments/campaign2/PREREG.md)).
 - **Measured, in a Python 2D mirror of the shipped algorithm (not the Nav2

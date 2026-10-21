@@ -189,7 +189,7 @@ SE-MPPI가 동작하려면 **EscapeCritic도 MPPI critics 리스트에 등록**�
 7. `vx_min`은 0 이하로 두세요. 0보다 크면 로봇이 멈추거나 후진할 수 없어 탈출이 동작하지 않습니다.
 8. 캠페인 파라미터 파일의 완화된 허용치(`transform_tolerance` 0.5 s, `source_timeout` 5.0 s)는 시뮬레이션용입니다. 로봇에 복사하지 마세요.
 9. 대상 기기에서 실제 컨트롤러 주기를 재세요(Nav2의 "missed its desired rate" 경고). 실행기가 굶으면 lifecycle bond가 끊겨 스택 전체가 내려갈 수 있습니다.
-10. 진단 토픽의 forced-stop 카운터를 읽으세요. 포켓에서 회전하는 로봇은 존재하지 않는 장애물 때문에 멈출 수 있습니다(캠페인 2에서 관찰).
+10. 진단 토픽의 forced-stop 카운터와 `cbf_obstacles`를 함께 읽으세요. 포켓 안에서도, 빈 공간에서도 읽으세요. 존재하지 않는 장애물이 CBF에 들어가면 로봇이 멈추거나 방향을 틀 수 있습니다. 캠페인 2에서는 SE-MPPI 46회 중 42회에서 이런 장애물이 들어갔고, 장애물 없는 `s0_open` 12회 중 8회도 포함됩니다. 강제 정지는 s3·s4에서만 났습니다(`experiments/campaign2/CBF_ADMISSIONS.md`).
 11. 탈출 뒤 Nav2의 SUCCEEDED를 그대로 믿지 마세요. 캠페인 2에서 13회는 SUCCEEDED였지만 실제 위치는 목표에서 0.54~1.66 m 떨어져 있었습니다. 독립된 위치 확인을 붙이세요.
 12. 회전 속도와 가속 한계를 로봇에서 직접 재세요. 캠페인 2에서 컨트롤러 출력은 `wz_max` 1.9 rad/s까지 올라갔고, velocity smoother는 2.0 rad/s와 3.2 rad/s²까지 허용했습니다. 이 값은 시뮬레이션 로봇의 한계입니다.
 13. composed container에 respawn 정책을 주거나 non-composed bringup을 쓰세요. 캠페인 2에서 종료 중 한 번의 크래시가 composed container(`component_container_isolated`)를 내렸고, 그 컨테이너의 내비게이션 노드가 모두 함께 멈췄습니다.
