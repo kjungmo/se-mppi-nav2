@@ -535,6 +535,46 @@ if not ARXIV:
           and [t['rep'] for t in ph if t['config'] == 'C3'] == [0, 1, 2] and not any(t['reached'] for t in ph if t['config'] == 'C3'),
           'amendment 3: s1 C4 5 of 6 and s1 C3 reps 0-2 failed at 012f4f1 broken')
     check('16 counted trials' in flat and '012f4f1' in tex and '6a50723' in tex, 'amendment 3 disclosure text missing')
+    # interim state per cell when amendment 3 was written (R3.1)
+    def early_n(sc, cfg):
+        ts = [t for t in early if t['scenario'] == sc and t['config'] == cfg]
+        return sum(t['reached'] for t in ts), len(ts)
+    check(early_n('s1_utrap', 'C1') == (0, 1) and early_n('s1_utrap', 'C2') == (0, 1)
+          and early_n('s3_ctrap', 'C1') == (0, 1) and early_n('s3_ctrap', 'C2') == (1, 1)
+          and early_n('s3_ctrap', 'C3') == (0, 1) and early_n('s3_ctrap', 'C4') == (1, 1)
+          and early_n('s4_ltrap', 'C3') == (0, 1) and early_n('s4_ltrap', 'C4') == (0, 0)
+          and sum(early_n(sc, c)[1] for sc in ('s0_open', 's1_utrap_evidence') for c in ('C1', 'C2', 'C3', 'C4')) == 0,
+          'amendment 3: interim per-cell state at 012f4f1 differs from the paper')
+    late_s4 = [t for t in byt[16:] if t['scenario'] == 's4_ltrap']
+    check(sorted((t['config'], t['rep']) for t in late_s4) == sorted([('C4', r) for r in range(6)] + [('C3', r) for r in range(1, 6)]),
+          'amendment 3: s4 trials after the amendment are not all six C4 and C3 reps 1-5')
+    check('on s1, C4 complete at 5 of 6, C3 failed in repetitions 0 to 2, C1 0 of 1 and C2 0 of 1; on s3, C1 0 of 1, C2 1 of 1, C3 0 of 1 and C4 1 of 1; on s4, C3 0 of 1 (the crash trial). No C4 trial on s4 had run.' in flat
+          and 'All six C4 trials on s4 and C3 repetitions 1 to 5 on s4 ran after the amendment' in flat,
+          'amendment 3 interim-state text missing')
+    for name, txt in (('abstract', abstract), ('intro C2', intro_c2), ('conclusion', concl)):
+        check('post hoc amendment to its crash-stop rule' in txt, f'{name}: pre-registration not qualified by the post hoc amendment')
+    # recoveries and progress failures in SE trials (task-memory sentence)
+    check(all(t['progress_failures'] == 0 and t['bt_spin'] + t['bt_backup'] + t['bt_wait'] + t['bt_clear_local'] + t['bt_clear_global'] == 0
+              for t in c2['trials'] if t['config'] in ('C2', 'C4')),
+          'an SE trial invoked a recovery or had a progress failure')
+    # live hops: all horizon rays, shortest clearance 1.42 m (addition d)
+    hops = [h for t in c2['trials'] for h in (t['escape_hop_list'] or [])]
+    check(len(hops) == 188 and all(h['horizon_ray'] for h in hops) and f"{min(h['clearance_m'] for h in hops):.2f}" == '1.42'
+          and 'all 188 hops logged in campaign 2' in flat and '(shortest logged live: $1.42$~m)' in flat,
+          'live hops: 188, all horizon rays, shortest clearance 1.42 m broken')
+    # mirror arms paired by seed, F on utrap / narrowdyn (descriptive, R3.2)
+    import csv
+    def f_succ(arm):
+        return {(r_['family'], r_['seed']): int(r_['success']) for r_ in csv.DictReader(open(EXP / f'results_2d_{arm}/trials.csv'))
+                if r_['config'] == 'F_full'}
+    fv, fa = f_succ('v2'), f_succ('v2_advised')
+    def split(fam):
+        ks = [k for k in fv if k[0] == fam]
+        return sum(fv[k] and not fa[k] for k in ks), sum(fa[k] and not fv[k] for k in ks)
+    check(split('utrap') == (11, 0) and split('narrowdyn') == (10, 2)
+          and '11 U-trap seeds succeed only with the additions and none only without them' in flat
+          and '\\texttt{narrowdyn} the split is 10 and 2' in flat,
+          f'mirror arms paired split differs: utrap {split("utrap")}, narrowdyn {split("narrowdyn")}')
 
     # ---- forced stops without a moving body ----
     fsd = {}

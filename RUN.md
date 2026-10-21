@@ -181,6 +181,9 @@ SE-MPPI가 동작하려면 **EscapeCritic도 MPPI critics 리스트에 등록**�
 3. `se_cbf_lookahead`, `se_alpha_*`, `se_obstacle_*`는 로봇 크기·속도에 맞게 튜닝.
 4. **안전 우선:** `collision_monitor`는 켜둘 것(스모크에선 좁은 맵 때문에 껐었음).
    CBF 필터는 동적장애물용 추가 안전층이지 collision_monitor 대체가 아니다.
+   주의: 탈출은 활성 접근 다각형(`FootprintApproach`, `time_before_collision` 1.2 s)과 함께 돌린 적이 없습니다.
+   캠페인 파라미터 파일은 좁은 방에서 로봇을 거의 세우던 이 다각형을 껐습니다.
+   켜면 포켓 안의 회전이 느려지거나 멈출 수 있으니 탈출을 다시 시험하세요.
 5. `nav2_se_controller`를 로봇 워크스페이스 `src/`에 두고 colcon 빌드.
 6. 설치한 MPPI 라이브러리를 확인하세요: `ros2 run nav2_se_controller check_mppi_rollout`이 OK를 출력해야 합니다. 일부 배포 바이너리는 궤적을 반대 방향으로 굴립니다. 움직이는 로봇에서는 `se_enforce_rollout_check`를 false로 두지 마세요.
 7. `vx_min`은 0 이하로 두세요. 0보다 크면 로봇이 멈추거나 후진할 수 없어 탈출이 동작하지 않습니다.
@@ -188,6 +191,9 @@ SE-MPPI가 동작하려면 **EscapeCritic도 MPPI critics 리스트에 등록**�
 9. 대상 기기에서 실제 컨트롤러 주기를 재세요(Nav2의 "missed its desired rate" 경고). 실행기가 굶으면 lifecycle bond가 끊겨 스택 전체가 내려갈 수 있습니다.
 10. 진단 토픽의 forced-stop 카운터를 읽으세요. 포켓에서 회전하는 로봇은 존재하지 않는 장애물 때문에 멈출 수 있습니다(캠페인 2에서 관찰).
 11. 탈출 뒤 Nav2의 SUCCEEDED를 그대로 믿지 마세요. 캠페인 2에서 13회는 SUCCEEDED였지만 실제 위치는 목표에서 0.54~1.66 m 떨어져 있었습니다. 독립된 위치 확인을 붙이세요.
+12. 회전 속도와 가속 한계를 로봇에서 직접 재세요. 캠페인 2에서 컨트롤러 출력은 `wz_max` 1.9 rad/s까지 올라갔고, velocity smoother는 2.0 rad/s와 3.2 rad/s²까지 허용했습니다. 이 값은 시뮬레이션 로봇의 한계입니다.
+13. composed container에 respawn 정책을 주거나 non-composed bringup을 쓰세요. 캠페인 2에서 종료 중 한 번의 크래시가 composed container(`component_container_isolated`)를 내렸고, 그 컨테이너의 내비게이션 노드가 모두 함께 멈췄습니다.
+14. 로봇 외곽이 원이 아니면 MPPI `CostCritic`의 `consider_footprint`를 true로 두고 다시 검증하세요. 캠페인은 원형 로봇(반지름 0.22 m)에 `consider_footprint: false`와 inflation 0.45 m로 돌렸습니다.
 
 ---
 
@@ -210,7 +216,7 @@ C++ 알고리즘과 패리티(자세한 건 `experiments/prototype/README.md`).
 | `controller_server`가 플러그인 못 찾음 | `source install/setup.bash` 안 함 / 빌드 실패. `ros2 plugin`은 없으니 로그의 "Created controller …" 확인 |
 | `EscapeCritic` "no factory exists" | (이미 수정됨) 라이브러리 분리 필요 — 최신 레포면 OK |
 | **로봇이 안 움직임 + dist 고정** | **loopback 시뮬의 odom/구동 플러밍 결함**(stock 데모도 동일). → **Gazebo 물리 시뮬 사용**(loopback 쓰지 말 것) |
-| **`global_costmap: Failed to activate` / nav "Failed to bring up"** | 라이다가 느려 AMCL TF가 제때 안 섬(**GPU 없는 헤드리스**). → **GPU 머신** 또는 `transform_tolerance` 상향. 기본 bringup은 파라미터 파일의 lifecycle `bond_timeout`을 무시하므로, 대신 MPPI 계산량(주기·batch)을 줄이세요 |
+| **`global_costmap: Failed to activate` / nav "Failed to bring up"** | 라이다가 느려 AMCL TF가 제때 안 섬(**GPU 없는 헤드리스**). → **GPU 머신**, 또는 시뮬레이션에 한해 `transform_tolerance` 상향(로봇에는 쓰지 마세요, §5 8번). 기본 bringup은 파라미터 파일의 lifecycle `bond_timeout`을 무시하므로, 대신 MPPI 계산량(주기·batch)을 줄이세요 |
 | `amcl: cannot publish transform` / `Failed to transform initial pose` | 초기 pose 미설정. RViz 2D Pose Estimate 또는 smoke_drive가 발행(여러 번) |
 | 좁은 방에서 로봇이 거의 정지 | `collision_monitor` FootprintApproach가 과도 throttle. 좁은 데모 맵 한정 — 스모크 params는 이미 비활성. 실환경은 켜둘 것 |
 | planner "Failed to create plan" | 시작/목표가 **장애물·미탐색 셀**. 자유공간 좌표 사용(맵 중심이 벽일 수 있음) |

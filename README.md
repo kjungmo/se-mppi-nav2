@@ -10,7 +10,7 @@ Jungmo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
 [![ROS 2 Jazzy](https://img.shields.io/badge/ROS%202-Jazzy-22314E?logo=ros&logoColor=white)](https://docs.ros.org/en/jazzy/)
 [![Nav2](https://img.shields.io/badge/Nav2-controller%20plugin-1f6feb)](https://docs.nav2.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-D22128)](LICENSE)
-[![Paper: preprint (PDF)](https://img.shields.io/badge/paper-preprint%20(PDF)-6f42c1)](docs/papers/arxiv_ref/main.pdf)
+[![Paper: preprint (PDF)](https://img.shields.io/badge/paper-preprint%20(PDF)-6f42c1)](docs/papers/latex/main.pdf)
 [![Sponsor](https://img.shields.io/github/sponsors/kjungmo?logo=githubsponsors&color=ea4aaa)](https://github.com/sponsors/kjungmo)
 
 <p align="center">
@@ -56,19 +56,23 @@ repository is the code, data and manuscript of a **preprint**.
 
 What is measured and what is not:
 
-- **Live, in simulation, one host (pre-registered campaign 2).** SE-MPPI without
+- **Live, in simulation, one host (pre-registered campaign 2, with one post hoc
+  amendment to its crash-stop rule, after which all s4 SE-MPPI trials ran).** SE-MPPI without
   recoveries reached the goal in 5 of 6 on s1 and 5 of 6 on the held-out s4; stock
-  without recoveries in 0 of 6; with Nav2's default recovery tree, stock 0 of 6 and
-  SE-MPPI 3 of 6, on one simulated host (Fisher exact p = 0.0152 for each of the first
-  two contrasts). s1 is the development scenario; s4, an L-shaped dead end outside
+  without recoveries in 0 of 6; with Nav2's default recovery tree, on s1, stock 0 of 6 and
+  SE-MPPI 3 of 6 (descriptive, p = 0.1818), on one simulated host (Fisher exact p = 0.0152
+  for each of the first two contrasts). s1 is the development scenario; s4, an L-shaped dead end outside
   the development family, carries the claim. A third pocket, s3, has a near mirror
   twin in the development family and gave 4 of 6 against 0 of 6 (p = 0.0606, not
   significant). Six repetitions per cell, no real robot. The first version of the plugin
   reached the goal in none of 44 valid live trials; the four defects behind that are
   named in the paper.
-- **The repaired escape needs four additions to the design we advised ourselves**,
-  found on a development family of pockets (56 of 56 geometries pass with them,
-  14 to 19 of 56 without in the headless sweeps; see the paper and
+- **The repaired escape carries four additions to the design we advised ourselves**,
+  found on a development family of pockets. Two of them, (a) avoid lists and (b) a
+  movement watchdog, were needed together for the headless development sweeps to pass
+  (ablated jointly, confounded with position in the sweep): 55 or 56 of 56 geometries
+  pass per sweep with them, 14 to 19 of 56 without. The other two, (c) a waypoint floor
+  and (d) a clearance threshold, are safeguards for other configurations (see the paper and
   [`experiments/campaign2/PREREG.md`](experiments/campaign2/PREREG.md)).
 - **Measured, in a Python 2D mirror of the shipped algorithm (not the Nav2
   controller):** in a randomized, paired 1,200-trial benchmark the escape layer lifts
@@ -137,10 +141,10 @@ coordinated gain.
    parameter changes, `/diagnostics`).
    The design-stage benchmark data were generated at tag `paper-v1` (commit b21b0a5);
    the re-run on the mirror of the shipped algorithm ran at commit 742a3df. The paper describes the
-   C++ controller at the commit of the live re-run (recorded in every
-   `experiments/results_pilot_rerun/trials/*/meta.json`), which adds the rollout
-   guard, 55 deployment tests in 6 files (`test/deployment/`) and fixes to the
-   controller of `paper-v1`.
+   C++ controller at the local tag `campaign2-controller` (commit 6a50723), the code of the
+   headless sweeps and of live campaign 2; it adds the repaired escape, the rollout
+   guard and 148 deployment tests in 10 files (`test/deployment/`) to the controller of
+   `paper-v1`.
 6. **Committed benchmark artifacts.** The 1,200-trial randomized 2D benchmark
    ships its raw per-trial CSV, summary, statistics, tables, and figures; a
    number guard (`scripts/check_paper_numbers.py`) asserts that every headline

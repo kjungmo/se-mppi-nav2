@@ -81,6 +81,11 @@ v1 8/2/0, v2 4/2/4 (10 seeds). Clutter and dynamic: no change except dynamic
 
 ## Full re-run (not run)
 
+> Note, 2026-10-22: the full re-run has since run for both arms. Its results are committed
+> in `0388854` (`experiments/results_2d_v2/` and `experiments/results_2d_v2_advised/`).
+> The command below writes into the committed directory; the paper's appendix gives the
+> command that writes to `/tmp` with `--no-resume` and compares with the committed rows.
+
 ```bash
 # quiet host, micromamba env ros2 (numpy 2.4.6), from the repository root
 python3 -m experiments.benchmark2d.runner --variant v2 \
