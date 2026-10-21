@@ -578,6 +578,32 @@ Every amendment is dated and placed before the trials it affects. No counted tri
    s4 pocket polygon (a non-convex L, even-odd test) and `analyze.decision`.
 4. *Mirror variant (E-3).* `v2_advised` joins `configs.VARIANTS` (see the mirror README).
 
+**Amendment 2, 2026-10-22 (driver import fix, before any counted trial).**
+
+1. *What failed.* The first launch of Phase A (2026-10-22, 01:25 KST) ended at once with
+   `AttributeError: module 'analyze' has no attribute 'registered_records'`. `main()` imports
+   `run_rerun` of campaign 1. That import puts `experiments/results_pilot_rerun` first on
+   `sys.path`. The later bare `import analyze` in `check_stops()` and `phase_gate_refusal()` then
+   returned the campaign-1 `analyze.py`.
+2. *No trial and no data.* The driver stopped before it started a simulator or a trial. No `trials/`
+   directory was made. No trial data exist, and nothing was seen. The log
+   `driver_phaseA.log` of the raw root stays as the record of the failed start.
+3. *The fix.* `run_campaign2.py` now loads the campaign-2 `analyze.py` by file path under its own
+   directory, cached as module `c2_analyze` (function `c2_analyze()`). If a module named `analyze` is already
+   imported from that same file, it is reused. No `sys.path` order is used.
+   The audit found two file names in both directories, `analyze.py` and `recorder.py`. The driver
+   starts `recorder.py` as a subprocess by full path, so only `analyze` was affected. Every other
+   name the driver imports bare (`plan`, `provenance`, `freeze_manifest`, `hostload`, `run_rerun`)
+   exists in one directory only.
+4. *The new test.* `tests/test_c2_driver_imports.py` imports `run_rerun` as `main()` does, then
+   calls `check_stops()`, `phase_gate_refusal()` and `trial_refusal()` on an empty raw root. It fails
+   on the driver of the earlier tag commit and passes on the fixed driver. It also runs `main()` with
+   `--block A` through start-up and all nine trial slots with the trial launcher replaced by a stub.
+5. *Unchanged.* The analysis rules, the plan, the worlds, the controller, the thresholds and the
+   stopping rules are unchanged. Besides this file, the manifest and the new test, the only changed
+   frozen file is `run_campaign2.py` (the import lookup). The tag `campaign2-controller` moves to the
+   commit that holds this amendment and the renewed manifest. The tag was never pushed.
+
 ## Shakedown (not a registered trial)
 
 One trial on `s0_open` with C2, id `correct__s0_open__C2__rep0`, raw data in

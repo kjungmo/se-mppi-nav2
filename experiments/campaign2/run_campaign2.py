@@ -65,6 +65,28 @@ sys.path.insert(0, HERE)
 import plan as plan_mod  # noqa: E402
 import provenance  # noqa: E402
 
+
+def c2_analyze():
+    """The campaign-2 analysis module, loaded by file path under HERE and cached as 'c2_analyze'.
+
+    ``import analyze`` is ambiguous: ``results_pilot_rerun`` has an ``analyze.py`` too, and
+    importing ``run_rerun`` puts that directory first on ``sys.path``. A bare name must never
+    pick the module (amendment 2 of PREREG.md).
+    """
+    path = os.path.join(HERE, 'analyze.py')
+    mod = sys.modules.get('analyze')                # already imported from this very file: reuse it
+    if mod is not None and os.path.abspath(getattr(mod, '__file__', '') or '') == path:
+        return mod
+    mod = sys.modules.get('c2_analyze')
+    if mod is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('c2_analyze', path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules['c2_analyze'] = mod
+        spec.loader.exec_module(mod)
+    return mod
+
+
 EXIT_REFUSED = 2
 EXIT_STOP = 3
 
@@ -300,7 +322,7 @@ def run_trial(rr, config_mod, suite, base_tree, scenario, trial, out_root, env_i
 
 
 def check_stops(raw_root, trials_done_cells) -> list:
-    import analyze as an
+    an = c2_analyze()
     recs = an.registered_records(raw_root)
     inval = {f'{s}/{c}': an.count_invalid_attempts(raw_root, (s, c)) for s, c in trials_done_cells}
     return an.evaluate_stops(recs, inval, an.superseded_records(raw_root))
@@ -309,7 +331,7 @@ def check_stops(raw_root, trials_done_cells) -> list:
 def phase_gate_refusal(raw_root, trial_or_block) -> str | None:
     """Refusal text when ``trial_or_block`` (a Trial, or the block name 'B') would drive s3 or
     run block B before Phase A is complete and its gate decided. None when allowed."""
-    import analyze as an
+    an = c2_analyze()
     if isinstance(trial_or_block, str):
         needs = trial_or_block == 'B'
     else:
