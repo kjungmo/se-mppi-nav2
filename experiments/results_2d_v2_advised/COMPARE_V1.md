@@ -1,0 +1,35 @@
+| family | config | n | v1 S/C/T | v2 S/C/T | v2 zero-cmd steps | v2 hops |
+|---|---|---|---|---|---|---|
+| clutter | A_stock | 50 | 26/0/24 | 26/0/24 | 0 | 0 |
+| clutter | C_escape | 50 | 31/0/19 | 31/0/19 | 0 | 59 |
+| clutter | D_cbf | 50 | 26/0/24 | 26/0/24 | 0 | 0 |
+| clutter | E_indep | 50 | 31/0/19 | 31/0/19 | 0 | 59 |
+| clutter | F_full | 50 | 31/0/19 | 31/0/19 | 0 | 59 |
+| clutter | Fminus_nogap | 50 | 26/0/24 | 26/0/24 | 0 | 0 |
+| dynamic | A_stock | 50 | 40/10/0 | 40/10/0 | 0 | 0 |
+| dynamic | C_escape | 50 | 38/10/2 | 40/10/0 | 0 | 54 |
+| dynamic | D_cbf | 50 | 41/8/1 | 41/8/1 | 2 | 0 |
+| dynamic | E_indep | 50 | 39/9/2 | 42/8/0 | 2 | 60 |
+| dynamic | F_full | 50 | 39/9/2 | 42/8/0 | 1 | 59 |
+| dynamic | Fminus_nogap | 50 | 42/8/0 | 42/8/0 | 2 | 0 |
+| narrowdyn | A_stock | 50 | 0/9/41 | 0/9/41 | 0 | 0 |
+| narrowdyn | C_escape | 50 | 39/9/2 | 28/9/13 | 0 | 167 |
+| narrowdyn | D_cbf | 50 | 0/16/34 | 0/16/34 | 2 | 0 |
+| narrowdyn | E_indep | 50 | 32/16/2 | 22/16/12 | 2 | 134 |
+| narrowdyn | F_full | 50 | 31/16/3 | 22/16/12 | 2 | 134 |
+| narrowdyn | Fminus_nogap | 50 | 0/16/34 | 0/16/34 | 2 | 0 |
+| utrap | A_stock | 50 | 0/0/50 | 0/0/50 | 0 | 0 |
+| utrap | C_escape | 50 | 45/0/5 | 29/0/21 | 0 | 183 |
+| utrap | D_cbf | 50 | 0/0/50 | 0/0/50 | 0 | 0 |
+| utrap | E_indep | 50 | 44/0/6 | 29/0/21 | 0 | 181 |
+| utrap | F_full | 50 | 44/0/6 | 29/0/21 | 0 | 181 |
+| utrap | Fminus_nogap | 50 | 0/0/50 | 0/0/50 | 0 | 0 |
+
+| config | n | v1 success | v2 success |
+|---|---|---|---|
+| A_stock | 200 | 66 | 66 |
+| C_escape | 200 | 153 | 128 |
+| D_cbf | 200 | 67 | 67 |
+| E_indep | 200 | 146 | 124 |
+| F_full | 200 | 145 | 124 |
+| Fminus_nogap | 200 | 68 | 68 |
