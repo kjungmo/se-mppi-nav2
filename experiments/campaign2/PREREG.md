@@ -585,9 +585,10 @@ Every amendment is dated and placed before the trials it affects. No counted tri
    `run_rerun` of campaign 1. That import puts `experiments/results_pilot_rerun` first on
    `sys.path`. The later bare `import analyze` in `check_stops()` and `phase_gate_refusal()` then
    returned the campaign-1 `analyze.py`.
-2. *No trial and no data.* The driver stopped before it started a simulator or a trial. No `trials/`
-   directory was made. No trial data exist, and nothing was seen. The log
-   `driver_phaseA.log` of the raw root stays as the record of the failed start.
+2. *No trial and no data.* The driver stopped before it started a simulator or a trial. The only
+   traces are the log `driver_phaseA.log` and an empty `trials/` directory in the raw root, which the
+   driver makes at start-up. No trial data exist, and nothing was seen. Both stay as the record of
+   the failed start.
 3. *The fix.* `run_campaign2.py` now loads the campaign-2 `analyze.py` by file path under its own
    directory, cached as module `c2_analyze` (function `c2_analyze()`). If a module named `analyze` is already
    imported from that same file, it is reused. No `sys.path` order is used.
