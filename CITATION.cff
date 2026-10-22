@@ -8,7 +8,35 @@ authors:
     orcid: "https://orcid.org/0009-0002-0394-1861"
 repository-code: "https://github.com/kjungmo/se-mppi-nav2"
 license: Apache-2.0
-date-released: "2026-07-03"
+date-released: "2026-10-22"
+version: "2.0.0-pre"
+abstract: >-
+  The MPPI controller in ROS 2 Nav2 can stall in local minima in crowded
+  dynamic spaces, and its critics avoid collisions only through soft costs. We
+  know of no public Nav2 plugin combining local-minima escape with a barrier-
+  based safety filter. This system paper presents SE-MPPI, a Nav2 controller
+  plugin integrating local-minima escape with a control-barrier-function (CBF)
+  safety filter for tracked dynamic obstacles. A first version reached the
+  goal in none of its 44 valid live trials on a correct build; we report the
+  four defects identified as the cause (one inferred) and the repaired
+  controller. Its escape carries four additions to the advised design: two
+  were needed for the development sweeps of a pocket family to pass (ablated
+  jointly, confounded with sweep position), and two are safeguards. In a pre-
+  registered live campaign (one post hoc amendment to its crash-stop rule),
+  SE-MPPI without recoveries reached the goal in 5 of 6 trials on s1 and 5 of
+  6 on the held-out s4; stock MPPI reached it in 0 of 6 on each (Fisher
+  p=0.0152 each). With Nav2's default recovery tree on s1: stock 0 of 6, SE-
+  MPPI 3 of 6 (p=0.1818, descriptive). On s3 (near mirror twin in the
+  development family): 4 of 6 against 0 of 6 (p=0.0606, not significant). The
+  claim stops at one simulated host, six repetitions per cell, no real robot.
+  In a randomized, paired 1,200-trial benchmark on a Python 2D mirror, not on
+  the Nav2 controller itself, escape raises U-trap success from 0% to 80%
+  (Wilson 95% interval [67,89]); a second arm of 1,200 trials on the same 200
+  seeded worlds, with the four additions off, reaches 58%. Escape-safety
+  coordination matches an independent escape+CBF stack, so we claim it only as
+  a mechanism. The gain schedule preserves CBF forward invariance only
+  conditionally: for a look-ahead point and tracked dynamic obstacles, if the
+  barrier inequality holds between updates and the QP is slack-free.
 keywords:
   - ROS 2
   - Nav2
@@ -23,4 +51,4 @@ preferred-citation:
     - family-names: "Kang"
       given-names: "Jungmo"
   year: 2026
-  notes: "Preprint. Manuscript and artifacts at https://github.com/kjungmo/se-mppi-nav2"
+  notes: "Preprint, second edition (campaign 2 controller, tag campaign2-controller). Manuscript and artifacts at https://github.com/kjungmo/se-mppi-nav2"
