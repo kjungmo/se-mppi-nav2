@@ -797,7 +797,7 @@ pruned to the nearest $20$ (a compiled cap) by \emph{clearance} (surface gap), n
 distance. If the QP can only stay safe by relaxing the barrier
 ($\delta>\epsilon$) or fails, the controller sets the linear velocity to zero at its output
 (forward or reverse; the controller's log calls it the forward velocity; the velocity smoother limits
-the change at the base, see Sec.~\ref{sec:c2results}) while keeping the QP's turn (or, on solver failure, the
+the change in the command sent to the base, see Sec.~\ref{sec:c2results}) while keeping the QP's turn (or, on solver failure, the
 box-clamped nominal turn) -- stop rather than drive
 into an imminent collision. Static structure is intentionally
 \textbf{excluded} from the CBF (handled by the MPPI obstacle critic and
@@ -914,7 +914,7 @@ families, and uses nonzero slack in $26$--$35$ of $50$ narrow-dynamic
 trials (max $0.47$) and $47$--$48$ of $50$ dynamic-family trials (max
 $0.014$) per CBF-carrying config (Sec.~\ref{sec:evsf}). In cycles with
 $\delta>\epsilon$ the brake of Sec.~\ref{sec:cbf} sets the linear velocity of the QP command to zero
-(at the controller output, for one cycle; the velocity smoother limits the change at the base),
+(at the controller output, for one cycle; the velocity smoother limits the change in the command sent to the base),
 and bounded-prediction-error robustness is the subject of follow-up work
 (Sec.~\ref{sec:limitations}).
 
@@ -1630,7 +1630,7 @@ recovery tree beyond what six trials can resolve: the direction is favourable an
 \textbf{Forced stops without a moving body.} No pocket held a moving body, yet the brake
 fallback of Sec.~\ref{sec:cbf} (linear velocity, forward or reverse, set to zero at the controller
 output for one control cycle of about $0.1$~s) fired in at least 16 of the 18 SE pocket trials on s3 and s4
-(all 12 on s3, 4 of 6 on s4). After the velocity smoother (open loop, $20$~Hz, maximum deceleration
+(all 12 on s3, 4 of 6 on s4). After the velocity smoother ($20$~Hz, maximum deceleration
 $2.5$~m/s$^2$, from the committed YAML) the command sent to the base drops by at most about $0.25$~m/s per braked cycle, so the
 smoother's deceleration limit and rate bound the effect of the brake on the command (the smoother runs open loop and the base
 speed was not measured here; braked cycles in a row add up). The QP failure counter is $0$ in all 88
