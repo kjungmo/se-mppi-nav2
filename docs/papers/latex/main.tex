@@ -62,8 +62,8 @@ repetitions per cell, and no real robot. In a randomized, paired
 $1{,}200$-trial benchmark on a Python 2D mirror that transcribes the
 shipped algorithm, not on the Nav2 controller itself, escape raises
 success on the static U-trap family from $0\%$ to $80\%$ (Wilson 95\%
-interval $[67,89]$); the $58\%$ comes from the same $1{,}200$ trials with the four additions
-switched off (a second arm, on the same $200$ seeded worlds). The escape--safety coordination matches an independent escape+CBF
+interval $[67,89]$); a second arm of $1{,}200$ trials on the same $200$ seeded worlds, with the four
+additions switched off, reaches $58\%$. The escape--safety coordination matches an independent escape+CBF
 stack there, a null result, so we claim it only as a mechanism. By a
 standard argument for time-varying CBF gains, the gain schedule
 preserves forward invariance of the barrier's safe set, a conditional
@@ -496,7 +496,8 @@ override), and the CBF safety filter -- fed by the
 \texttt{cmd\_vel}. The intended chain ends in Nav2's
 \texttt{collision\_monitor} as a final reactive layer; in the live campaign
 the only \texttt{collision\_monitor} polygon was disabled, so no zone was active; the monitor stayed
-in the chain and passed commands through (its $5$~s source-validity stop never fired) (Sec.~\ref{sec:limitations}). The figure predates the repaired escape: the
+in the chain and passed commands through (its $5$~s source-validity stop never fired: no line above INFO in its log,
+\texttt{CBF\_ADMISSIONS.md}; Sec.~\ref{sec:limitations}). The figure predates the repaired escape: the
 critic's gap search that it labels is off in the shipped configuration (\texttt{gap\_weight}
 $0$); the opening selection, which now produces the escape, runs in the controller, and its
 hand-off of an escape path to the optimizer (Sec.~\ref{sec:escape}) is not drawn. Nav2's
@@ -1446,15 +1447,16 @@ stays at most $3.0$ cores in every $30$~s window.
 Ryzen 5 5500GT (12 threads) and simulated time (\texttt{use\_sim\_time}). The control loop was
 paced by the wall clock, not by simulated time: over the 46 SE-MPPI trials the controller ran $9.83$
 to $10.00$ cycles per wall-clock second and $10.14$ to $10.42$ per simulated second (post hoc,
-\texttt{experiments/campaign2/}\allowbreak\texttt{CBF\_ADMISSIONS.md}). Each rate is an endpoint estimate
-between the first and last 1~Hz diagnostics message of a trial, so one cycle over about $20$~s moves it by
-about $0.05$ per second; the lowest values come from the four shortest \texttt{s0\_open} trials (20 to 23
-messages). This is the resolution of the estimate, not a measured slowdown of the loop. The timers that count cycles (the stall window, the watchdog and the
+\texttt{experiments/campaign2/}\allowbreak\texttt{CBF\_ADMISSIONS.md}). Each rate divides the cycles between the first and the last 1~Hz diagnostics message with a nonzero cycle
+count by the time between them. The loop stops when the goal ends, inside the last one-second interval, so that
+interval usually holds fewer than ten cycles and both rates are biased low, most in short trials; the lowest
+values ($9.83$) come from four \texttt{s0\_open} trials. This is a property of the estimate, not a measured
+slowdown of the loop. The timers that count cycles (the stall window, the watchdog and the
 re-selection period) were therefore wall-clock durations, a few percent
 shorter in simulated time. On a robot the two clocks coincide. Over all 88 trials the stack used
 $3.2$ to $4.2$ cores on average per trial, the peak one-minute load average was $1.79$ to $8.35$,
 and the lowest real-time factor over a $10$~s window was $0.882$ ($0.944$ in the SE-MPPI pocket
-trials) (same file; inputs from \texttt{results.json.gz}); only the 12 C1 pocket trials logged missed control cycles ($2$ to $5$ each). The parameter
+trials; same file, inputs from \texttt{results.json.gz}); only the 12 C1 pocket trials logged missed control cycles ($2$ to $5$ each). The parameter
 file loosens tolerances for the lag of the simulated transform tree: \texttt{transform\_tolerance}
 $0.5$~s on the controller, the costmaps, the behavior server and the collision monitor ($1.0$~s
 for AMCL). It sets \texttt{source\_timeout} of the collision monitor to $5.0$~s for a different
@@ -1627,10 +1629,11 @@ requires that both be reported); C2 against C1 on s1 (3 of 6 against 0 of 6, $p=
 recovery tree beyond what six trials can resolve: the direction is favourable and the intervals overlap.
 \textbf{Forced stops without a moving body.} No pocket held a moving body, yet the brake
 fallback of Sec.~\ref{sec:cbf} (linear velocity, forward or reverse, set to zero at the controller
-output for one control cycle of about $0.1$~s) fired in 16 of the 18 SE pocket trials on s3 and s4
+output for one control cycle of about $0.1$~s) fired in at least 16 of the 18 SE pocket trials on s3 and s4
 (all 12 on s3, 4 of 6 on s4). After the velocity smoother (open loop, $20$~Hz, maximum deceleration
-$2.5$~m/s$^2$, from the committed YAML) the base slows by at most about $0.25$~m/s in that cycle, so the
-smoother's deceleration limit and rate bound the effect of the brake at the base. The QP failure counter is $0$ in all 88
+$2.5$~m/s$^2$, from the committed YAML) the command sent to the base drops by at most about $0.25$~m/s per braked cycle, so the
+smoother's deceleration limit and rate bound the effect of the brake on the command (the smoother runs open loop and the base
+speed was not measured here; braked cycles in a row add up). The QP failure counter is $0$ in all 88
 trials, so every forced stop was a brake on barrier slack, not on a solver failure. The counts
 come from the last diagnostics message of each trial, which the controller publishes once per
 wall-clock second, so stops in the final second are missing and the counts are lower bounds.
@@ -1903,7 +1906,7 @@ significant. The result does not rest on a real robot, a second host or more tha
 
 A randomized, paired $1{,}200$-trial benchmark on a Python 2D mirror of the shipped algorithm shows the
 escape raising success on the U-trap family from $0\%$ to $80\%$, and to $58\%$ with the four
-additions switched off (a second arm of the same $1{,}200$ trials, on the same $200$ seeded worlds), while the escape--safety coordination is indistinguishable from an independent escape+CBF
+additions switched off (a second arm of $1{,}200$ trials on the same $200$ seeded worlds), while the escape--safety coordination is indistinguishable from an independent escape+CBF
 stack there, which we report as a null. We addressed three integration faults that surfaced in the
 live stack -- static-wall CBF infeasibility (the wall freeze stopped; phantom admissions remained),
 host-matched compute budgeting, and an xtensor ABI mismatch -- and we guard against a defective

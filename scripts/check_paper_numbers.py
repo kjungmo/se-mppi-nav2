@@ -620,7 +620,7 @@ if not ARXIV:
     check(h_['all_trials'] == 88 and (f'{h_["own_cores_mean"]["min"]:.1f}', f'{h_["own_cores_mean"]["max"]:.1f}') == ('3.2', '4.2')
           and (f2(h_['load1_max']['min']), f2(h_['load1_max']['max'])) == ('1.79', '8.35')
           and f'{h_["rtf_min_10s_all"]["min"]:.3f}' == '0.882' and f'{h_["rtf_min_10s_se_pocket"]["min"]:.3f}' == '0.944'
-          and '$3.2$ to $4.2$ cores' in flat and '$1.79$ to $8.35$' in flat and 'was $0.882$ ($0.944$ in the SE-MPPI pocket trials)' in flat,
+          and '$3.2$ to $4.2$ cores' in flat and '$1.79$ to $8.35$' in flat and 'was $0.882$ ($0.944$ in the SE-MPPI pocket trials; same file' in flat,
           f'host-load quote broken: {h_}')
     mc = h_['missed_control_cycles_nonzero']
     check(set(mc) == {'s1_utrap/C1', 's3_ctrap/C1'} and sum(len(v) for v in mc.values()) == 12
