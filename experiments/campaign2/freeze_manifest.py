@@ -9,9 +9,11 @@
 ``--check`` compares the manifest with the working tree. The manifest documents the frozen state
 at the tag ``campaign2-controller`` (commit 6a50723), so ``--check`` passes on a checkout of that
 tag and the driver may run counted trials only there. After the campaign (2026-10-22) the branch
-received a change that the manifest does not describe (the Humble compile fix in
-``safe_escape_controller.hpp``, commit 06da6ce, no behaviour change); on such a checkout
-``--check`` correctly reports ``changed:`` for it. ``--check --ref REF`` compares the manifest
+received three edits to frozen files that the manifest does not describe: the Humble compile fix
+in ``safe_escape_controller.hpp`` (commit 06da6ce), ``--digits`` in
+``results_pilot_rerun/analyze.py`` (commit 010f46e) and ``--ref`` in this tool (commit 2d6b51f).
+None changes controller behaviour or a campaign input; on such a checkout ``--check`` correctly
+reports ``changed:`` for them. ``--check --ref REF`` compares the manifest
 with the files as committed at REF (a tag or a commit) instead of the working tree, so the
 claim "the tag holds the frozen state" stays checkable from any later checkout that has the tag.
 

@@ -147,14 +147,20 @@ coordinated gain.
    guard and 148 deployment tests in 10 files (`test/deployment/`) to the controller of
    `paper-v1`.
 
-   After the campaign (2026-10-22) the controller received one change, commit 06da6ce: the member
-   `steady_clock_` of `SafeEscapeController` is `mutable`, because Humble's `rclcpp::Clock::now()`
-   is not `const` and the throttled log in a `const` member did not compile there. Jazzy's
-   `now()` is `const`, so the change has no effect there, and no logic changed. The campaign ran
-   the tag `campaign2-controller`, not this commit. `FREEZE_MANIFEST.json` describes the tag:
-   `python3 experiments/campaign2/freeze_manifest.py --check --ref campaign2-controller` passes on
-   any checkout that has the tag, and `--check` alone reports `changed:` for that header on this
-   branch.
+   After the campaign (2026-10-22) three frozen files received edits. None of them changes
+   controller behaviour or a campaign input:
+   - `06da6ce`: the member `steady_clock_` of `SafeEscapeController` is `mutable`, because
+     Humble's `rclcpp::Clock::now()` is not `const` and the throttled log in a `const` member did
+     not compile there. Jazzy's `now()` is `const`, so nothing changes there. This is the only
+     change to the controller.
+   - `010f46e`: `experiments/results_pilot_rerun/analyze.py` gained the option `--digits N`. The
+     default check is still exact.
+   - `2d6b51f`: `experiments/campaign2/freeze_manifest.py` gained `--check --ref`.
+
+   The campaign ran the tag `campaign2-controller`, not this commit. `FREEZE_MANIFEST.json`
+   describes the tag: `python3 experiments/campaign2/freeze_manifest.py --check --ref
+   campaign2-controller` passes on any checkout that has the tag. Plain `--check` reports
+   `changed:` for those three files on this branch.
 6. **Committed benchmark artifacts.** The 1,200-trial randomized 2D benchmark
    ships its raw per-trial CSV, summary, statistics, tables, and figures; a
    number guard (`scripts/check_paper_numbers.py`) asserts that every headline
