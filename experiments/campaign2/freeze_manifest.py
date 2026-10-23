@@ -4,6 +4,16 @@
 
     python3 experiments/campaign2/freeze_manifest.py --write   # at the tag, before Phase A
     python3 experiments/campaign2/freeze_manifest.py --check   # exit 1 on any difference
+    python3 experiments/campaign2/freeze_manifest.py --check --ref campaign2-controller
+
+``--check`` compares the manifest with the working tree. The manifest documents the frozen state
+at the tag ``campaign2-controller`` (commit 6a50723), so ``--check`` passes on a checkout of that
+tag and the driver may run counted trials only there. After the campaign (2026-10-22) the branch
+received a change that the manifest does not describe (the Humble compile fix in
+``safe_escape_controller.hpp``, commit 06da6ce, no behaviour change); on such a checkout
+``--check`` correctly reports ``changed:`` for it. ``--check --ref REF`` compares the manifest
+with the files as committed at REF (a tag or a commit) instead of the working tree, so the
+claim "the tag holds the frozen state" stays checkable from any later checkout that has the tag.
 
 The driver refuses to run a counted trial (Phase A or B) unless ``--check`` passes.
 The manifest covers the parameter file, the behaviour trees, the worlds and scenarios,
@@ -17,10 +27,12 @@ second does not exist yet when the manifest is written.
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import glob
 import hashlib
 import json
 import os
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -76,6 +88,29 @@ def files() -> list:
     return sorted(set(out))
 
 
+def _git(*args: str) -> bytes:
+    return subprocess.run(['git', *args], cwd=REPO, check=True, capture_output=True).stdout
+
+
+def files_at(ref: str) -> list:
+    """The frozen file list evaluated on the tree committed at ``ref`` (same rules as files())."""
+    tree = _git('ls-tree', '-r', '--name-only', ref).decode().splitlines()
+    out = [f for f in FROZEN if f in tree]
+    for pat in FROZEN_GLOBS:
+        # glob's recursive '**/' also matches zero directories; fnmatch's '*' crosses '/'.
+        pats = {pat, pat.replace('**/', '')}
+        out += [t for t in tree if any(fnmatch.fnmatchcase(t, q) for q in pats)]
+    return sorted(set(out))
+
+
+def compute_at(ref: str) -> dict:
+    """sha256 of the frozen files as committed at ``ref``; a frozen file absent there is left out."""
+    h = {}
+    for rel in files_at(ref):
+        h[rel] = hashlib.sha256(_git('show', f'{ref}:{rel}')).hexdigest()
+    return h
+
+
 def sha256(path: str) -> str:
     h = hashlib.sha256()
     with open(path, 'rb') as f:
@@ -101,12 +136,13 @@ def compare(recorded: dict, current: dict) -> list:
     return diffs
 
 
-def check(manifest_path: str = MANIFEST) -> list:
+def check(manifest_path: str = MANIFEST, ref: str = None) -> list:
+    """Differences between the manifest and the working tree, or the tree committed at ``ref``."""
     if not os.path.exists(manifest_path):
         return ['no FREEZE_MANIFEST.json: the campaign is not frozen']
     with open(manifest_path) as f:
         recorded = json.load(f)['files']
-    return compare(recorded, compute())
+    return compare(recorded, compute_at(ref) if ref else compute())
 
 
 def main() -> int:
@@ -114,7 +150,10 @@ def main() -> int:
     g = ap.add_mutually_exclusive_group(required=True)
     g.add_argument('--write', action='store_true')
     g.add_argument('--check', action='store_true')
+    ap.add_argument('--ref', help='with --check: compare with the files committed at this tag or commit')
     args = ap.parse_args()
+    if args.ref and not args.check:
+        ap.error('--ref goes with --check')
     if args.write:
         data = {'note': 'sha256 of the files fixed by experiments/campaign2/PREREG.md',
                 'files': compute()}
@@ -123,12 +162,12 @@ def main() -> int:
             f.write('\n')
         print(f'wrote {os.path.relpath(MANIFEST, REPO)} ({len(data["files"])} files)')
         return 0
-    diffs = check()
+    diffs = check(ref=args.ref)
     for d in diffs:
         print(d)
     if diffs:
         return 1
-    print('frozen files unchanged')
+    print(f'frozen files unchanged{" at " + args.ref if args.ref else ""}')
     return 0
 
 
