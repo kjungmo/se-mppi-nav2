@@ -238,7 +238,9 @@ protected:
   static constexpr double kQpFailureStaleSec = 0.5;
   FailureStreak qp_failure_streak_;
   std::atomic<bool> se_enabled_mirror_{true};  // se_enabled_ for the timer, lock-free
-  rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
+  // mutable: Humble's rclcpp::Clock::now() is not const, and a const member
+  // (transformFor, through the throttled log) reads it. Jazzy's now() is const.
+  mutable rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
   rclcpp_lifecycle::LifecyclePublisher<diagnostic_msgs::msg::DiagnosticArray>::SharedPtr
     diag_pub_;
   rclcpp::TimerBase::SharedPtr diag_timer_;
