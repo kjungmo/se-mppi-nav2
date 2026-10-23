@@ -1,0 +1,28 @@
+<!--
+  Replanning-only navigate_to_pose BT for campaign 2 (configurations C3 and C4).
+
+  Derived from nav2's navigate_to_pose_w_replanning_and_recovery.xml
+  (nav_to_pose_default_recovery.xml next to this file is a byte copy of it)
+  by removing every RecoveryNode and the whole recovery branch:
+    - the outer NavigateRecovery RecoveryNode and its RecoveryFallback
+      (clear costmaps, Spin, Wait, BackUp);
+    - the inner RecoveryNodes around ComputePathToPose and FollowPath.
+  What is left: the path is recomputed at 1 Hz and FollowPath runs. The first
+  FollowPath failure (the controller throws with failure_tolerance 0.0, or the
+  progress checker reports "Failed to make progress") ends the goal with
+  NOT_REACHED_ABORTED. A stock controller in a true local minimum therefore
+  fails cleanly, and SE-MPPI gets a bounded window to act.
+  Applied identically to C3 (stock MPPI) and C4 (SE-MPPI).
+-->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <PipelineSequence name="NavigateWithReplanning">
+      <ControllerSelector selected_controller="{selected_controller}" default_controller="FollowPath" topic_name="controller_selector"/>
+      <PlannerSelector selected_planner="{selected_planner}" default_planner="GridBased" topic_name="planner_selector"/>
+      <RateController hz="1.0">
+        <ComputePathToPose goal="{goal}" path="{path}" planner_id="{selected_planner}" error_code_id="{compute_path_error_code}"/>
+      </RateController>
+      <FollowPath path="{path}" controller_id="{selected_controller}" error_code_id="{follow_path_error_code}"/>
+    </PipelineSequence>
+  </BehaviorTree>
+</root>

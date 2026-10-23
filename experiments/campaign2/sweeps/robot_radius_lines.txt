@@ -1,0 +1,17 @@
+# Controller start lines in the raw logs of the confirmation-2 sweeps (outside the repository).
+# Per log: number of lines 'SafeEscapeController[...] configured', number with robot_radius=0.114, first line.
+# sweep_off3.log is the stalled first attempt of run 3 (off), see ../PREREG.md; run 3 (off) of the table is sweep_off3b.log.
+sweep_on1.log configured=56 robot_radius_0.114=56
+  [INFO] [1792284252.863104604] [MPPIController]: SafeEscapeController[FollowPath] configured: se_enabled=1 robot_radius=0.114 alpha_base=2.00 alpha_escape=6.00
+sweep_on2.log configured=56 robot_radius_0.114=56
+  [INFO] [1792284252.842022747] [MPPIController]: SafeEscapeController[FollowPath] configured: se_enabled=1 robot_radius=0.114 alpha_base=2.00 alpha_escape=6.00
+sweep_on3.log configured=56 robot_radius_0.114=56
+  [INFO] [1792284252.854419200] [MPPIController]: SafeEscapeController[FollowPath] configured: se_enabled=1 robot_radius=0.114 alpha_base=2.00 alpha_escape=6.00
+sweep_off1.log configured=56 robot_radius_0.114=56
+  [INFO] [1792284252.853656575] [MPPIController]: SafeEscapeController[FollowPath] configured: se_enabled=1 robot_radius=0.114 alpha_base=2.00 alpha_escape=6.00
+sweep_off2.log configured=56 robot_radius_0.114=56
+  [INFO] [1792284321.211321317] [MPPIController]: SafeEscapeController[FollowPath] configured: se_enabled=1 robot_radius=0.114 alpha_base=2.00 alpha_escape=6.00
+sweep_off3.log configured=4 robot_radius_0.114=4
+  [INFO] [1792284321.214252552] [MPPIController]: SafeEscapeController[FollowPath] configured: se_enabled=1 robot_radius=0.114 alpha_base=2.00 alpha_escape=6.00
+sweep_off3b.log configured=56 robot_radius_0.114=56
+  [INFO] [1792285095.105901673] [MPPIController]: SafeEscapeController[FollowPath] configured: se_enabled=1 robot_radius=0.114 alpha_base=2.00 alpha_escape=6.00

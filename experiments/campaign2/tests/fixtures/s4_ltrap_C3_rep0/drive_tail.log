@@ -1,0 +1,4 @@
+[INFO] [1792603416.351255404] [basic_navigator]: [ 39.2s] dist=2.10m amcl=(0.95,-0.28 yaw=0.18rad) odom=(3.95,-0.28 yaw=0.18rad) nav=vx:0.002 wz:0.013 cmd=vx:-0.005 wz:0.020
+[INFO] [1792603416.553724709] [basic_navigator]: [ 39.4s] dist=2.10m amcl=(0.95,-0.28 yaw=0.19rad) odom=(3.95,-0.28 yaw=0.18rad) nav=vx:0.004 wz:-0.002 cmd=vx:0.003 wz:0.012
+[INFO] [1792603416.755855442] [basic_navigator]: [ 39.6s] dist=2.10m amcl=(0.95,-0.28 yaw=0.19rad) odom=(3.95,-0.28 yaw=0.18rad) nav=vx:-0.000 wz:-0.001 cmd=vx:0.006 wz:-0.001
+SMOKE_RESULT=TaskResult.FAILED

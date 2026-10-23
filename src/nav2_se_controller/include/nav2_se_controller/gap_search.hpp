@@ -22,6 +22,7 @@
 #pragma GCC diagnostic pop
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav2_se_controller/opening_search.hpp"
 
 namespace nav2_se_controller
 {

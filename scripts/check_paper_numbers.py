@@ -211,20 +211,600 @@ if ARXIV:
                           for k in range(len(txt) - n + 1))
                 check(not hit, f'forbidden token (len {n}) in {p.relative_to(ROOT)}')
 
+
+# =====================================================================
+# SE-MPPI v2 paper (default mode): the main text describes the shipped
+# algorithm; the paper-v1 numbers live in the appendix only. Every number
+# below is re-read from a committed artifact.
+# =====================================================================
+if not ARXIV:
+    import csv
+    import gzip
+
+    EXP = ROOT / 'experiments'
+    # ---- split the source: main text / design-stage appendix ----
+    split_at = tex.index('\\section{Design-stage benchmark')
+    main_tex, app_tex = tex[:split_at], tex[split_at:]
+    flat = re.sub(r'\s+', ' ', tex)
+
+    def table_rows(label):
+        i = tex.index('\\label{' + label + '}')
+        j = tex.index('\\midrule', i)
+        k = tex.index('\\bottomrule', j)
+        rows = []
+        for line in tex[j + len('\\midrule'):k].split('\\\\'):
+            line = line.strip()
+            if line:
+                rows.append([c.strip() for c in line.split('&')])
+        return rows
+
+    def pct(r, lo, hi):
+        return f'{round(float(r) * 100)} [{round(float(lo) * 100)},{round(float(hi) * 100)}]'
+
+    def load_arm(d):
+        s = json.loads((EXP / d / 'stats.json').read_text())
+        summ = {(r_['family'], r_['config']): r_ for r_ in csv.DictReader(open(EXP / d / 'summary.csv'))}
+        n = sum(1 for _ in open(EXP / d / 'trials.csv')) - 1
+        return s, summ, n
+
+    v1s, v1m, v1n = load_arm('results_2d')
+    v2s, v2m, v2n = load_arm('results_2d_v2')
+    v2as, v2am, v2an = load_arm('results_2d_v2_advised')
+    for name, nn in (('results_2d', v1n), ('results_2d_v2', v2n), ('results_2d_v2_advised', v2an)):
+        check(nn == 1200, f'{name}/trials.csv has {nn} rows, paper claims 1,200 per arm')
+    for name, st in (('v1', v1s), ('v2', v2s), ('v2_advised', v2as)):
+        for fam in st:
+            e = [c for c in st[fam]['comparisons'] if c['baseline'] == 'E_indep'][0]
+            check(e['mcnemar_p'] == 1.0, f'E-vs-F McNemar p != 1 in {name}/{fam}')
+    # the v2 coordination claims: 0/0 in every family; |delta| bounds
+    for name, st, bound in (('v2', v2s, 0.002), ('v2_advised', v2as, 0.005)):
+        for fam in st:
+            e = [c for c in st[fam]['comparisons'] if c['baseline'] == 'E_indep'][0]
+            check((e['mcnemar_b'], e['mcnemar_c']) == (0, 0), f'{name}/{fam} E-vs-F not 0/0')
+            check(max(abs(v['cliffs_delta']) for v in e['continuous'].values()) <= bound,
+                  f'{name}/{fam} E-vs-F |Cliff delta| above {bound}')
+
+    CFG = ['A_stock', 'C_escape', 'D_cbf', 'E_indep', 'F_full', 'Fminus_nogap']
+    FAM = ['utrap', 'clutter', 'dynamic', 'narrowdyn']
+
+    def success_table(label, summ):
+        rows = table_rows(label)
+        check(len(rows) == 6, f'{label}: expected 6 rows')
+        for row, cfg in zip(rows, CFG):
+            exp = [pct(summ[(f, cfg)]['success_rate'], summ[(f, cfg)]['success_ci_low'],
+                       summ[(f, cfg)]['success_ci_high']) for f in FAM]
+            check(row[1:] == exp, f'{label}: row {cfg} is {row[1:]}, artifact says {exp}')
+
+    success_table('tab:bench2d-success', v2m)
+    success_table('tab:v1-success', v1m)
+    rows = table_rows('tab:bench2d-arms')
+    for row, summ in zip(rows, (v2m, v2am)):
+        exp = [pct(summ[(f, 'F_full')]['success_rate'], summ[(f, 'F_full')]['success_ci_low'],
+                   summ[(f, 'F_full')]['success_ci_high']) for f in FAM]
+        check(row[1:] == exp, f'tab:bench2d-arms row {row[0]} differs from the artifact {exp}')
+
+    def pcell(p):
+        if p >= 0.995:
+            return '1'
+        star = '\\,*' if p < 0.05 else ''
+        if p < 0.01:
+            m, e = f'{p:.1e}'.split('e')
+            return f'${m}\\!\\times\\!10^{{{int(e)}}}$' + star
+        return f'${p:.3f}$' + star
+
+    def stats_table(label, st):
+        rows = table_rows(label)
+        for row, fam in zip(rows, FAM if label == 'tab:bench2d-stats' else FAM):
+            pass
+        order = ['utrap', 'clutter', 'dynamic', 'narrowdyn']
+        check(len(rows) == 4, f'{label}: expected 4 rows')
+        for row, fam in zip(rows, order):
+            a = [c for c in st[fam]['comparisons'] if c['baseline'] == 'A_stock'][0]
+            e = [c for c in st[fam]['comparisons'] if c['baseline'] == 'E_indep'][0]
+            exp = [f"{a['mcnemar_b']}/{a['mcnemar_c']}", pcell(a['mcnemar_p_adj']),
+                   f"{e['mcnemar_b']}/{e['mcnemar_c']}", pcell(e['mcnemar_p_adj'])]
+            check(row[1:] == exp, f'{label}: {fam} row {row[1:]} differs from {exp}')
+
+    stats_table('tab:bench2d-stats', v2s)
+    stats_table('tab:v1-stats', v1s)
+
+    # ---- numbers quoted in prose, shipped arm ----
+    f2 = lambda fam, cfg: v2m[(fam, cfg)]
+    check(f2('utrap', 'F_full')['n_success'] == '40' and f2('utrap', 'F_full')['success_rate'] == '0.8',
+          'v2 utrap F is no longer 40 of 50')
+    check(v2am[('utrap', 'F_full')]['n_success'] == '29', 'v2_advised utrap F is no longer 29 of 50')
+    check(v2am[('narrowdyn', 'F_full')]['success_rate'] == '0.44' and
+          f2('narrowdyn', 'F_full')['success_rate'] == '0.6', 'narrowdyn 60%/44% trace broken')
+    check('40 of 50' in flat and '29 of 50' in flat, 'paper lost the 40/29 of 50 headline counts')
+    u = [c for c in v2s['utrap']['comparisons'] if c['baseline'] == 'A_stock'][0]
+    check(abs(u['mcnemar_p_adj'] - 1.1175e-8) < 1e-11 and u['mcnemar_b'] == 0 and u['mcnemar_c'] == 40,
+          'v2 utrap A->F trace broken')
+    c_cl = [c for c in v2s['clutter']['comparisons'] if c['baseline'] == 'A_stock'][0]
+    check(c_cl['mcnemar_c'] == 10 and round(c_cl['mcnemar_p_adj'], 3) == 0.031, 'v2 clutter A->F trace broken')
+    ttg = float(v2m[('clutter', 'F_full')]['time_to_goal_mean']) - float(v2m[('clutter', 'A_stock')]['time_to_goal_mean'])
+    check(round(ttg, 1) == 4.8 and '4.8' in flat, 'v2 clutter time cost trace (4.8 s) broken')
+    check(float(v2m[('clutter', 'F_full')]['success_rate']) == 0.72 and float(v2am[('clutter', 'F_full')]['success_rate']) == 0.62,
+          'clutter 72%/62% trace broken')
+    nd = [c for c in v2s['narrowdyn']['comparisons'] if c['baseline'] == 'C_escape'][0]
+    check((nd['mcnemar_b'], nd['mcnemar_c']) == (6, 0) and round(nd['mcnemar_p'], 3) == 0.031
+          and round(nd['mcnemar_p_adj'], 3) == 0.438, 'v2 narrowdyn C->F trace broken')
+    dyn = [c for c in v2s['dynamic']['comparisons'] if c['baseline'] == 'A_stock'][0]
+    check((dyn['mcnemar_b'], dyn['mcnemar_c']) == (0, 2), 'v2 dynamic A->F trace broken')
+    coll = lambda fam, cfg: float(v2m[(fam, cfg)]['collision_rate'])
+    check(coll('dynamic', 'A_stock') == 0.2 and all(coll('dynamic', c) == 0.16 for c in ('D_cbf', 'E_indep', 'F_full', 'Fminus_nogap')),
+          'v2 dynamic collision 20% -> 16% trace broken')
+    check(coll('narrowdyn', 'A_stock') == coll('narrowdyn', 'C_escape') == 0.18 and
+          all(coll('narrowdyn', c) == 0.32 for c in ('D_cbf', 'E_indep', 'F_full', 'Fminus_nogap')),
+          'v2 narrowdyn collision 18% -> 32% trace broken')
+    su = {f: v2s[f]['slack_usage'] for f in v2s}
+    check(all(su[f][c]['n_slack_pos'] == 0 for f in ('utrap', 'clutter') for c in su[f]), 'v2 mover-free families not slack-free')
+    check(su['narrowdyn']['E_indep']['n_slack_pos'] == su['narrowdyn']['F_full']['n_slack_pos'] == 35 and
+          su['narrowdyn']['D_cbf']['n_slack_pos'] == su['narrowdyn']['Fminus_nogap']['n_slack_pos'] == 26 and
+          round(su['narrowdyn']['F_full']['slack_max_max'], 2) == 0.47, 'v2 narrowdyn slack trace broken')
+    dp = [su['dynamic'][c]['n_slack_pos'] for c in ('D_cbf', 'E_indep', 'F_full', 'Fminus_nogap')]
+    check(min(dp) == 47 and max(dp) == 48 and round(su['dynamic']['F_full']['slack_max_max'], 3) == 0.014,
+          'v2 dynamic slack trace broken')
+    check('$26$--$35$' in tex and '$35/50$' in tex and '$0.014$' in tex, 'slack quotes missing from the paper')
+
+    # ---- v1 numbers only in the appendix ----
+    for tok in ('88\\%', '88$--$90', '62$--$78', '1.4\\!\\times', '1.1\\!\\times\\!10^{-6}', '27.7', '18.6', '90 [79'):
+        check(tok not in main_tex, f'design-stage (paper-v1) number {tok!r} appears outside the appendix')
+    check('88$--$90' in app_tex and '62$--$78' in app_tex, 'appendix lost the paper-v1 quotes')
+
+    # ---- campaign 2 ----
+    c2 = json.loads(gzip.open(EXP / 'campaign2/results.json.gz').read())
+    cells = {(c['scenario'], c['config']): c for c in c2['cells']}
+    rows = table_rows('tab:c2cells')
+    for row, scen in zip(rows, ['s0_open', 's1_utrap', 's3_ctrap', 's4_ltrap']):
+        exp = []
+        for cfg in ('C1', 'C2', 'C3', 'C4'):
+            c = cells.get((scen, cfg))
+            if c is None:
+                exp.append('--')
+            else:
+                check(c['n_valid'] == 6 and c['n_trials'] == 6, f'{scen}/{cfg} not 6 valid trials')
+                lo, hi = c['wilson95']
+                exp.append(f"{c['successes']} [{lo:.2f},{hi:.2f}]")
+        check(row[1:] == exp, f'tab:c2cells row {scen}: {row[1:]} differs from {exp}')
+    contr = {c['name']: c for c in c2['contrasts']}
+    crow = table_rows('tab:c2contrasts')
+    order = ['C4 vs C3 on s1_utrap', 'C4 vs C3 on s3_ctrap', 'C2 vs C1 on s1_utrap', 'C2 vs C1 on s3_ctrap',
+             'C4 vs C3 on s4_ltrap', 'C4 on s3_ctrap vs C4 on s1_utrap (transfer)',
+             'C4 on s4_ltrap vs C4 on s1_utrap (transfer)']
+    check(len(crow) == 7, 'tab:c2contrasts: expected 7 rows')
+    for row, name in zip(crow, order):
+        c = contr[name]
+        exp = [str(c['a_successes']), str(c['b_successes']), f"{c['fisher_p']:.4f}"]
+        check(row[1:] == exp, f'tab:c2contrasts {name}: {row[1:]} differs from {exp}')
+    dec = c2['decision']
+    check(dec['branch'] == 'demonstrated' and dec['s1']['yes'] and dec['s4']['yes'] and not dec['s3']['yes'],
+          'campaign-2 decision is not demonstrated / s1 yes / s4 yes / s3 no')
+    check(len(c2['trials']) == 88 and not c2['superseded_attempts'] and not c2['stops'],
+          'campaign 2: not 88 trials without superseded attempts and stops')
+    check(all(c['rtf_min'] >= 0.93 for c in c2['cells']) and 0.93 <= min(c['rtf_min'] for c in c2['cells']) < 0.94 and
+          max(c['rtf_max'] for c in c2['cells']) < 0.975, 'campaign-2 RTF range 0.93-0.97 broken')
+    check(c2['h3_control']['reached'] == 24 and c2['h3_control']['escape_enter_total'] == 0, 'H3 control 24/24, 0 ENTER broken')
+    se = [c for c in c2['cells'] if c['config'] in ('C2', 'C4') and c['scenario'] != 's0_open']
+    check(all(c['reached_with_contact'] == 0 and c['optimizer_failures_total'] == 0 and c['missed_control_cycles_total'] == 0
+              and c['reached_without_escape'] == 0 and c['bt_spin'] + c['bt_backup'] + c['bt_wait'] == 0 for c in se),
+          'SE cells: contact / optimizer failure / missed cycle / recovery / reached-without-escape claim broken')
+    check(all(c['reached_with_contact'] == 0 for c in c2['cells']), 'a campaign-2 cell has contacts')
+    check(all(t['enter_before_leaving_pocket'] for t in c2['trials']
+              if t['config'] in ('C2', 'C4') and t['scenario'] in ('s1_utrap', 's3_ctrap', 's4_ltrap')),
+          'an SE pocket trial has no ENTER before leaving the pocket')
+    fs = [t for t in c2['trials'] if t['outcome'] == 'NOT_REACHED_ABORTED' and t.get('nav2_result') == 'SUCCEEDED']
+    reg = [t for t in fs if t['phase'] != 'evidence' and not t['scenario'].endswith('evidence')]
+    check(len(fs) == 13 and len(reg) == 11, f'Nav2-SUCCEEDED-but-not-reached trials: {len(fs)} total / {len(reg)} registered, paper says 13 / 11')
+    fd = [t['final_goal_distance_m'] for t in fs]
+    check(round(min(fd), 2) == 0.54 and round(max(fd), 2) == 1.66, 'false-success distance range 0.54-1.66 broken')
+    by = {}
+    for t in reg:
+        by[(t['scenario'], t['config'])] = by.get((t['scenario'], t['config']), 0) + 1
+    check(by == {('s1_utrap', 'C2'): 3, ('s1_utrap', 'C4'): 1, ('s3_ctrap', 'C2'): 4, ('s3_ctrap', 'C4'): 2, ('s4_ltrap', 'C4'): 1},
+          f'false-success split changed: {by}')
+    se_trials = [t for t in c2['trials'] if t['config'] in ('C2', 'C4') and t['scenario'] != 's0_open' and not t['scenario'].endswith('evidence')]
+    check(all(t.get('nav2_result') == 'SUCCEEDED' for t in se_trials) and len(se_trials) == 30,
+          'Nav2 SUCCEEDED in every SE pocket trial (6 of 6 per cell) broken')
+    og = json.loads((EXP / 'campaign2/ODOM_GAP.json').read_text())
+    check(og['n'] == 13, 'ODOM_GAP.json is not about 13 trials')
+    ogv = lambda k: [r_[k] for r_ in og['rows']]
+    otab = table_rows('tab:odomgap')
+    exp = [['Ground-truth distance to goal', f"{min(ogv('final_gt_distance_m')):.3f}", f"{max(ogv('final_gt_distance_m')):.3f}"],
+           ['Distance printed by Nav2 (AMCL)', f"{min(ogv('nav2_amcl_distance_m')):.2f}", f"{max(ogv('nav2_amcl_distance_m')):.2f}"],
+           ['Shifted odometry distance to goal', f"{min(ogv('odom_distance_m')):.3f}", f"{max(ogv('odom_distance_m')):.3f}"],
+           ['Odometry vs ground truth', f"{min(ogv('odom_minus_gt_m')):.3f}", f"{max(ogv('odom_minus_gt_m')):.3f}"],
+           ['AMCL vs ground truth', f"{min(ogv('amcl_minus_gt_m')):.3f}", f"{max(ogv('amcl_minus_gt_m')):.3f}"]]
+    check(otab == exp, f'tab:odomgap differs from ODOM_GAP.json: {otab} vs {exp}')
+    check(round(min(ogv('amcl_minus_gt_m')), 2) == 0.33 and round(max(ogv('amcl_minus_gt_m')), 2) == 1.56 and
+          round(min(ogv('odom_minus_gt_m')), 2) == 0.29 and round(max(ogv('odom_minus_gt_m')), 2) == 1.59,
+          'prose gap ranges (0.33-1.56, 0.29-1.59) broken')
+    check('$0.33$ to $1.56$~m' in tex and '$0.29$ to\n$1.59$~m' in tex, 'prose gap ranges missing from the paper')
+    check(max(ogv('nav2_amcl_distance_m')) <= 0.2 and min(ogv('nav2_amcl_distance_m')) >= 0.0, 'Nav2 printed distance range 0.00-0.20 broken')
+    tc = c2['teardown_crashes']
+    check(tc['by_cell'] == {'s4_ltrap/C3': 1} and tc['rows'][0]['exit_code'] == -6, 'teardown crash record changed')
+    tr = {c['name']: c for c in c2['contrasts']}
+    t4 = tr['C4 on s4_ltrap vs C4 on s1_utrap (transfer)']['mann_whitney']
+    check(round(t4['median1'], 1) == 48.3 and round(t4['median2'], 1) == 34.3 and round(t4['p'], 4) == 0.0079,
+          'transfer time medians 48.3 / 34.3 / p 0.0079 broken')
+    check('48.3' in tex and '34.3' in tex and '0.0079' in tex, 'transfer time quote missing')
+    import statistics
+    simmed = {sc: statistics.median(t['time_to_goal_sim_s'] for t in c2['trials']
+                                    if t['scenario'] == sc and t['config'] == 'C4' and t['reached'])
+              for sc in ('s1_utrap', 's4_ltrap')}
+    check(f"{simmed['s4_ltrap']:.1f}" == '46.7' and f"{simmed['s1_utrap']:.1f}" == '33.1'
+          and 'median wall-clock time to goal' in flat and '$46.7$~s and $33.1$~s' in flat,
+          f'transfer sim-time medians {simmed} / wall-clock label broken')
+    check(all(t['diagnostics_last'] and int(t['diagnostics_last']['qp_failures']) == 0 for t in c2['trials'])
+          and 'QP failure counter is $0$ in all 88' in flat, 'qp_failures = 0 in all 88 trials broken')
+    check('no pocket trial reached the goal without an escape' in flat
+          and all(not t['reached_without_escape'] for t in c2['trials'] if t['scenario'] != 's0_open'),
+          'reached-without-escape claim broken')
+    # live robot radius: the launch log and the waypoint arithmetic
+    import gzip as _gz
+    lg = _gz.open(EXP / 'campaign2/logs/trials__correct__s1_utrap__C4__rep0.log.gz', 'rt').read()
+    check('robot_radius=0.234' in lg, 'live controller radius 0.234 not in the committed launch log')
+    rr = 0.234
+    check(f'{2.0 - rr - 0.05:.3f}' == '1.716' and f'{0.6 - rr - 0.05:.3f}' == '0.316' and f'{2.5 + rr + 0.05:.3f}' == '2.784'
+          and '$2.0-0.234-0.05=1.716$~m' in tex and '$0.6-0.234-0.05=0.316$~m' in tex and '$2.5+r+0.05=2.784$~m' in tex,
+          'robot-radius arithmetic (1.716 / 0.316 / 2.784) broken')
+    rl = (EXP / 'campaign2/sweeps/robot_radius_lines.txt').read_text()
+    cnts = re.findall(r'configured=(\d+) robot_radius_0.114=(\d+)', rl)
+    check(len(cnts) == 7 and all(a == b for a, b in cnts) and f'{0.234 - 0.114:.2f}' == '0.12'
+          and '$0.12$~m farther out' in flat, 'rig radius 0.114 excerpt / 0.12 m offset broken')
+
+    # ---- PREREG: branch wording verbatim, amendment facts ----
+    prereg = (EXP / 'campaign2/PREREG.md').read_text()
+    m = re.search(r'> - \*Demonstrated\*: (.*?)\n> - \*s1 yes', prereg, re.S)
+    want = re.sub(r'\s+', ' ', re.sub(r'^>\s?', '', m.group(1), flags=re.M)).strip()
+    q = re.search(r'\\begin\{quote\}\\small(.*?)\\end\{quote\}', tex, re.S).group(1)
+    got = re.sub(r'\s+', ' ', q.replace('``', '"').replace("''", '"')).strip()
+    check(got == want, 'branch wording in the paper differs from PREREG.md.\n   paper: ' + got + '\n   prereg: ' + want)
+    check('FROZEN on 2026-10-18' in prereg and '88 trials' in prereg and 'Amendment 3, 2026-10-22' in prereg
+          and 'Amendment 2, 2026-10-22' in prereg and 'Amendment 1, 2026-10-18' in prereg, 'PREREG amendment headings changed')
+    for tok in ('2026-10-18', 'Amendment 3', 'post hoc', 'teardown crash', 'amendment 3', 'Provenance refusal'):
+        check(tok in tex or tok.lower() in tex.lower(), f'paper lost the disclosure {tok!r}')
+    check('0.0152' in tex and '0.0606' in tex and '0.1818' in tex and '0.4545' in tex, 'Fisher p quotes missing')
+    # ablation table = PREREG sweep table
+    sw = re.findall(r'^\| ([^|]+?) \| (on|off) \| (\d+) of 56 \|', prereg, re.M)
+    from_prereg = sorted((a, int(n)) for _, a, n in sw)
+    rows = table_rows('tab:ablation')
+    from_tex = sorted((r_[1], int(r_[2])) for r_ in rows)
+    check(from_prereg == from_tex and len(from_tex) == 10, f'ablation table differs from PREREG: {from_tex} vs {from_prereg}')
+    check('167 of 168' in prereg and '48 of 168' in prereg, 'PREREG 167/48 of 168 changed')
+    check('167 of 168' in flat and 'passed 48 of 168' in flat, 'paper lost 167/168 and 48/168')
+    check('96' in tex and '56 valid' in flat, 'family count (96 combos, 56 valid) missing')
+    dev = (ROOT / 'src/nav2_se_controller/test/deployment/UTRAP_DEV_GEOMETRIES.md').read_text()
+    check('That is 4 x 3 x 4 x 2 = 96 combinations' in dev and 'finds 56 valid geometries' in dev, 'family rule counts changed')
+    check('w22_d15_r-25_a6' in prereg and 'w22\\_d15\\_r-25\\_a6' in tex, 'twin of s3 not named')
+    check('2.05 m' in prereg and '1.85 m' in prereg and '$2.05$~m' in tex and '$1.85$~m' in tex, 'depth margin 2.05/1.85 missing')
+
+    # ---- parameter file ----
+    yml = (ROOT / 'experiments/sim/nav2_se_campaign2.yaml').read_text()
+    def yv(key):
+        return float(re.search(r'^\s*' + key + r':\s*([-\d.]+)', yml, re.M).group(1))
+    for key, val in (('se_progress_stall_window', 30), ('se_progress_min_advance', 0.10), ('se_progress_adopt_advance', 0.5),
+                     ('se_escape_waypoint_cap', 2.5), ('se_escape_reselect_radius', 0.4), ('se_escape_reselect_period', 15),
+                     ('se_escape_stall_time', 3), ('se_escape_stall_distance', 0.15), ('se_escape_hysteresis', 0.5),
+                     ('se_escape_avoid_radius', 1.0), ('se_escape_avoid_hop_radius', 0.6), ('se_escape_avoid_hops', 3),
+                     ('se_gap_num_rays', 36), ('se_gap_max_range', 2.0), ('se_gap_min_clearance', 0.6), ('gap_weight', 0.0),
+                     ('vx_min', -0.35), ('time_steps', 28), ('model_dt', 0.1), ('batch_size', 1500), ('controller_frequency', 10.0)):
+        check(yv(key) == val, f'campaign-2 parameter {key} is {yv(key)}, paper says {val}')
+    for tok in ('0.10 m / 0.5 m', '36 / 2.0 m', '2.5 m', '0.4 m / 15 s', '0.5 rad', '3 s / 0.15 m', '1.0 m', '0.6 m; 3', '0.2 m; 6', '$-0.35$', '$1500$'):
+        check(tok in tex, f'parameter quote {tok!r} missing from the paper')
+
+    # ---- prose counts of the abstract, intro C2 and conclusion against results.json.gz ----
+    def section(a, b):
+        i = tex.index(a)
+        return re.sub(r'\s+', ' ', tex[i:tex.index(b, i)])
+    abstract = section('\\begin{abstract}', '\\end{abstract}')
+    intro_c2 = section('\\item \\textbf{C2 (repair and live evidence).}', '\\item \\textbf{C3 (algorithm).}')
+    concl = section('\\section{Conclusion}', '\\appendices')
+    cnt = lambda scen, cfg: cells[(scen, cfg)]['successes']
+    p4 = lambda name: f"{contr[name]['fisher_p']:.4f}"
+    s1c4, s4c4, s3c4 = cnt('s1_utrap', 'C4'), cnt('s4_ltrap', 'C4'), cnt('s3_ctrap', 'C4')
+    s1c3, s4c3, s3c3 = cnt('s1_utrap', 'C3'), cnt('s4_ltrap', 'C3'), cnt('s3_ctrap', 'C3')
+    s1c1, s1c2 = cnt('s1_utrap', 'C1'), cnt('s1_utrap', 'C2')
+    lo, hi = cells[('s1_utrap', 'C4')]['wilson95']
+    wil = f'$[{lo:.2f}, {hi:.2f}]$'
+    for name, txt in (('abstract', abstract), ('conclusion', concl)):
+        want = (f'reached the goal in {s1c4} of 6 on s1 (Wilson 95\\% interval {wil}) and {s4c4} of 6 on the held-out s4')
+        check(want in txt, f'{name}: SE-MPPI counts on s1/s4 or the Wilson interval differ from results.json.gz ({want})')
+        want = f'stock without recoveries in {s1c3} of 6 on each'
+        check(want in txt and s1c3 == s4c3, f'{name}: stock count without recoveries differs ({want})')
+        want = f'on s1, stock {s1c1} of 6 and SE-MPPI {s1c2} of 6'
+        check(want in txt, f'{name}: C1/C2 counts on s1 differ ({want})')
+    check(f'{s3c4} of 6 against {s3c3} of 6' in concl and f'($p={p4("C4 vs C3 on s3_ctrap")}$)' in concl,
+          'conclusion: s3 count or p differs')
+    check(f"$p={p4('C4 vs C3 on s1_utrap')}$" in abstract and p4('C4 vs C3 on s1_utrap') == p4('C4 vs C3 on s4_ltrap')
+          and f"$p={p4('C2 vs C1 on s1_utrap')}$" in abstract and f"$p={p4('C4 vs C3 on s3_ctrap')}$" in abstract,
+          'abstract: Fisher p values differ from results.json.gz')
+    check(f'in {s1c4} of 6 trials on the development pocket and in {s4c4} of 6 on a held-out pocket' in intro_c2
+          and s1c3 == 0 and 'stock MPPI reached it in none' in intro_c2, 'intro C2: counts differ from results.json.gz')
+    check(f'{s3c4} of 6 against {s3c3} of 6 ($p=0.0606$, not' in abstract.replace('\n', ' ') or
+          f'{s3c4} of 6 against {s3c3} of 6 ($p={p4("C4 vs C3 on s3_ctrap")}$' in abstract,
+          'abstract: s3 count differs')
+
+    # ---- amendment 3 disclosure: 16 counted trials at 012f4f1 ----
+    byt = sorted(c2['trials'], key=lambda t: t['wall_start'])
+    early = [t for t in byt if t['controller_tag_commit'].startswith('012f4f1')]
+    check(len(early) == 16 and byt[15]['trial_id'] == 'correct__s4_ltrap__C3__rep0' and
+          all(t['controller_tag_commit'].startswith('6a50723') for t in byt[16:]),
+          'amendment 3: the first 16 trials (up to s4 C3 rep0) are not exactly those at 012f4f1')
+    ph = [t for t in early if t['scenario'] == 's1_utrap']
+    check(sum(t['reached'] for t in ph if t['config'] == 'C4') == 5 and sum(1 for t in ph if t['config'] == 'C4') == 6
+          and [t['rep'] for t in ph if t['config'] == 'C3'] == [0, 1, 2] and not any(t['reached'] for t in ph if t['config'] == 'C3'),
+          'amendment 3: s1 C4 5 of 6 and s1 C3 reps 0-2 failed at 012f4f1 broken')
+    check('16 counted trials' in flat and '012f4f1' in tex and '6a50723' in tex, 'amendment 3 disclosure text missing')
+    # interim state per cell when amendment 3 was written (R3.1)
+    def early_n(sc, cfg):
+        ts = [t for t in early if t['scenario'] == sc and t['config'] == cfg]
+        return sum(t['reached'] for t in ts), len(ts)
+    check(early_n('s1_utrap', 'C1') == (0, 1) and early_n('s1_utrap', 'C2') == (0, 1)
+          and early_n('s3_ctrap', 'C1') == (0, 1) and early_n('s3_ctrap', 'C2') == (1, 1)
+          and early_n('s3_ctrap', 'C3') == (0, 1) and early_n('s3_ctrap', 'C4') == (1, 1)
+          and early_n('s4_ltrap', 'C3') == (0, 1) and early_n('s4_ltrap', 'C4') == (0, 0)
+          and sum(early_n(sc, c)[1] for sc in ('s0_open', 's1_utrap_evidence') for c in ('C1', 'C2', 'C3', 'C4')) == 0,
+          'amendment 3: interim per-cell state at 012f4f1 differs from the paper')
+    late_s4 = [t for t in byt[16:] if t['scenario'] == 's4_ltrap']
+    check(sorted((t['config'], t['rep']) for t in late_s4) == sorted([('C4', r) for r in range(6)] + [('C3', r) for r in range(1, 6)]),
+          'amendment 3: s4 trials after the amendment are not all six C4 and C3 reps 1-5')
+    check('on s1, C4 complete at 5 of 6, C3 failed in repetitions 0 to 2, C1 0 of 1 and C2 0 of 1; on s3, C1 0 of 1, C2 1 of 1, C3 0 of 1 and C4 1 of 1; on s4, C3 0 of 1 (the crash trial). No C4 trial on s4 had run.' in flat
+          and 'All six C4 trials on s4 and C3 repetitions 1 to 5 on s4 ran after the amendment' in flat,
+          'amendment 3 interim-state text missing')
+    for name, txt in (('abstract', abstract), ('intro C2', intro_c2), ('conclusion', concl)):
+        check('post hoc amendment to its crash-stop rule' in txt, f'{name}: pre-registration not qualified by the post hoc amendment')
+    # recoveries and progress failures in SE trials (task-memory sentence)
+    check(all(t['progress_failures'] == 0 and t['bt_spin'] + t['bt_backup'] + t['bt_wait'] + t['bt_clear_local'] + t['bt_clear_global'] == 0
+              for t in c2['trials'] if t['config'] in ('C2', 'C4')),
+          'an SE trial invoked a recovery or had a progress failure')
+    # live hops: all horizon rays, shortest clearance 1.42 m (addition d)
+    hops = [h for t in c2['trials'] for h in (t['escape_hop_list'] or [])]
+    check(len(hops) == 188 and all(h['horizon_ray'] for h in hops) and f"{min(h['clearance_m'] for h in hops):.2f}" == '1.42'
+          and 'all 188 hops logged in campaign 2' in flat and '(shortest logged live: $1.42$~m)' in flat,
+          'live hops: 188, all horizon rays, shortest clearance 1.42 m broken')
+    # mirror arms paired by seed, F on utrap / narrowdyn (descriptive, R3.2)
+    import csv
+    def f_succ(arm):
+        return {(r_['family'], r_['seed']): int(r_['success']) for r_ in csv.DictReader(open(EXP / f'results_2d_{arm}/trials.csv'))
+                if r_['config'] == 'F_full'}
+    fv, fa = f_succ('v2'), f_succ('v2_advised')
+    def split(fam):
+        ks = [k for k in fv if k[0] == fam]
+        return sum(fv[k] and not fa[k] for k in ks), sum(fa[k] and not fv[k] for k in ks)
+    check(split('utrap') == (11, 0) and split('narrowdyn') == (10, 2)
+          and '11 U-trap seeds succeed only with the additions and none only without them' in flat
+          and '\\texttt{narrowdyn} the split is 10 and 2' in flat,
+          f'mirror arms paired split differs: utrap {split("utrap")}, narrowdyn {split("narrowdyn")}')
+
+    # ---- forced stops without a moving body ----
+    fsd = {}
+    for t in sorted(c2['trials'], key=lambda t: t['trial_id']):
+        if t['scenario'].endswith('evidence'):
+            continue
+        fsd.setdefault((t['scenario'], t['config']), []).append(int(t['diagnostics_last']['forced_stops']))
+    lst = lambda k: ', '.join(str(v) for v in fsd[k])
+    for key, name in ((('s3_ctrap', 'C2'), 's3 C2'), (('s3_ctrap', 'C4'), 's3 C4'), (('s4_ltrap', 'C4'), 's4 C4')):
+        check(f'{name} ${lst(key)}$' in flat, f'forced-stop counts of {name} differ from results.json.gz: {fsd[key]}')
+    check(all(sum(v) == 0 for k, v in fsd.items() if k[0] in ('s0_open', 's1_utrap') or k[1] in ('C1', 'C3')),
+          'forced stops outside the SE pockets of s3/s4 are not all zero')
+    check(max(max(v) for v in fsd.values()) == 16 and 'up to $16$ cycles' in flat, 'forced-stop maximum 16 broken')
+
+    # ---- CBF admissions, loop rate, host load, collision_monitor log (cbf_admissions.py, R4 round) ----
+    import tempfile
+    adm_json = EXP / 'campaign2/CBF_ADMISSIONS.json'
+    adm = json.loads(adm_json.read_text())
+    with tempfile.TemporaryDirectory() as td:
+        subprocess.run([sys.executable, str(EXP / 'campaign2/cbf_admissions.py'), '--out-dir', td], check=True)
+        check(json.loads((Path(td) / 'CBF_ADMISSIONS.json').read_text()) == adm,
+              'CBF_ADMISSIONS.json differs from a fresh run of cbf_admissions.py')
+        check((Path(td) / 'CBF_ADMISSIONS.md').read_text() == (EXP / 'campaign2/CBF_ADMISSIONS.md').read_text(),
+              'CBF_ADMISSIONS.md differs from a fresh run of cbf_admissions.py')
+    a_ = adm['admissions']
+    bs = a_['by_scenario']
+    check(a_['se_trials'] == 46 and a_['se_trials_with_admission'] == 42 and a_['max_obstacles_in_a_message'] == 2
+          and bs['s0_open']['n'] == 12 and bs['s0_open']['with_admission'] == 8,
+          f'CBF admissions: {a_["se_trials_with_admission"]} of {a_["se_trials"]}, s0 {bs["s0_open"]}; paper says 42 of 46, 8 of 12, max 2')
+    check(all(b['with_forced_stop'] == 0 for k, b in bs.items() if k not in ('s3_ctrap', 's4_ltrap'))
+          and bs['s3_ctrap']['with_forced_stop'] > 0 and bs['s4_ltrap']['with_forced_stop'] > 0,
+          'CBF_ADMISSIONS: forced stops not confined to s3/s4')
+    for tok in ('in 42 of 46 SE-MPPI trials (evidence trials included), among them 8 of 12 on \\texttt{s0\\_open}, with at most 2 obstacles in a sample',
+                'admitted phantom obstacles in 42 of 46 SE-MPPI trials, including 8 of 12'):
+        check(tok in flat, f'CBF admission quote missing: {tok!r}')
+    lr_ = adm['loop_rate']
+    f2 = lambda v: f'{v:.2f}'
+    check(lr_['se_trials'] == 46 and (f2(lr_['cycles_per_wall_s']['min']), f2(lr_['cycles_per_wall_s']['max'])) == ('9.83', '10.00')
+          and (f2(lr_['cycles_per_sim_s']['min']), f2(lr_['cycles_per_sim_s']['max'])) == ('10.14', '10.42')
+          and 'ran $9.83$ to $10.00$ cycles per wall-clock second and $10.14$ to $10.42$ per simulated second' in flat,
+          f'loop-rate quote broken: {lr_}')
+    h_ = adm['host']
+    check(h_['all_trials'] == 88 and (f'{h_["own_cores_mean"]["min"]:.1f}', f'{h_["own_cores_mean"]["max"]:.1f}') == ('3.2', '4.2')
+          and (f2(h_['load1_max']['min']), f2(h_['load1_max']['max'])) == ('1.79', '8.35')
+          and f'{h_["rtf_min_10s_all"]["min"]:.3f}' == '0.882' and f'{h_["rtf_min_10s_se_pocket"]["min"]:.3f}' == '0.944'
+          and '$3.2$ to $4.2$ cores' in flat and '$1.79$ to $8.35$' in flat and 'was $0.882$ ($0.944$ in the SE-MPPI pocket trials; same file' in flat,
+          f'host-load quote broken: {h_}')
+    mc = h_['missed_control_cycles_nonzero']
+    check(set(mc) == {'s1_utrap/C1', 's3_ctrap/C1'} and sum(len(v) for v in mc.values()) == 12
+          and min(min(v) for v in mc.values()) == 2 and max(max(v) for v in mc.values()) == 5
+          and 'only the 12 C1 pocket trials logged missed control cycles ($2$ to $5$ each)' in flat,
+          f'missed control cycles quote broken: {mc}')
+    cml_ = adm['collision_monitor_log']
+    check(cml_['launch_logs'] == 88 and cml_['lines'] > 0 and cml_['lines_not_info'] == 0
+          and 'its log in the 88 trials holds no line above INFO level' in flat,
+          f'collision_monitor log quote broken: {cml_}')
+    check('14 to 19' not in flat and 'pass 14 to 18 of 56, and an earlier, unarchived implementer sweep passed 19' in flat,
+          'ablation range must be quoted as 14 to 18 (archived) plus 19 (unarchived)')
+
+    # ---- localization drift, all 88 trials (odom_gap.py) ----
+    check(og['all_n'] == 88 and len(og['all_rows']) == 88, 'ODOM_GAP.json does not cover 88 trials')
+    bc = og['by_class']
+    cls = {'SE': 'SE-MPPI in a pocket (C2, C4)', 'stock': 'stock controller in a pocket (C1, C3)',
+           's0': 'trap-free control (s0_open, all four configurations)'}
+    otab2 = table_rows('tab:odomclass')
+    for row, (k, n) in zip(otab2, (('SE', 34), ('stock', 30), ('s0', 24))):
+        g = bc[cls[k]]
+        rg = lambda key, d=3: f"{g[key]['min']:.{d}f}--{g[key]['max']:.{d}f}"
+        exp = [str(n), rg('odom_minus_gt_m'), rg('amcl_minus_gt_m'), rg('peak_abs_cmd_wz_rad_s')]
+        check(g['odom_minus_gt_m']['n'] == n and row[1:] == exp, f'tab:odomclass {k}: {row[1:]} differs from {exp}')
+    r2 = lambda v: f'{v:.2f}'
+    br = og['by_class_reached'][cls['SE']]
+    check(br['odom_minus_gt_m']['n'] == 21 and r2(br['odom_minus_gt_m']['min']) == '0.09' and r2(br['odom_minus_gt_m']['max']) == '0.54'
+          and r2(br['amcl_minus_gt_m']['min']) == '0.06' and r2(br['amcl_minus_gt_m']['max']) == '0.54',
+          'reached SE trials: 21 trials, odometry 0.09-0.54, AMCL 0.06-0.54 broken')
+    check('in the 21 SE pocket trials that reached the goal (19 registered and 2 evidence trials), the odometry is $0.09$ to $0.54$~m and the AMCL estimate $0.06$ to $0.54$~m' in flat,
+          'limitations: reached-trial drift quote missing')
+    se_poc = [t for t in c2['trials'] if t['config'] in ('C2', 'C4') and t['scenario'] != 's0_open']
+    se_reg_reached = sum(t['reached'] for t in se_poc if not t['scenario'].endswith('evidence'))
+    se_ev_reached = sum(t['reached'] for t in se_poc if t['scenario'].endswith('evidence'))
+    check(len(se_poc) == 34 and se_reg_reached == 19 and se_ev_reached == 2,
+          f'SE pocket trials {len(se_poc)} / reached {se_reg_reached} registered + {se_ev_reached} evidence; paper says 34 / 19 + 2')
+    check('all 34 SE pocket trials (30 registered, 4 evidence)' in flat, '34 = 30 + 4 split missing')
+    c1s1 = og['by_cell']['s1_utrap/C1']
+    check(r2(c1s1['amcl_minus_gt_m']['min']) == '0.23' and r2(c1s1['amcl_minus_gt_m']['max']) == '0.38' and c1s1['odom_minus_gt_m']['max'] <= 0.03,
+          's1 C1: AMCL gap 0.23-0.38, odometry gap <= 0.03 broken')
+    check('$0.23$ to $0.38$~m from the ground truth while the odometry is at most $0.03$~m' in flat, 'C1 AMCL-gap quote missing')
+    st = bc[cls['stock']]['peak_abs_cmd_wz_rad_s']
+    c3w = max(og['by_cell'][f's{n}/C3']['peak_abs_cmd_wz_rad_s']['max'] for n in ('1_utrap', '3_ctrap', '4_ltrap'))
+    check(round(st['max'], 2) == 1.00 and round(c3w, 2) == 0.45 and bc[cls['SE']]['peak_abs_cmd_wz_rad_s']['max'] <= 1.9 + 1e-9
+          and round(bc[cls['SE']]['peak_abs_cmd_wz_rad_s']['max'], 1) == 1.9, 'peak turn-rate quotes (1.9 / 1.00 / 0.45) broken')
+    check('at or below $1.00$~rad/s (C1) and $0.45$~rad/s (C3)' in flat, 'peak turn-rate prose missing')
+    # controller output (nav) vs command to the base (cmd), SE pocket trials
+    sep = [r_ for r_ in og['all_rows'] if r_['config'] in ('C2', 'C4') and r_['scenario'] != 's0_open']
+    cmdw = [r_['peak_abs_cmd_wz_rad_s'] for r_ in sep]
+    at_lim = [r_ for r_ in sep if r_['peak_abs_nav_wz_rad_s'] >= 1.9 - 1e-9]
+    check(len(sep) == 34 and len(at_lim) == 11 and all(r_['scenario'] == 's3_ctrap' for r_ in at_lim)
+          and f'{min(cmdw):.2f}' == '1.23' and f'{max(cmdw):.2f}' == '1.90',
+          f'turn rate: controller output at 1.9 in {len(at_lim)} of {len(sep)}; base command {min(cmdw):.3f}-{max(cmdw):.3f}')
+    stn = [r_ for r_ in og['all_rows'] if r_['config'] in ('C1', 'C3') and r_['scenario'] != 's0_open']
+    check(round(max(r_['peak_abs_nav_wz_rad_s'] for r_ in stn if r_['config'] == 'C1'), 2) == 1.00
+          and round(max(r_['peak_abs_nav_wz_rad_s'] for r_ in stn if r_['config'] == 'C3'), 2) == 0.45,
+          'stock controller-output turn-rate bounds 1.00 / 0.45 broken')
+    check('reached its limit (\\texttt{wz\\_max} $1.9$~rad/s) in 11 of 34 trials, all on s3' in flat
+          and 'peaked at $1.23$ to $1.90$~rad/s' in flat, 'turn-rate prose (11 of 34, 1.23-1.90) missing')
+    lp = og['left_pocket']
+    check(lp[cls['SE']] == {'n': 34, 'left_pocket_s_set': 34} and lp[cls['stock']]['left_pocket_s_set'] == 0 and lp[cls['s0']]['left_pocket_s_set'] == 0,
+          'left_pocket_s: set in all 34 SE pocket trials and in no stock one broken')
+
+    # ---- raw archive, sweeps, fallback threshold ----
+    import tarfile
+    arc = EXP / 'campaign2/raw_trials.tar.gz'
+    check(hashlib.sha256(arc.read_bytes()).hexdigest() == (EXP / 'campaign2/raw_trials.tar.gz.sha256').read_text().split()[0],
+          'raw_trials.tar.gz does not match its sha256 file')
+    with tarfile.open(arc) as tf:
+        names = tf.getnames()
+    tr = {n.split('/')[2] for n in names if n.startswith('campaign2_raw/trials/') and n.count('/') >= 2 and n.split('/')[2]}
+    reg = [n for n in tr if 'evidence' not in n]
+    bys = {}
+    for n in reg:
+        k = n.split('__')[1]
+        bys[k] = bys.get(k, 0) + 1
+    check(len(tr) == 88 and len(reg) == 84 and bys == {'s0_open': 24, 's1_utrap': 24, 's3_ctrap': 24, 's4_ltrap': 12},
+          f'raw archive: {len(tr)} trial directories, classes {bys}; paper says 88 = 84 (24/24/24/12) + 4 evidence')
+    sh = {n.split('/')[2] for n in names if n.startswith('campaign2_raw/shakedown/') and n.count('/') >= 2 and n.split('/')[2]}
+    check(len(sh) == 5, f'raw archive: shakedown has {len(sh)} entries, paper says 5')
+    sweep_rows = {}
+    for f in ('on1', 'on2', 'on3', 'off1', 'off2', 'off3b'):
+        txt = (EXP / f'campaign2/sweeps/confirmation2_{f}.txt').read_text()
+        m_ = re.search(r'UTRAP sweep passed (\d+) of 56', txt)
+        check(m_ is not None and txt.count('UTRAP geometry=') == 56, f'sweeps/confirmation2_{f}.txt: not 56 rows and a summary')
+        sweep_rows[f] = int(m_.group(1))
+    check([sweep_rows[k] for k in ('on1', 'on2', 'on3')] == [55, 56, 56] and [sweep_rows[k] for k in ('off1', 'off2', 'off3b')] == [16, 18, 14],
+          f'committed sweep rows {sweep_rows} differ from tab:ablation (55,56,56 / 16,18,14)')
+    ft = (EXP / 'results_2d_v2_advised/FALLBACK_THRESHOLD.md').read_text()
+    check('| as in the advised arm (no threshold) | 29 | 50 |' in ft and '| 0.6 m threshold restored | 29 | 50 |' in ft
+          and 'outcome differs between the two columns: 0.' in ft and '$29$ of $50$, no seed differs' in tex,
+          'FALLBACK_THRESHOLD.md: 29 of 50 in both columns, no seed differs, broken')
+
+    # ---- released parameter file against the campaign file (R4.5) ----
+    rel = (ROOT / 'src/nav2_se_controller/config/nav2_se_controller_params.yaml').read_text()
+    rv = lambda key: float(re.search(r'^\s*' + key + r':\s*([-\d.]+)', rel, re.M).group(1))
+    check((rv('controller_frequency'), rv('time_steps'), rv('model_dt'), rv('batch_size'), rv('se_progress_stall_window')) == (20.0, 56, 0.05, 1000, 30)
+          and (yv('controller_frequency'), yv('time_steps'), yv('model_dt'), yv('batch_size'), yv('se_progress_stall_window')) == (10.0, 28, 0.1, 1500, 30),
+          'released-vs-campaign parameter differences (20/56/0.05/1000 vs 10/28/0.1/1500, window 30) broken')
+    check(yv('transform_tolerance') in (0.5, 1.0) and yv('source_timeout') == 5.0 and 'enabled: False' in yml, 'loosened tolerances / disabled polygon broken')
+    check(yv('wz_max') == 1.9 and 'max_velocity: [0.5, 0.0, 2.0]' in yml and 'max_accel: [2.5, 0.0, 3.2]' in yml, 'wz limits 1.9 / 2.0 / 3.2 broken')
+
+    # ---- campaign 1 ----
+    c1 = json.loads((EXP / 'results_pilot_rerun/results.json').read_text())
+    h = c1['headline']
+    check(h['n_correct'] == 44 and h['n_affected'] == 4 and h['n_registered_trials'] == 48 and h['correct']['reached'] == 0
+          and h['affected']['reached'] == 0, 'campaign 1: 0 of 44 (+4 affected) broken')
+    check(h['outcomes_correct'] == {'NOT_REACHED_ABORTED': 2, 'NOT_REACHED_TIMEOUT': 42} and h['correct']['trials_with_escape_enter'] == 13,
+          'campaign 1: 42 timeouts, 2 aborted, 13 with escape broken')
+    check(0.93 <= h['correct']['rtf_min'] < 0.94 and h['correct']['rtf_max'] < 0.97 + 1e-3 and h['affected']['rtf_min'] > 0.96,
+          'campaign 1 RTF range 0.93-0.97 broken')
+    builds = {t['mppi_build'] for t in c1['trials']}
+    check(builds == {'ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25', 'ros-jazzy-nav2-mppi-controller-1.3.11-np2py312h2ed9cc7_16'},
+          'campaign 1 builds changed')
+    rc = (EXP / 'results_pilot_rerun/ROOT_CAUSE.md').read_text()
+    for tok in ('70 of 70 closed escape episodes', '24 to 83 s', '0.34 m', '14 of the 20 valid `P`', '3.1 s'):
+        check(tok in rc.replace('\n  ', ' ').replace('\n', ' '), f'ROOT_CAUSE.md lost {tok!r}')
+    for tok in ('70 closed escape', '14 of them', '$0.93$', '42 timeouts', '13 of them'):
+        check(tok in flat or tok.replace(' ', '~') in flat, f'paper lost campaign-1 quote {tok!r}')
+
+    # ---- test counts (deployment) ----
+    dep_dir = TESTS_DIR / 'deployment'
+    dep = sum(len(re.findall(r'^TEST', p.read_text(), re.M)) for p in dep_dir.glob('test_*.cpp'))
+    dep_files = len(list(dep_dir.glob('test_*.cpp')))
+    check(dep == 148 and dep_files == 10, f'deployment tests: {dep} in {dep_files} files, paper says 148 in 10')
+    check('148' in tex and '10 files' in tex, 'paper lost the deployment-test count')
+
+    # ---- git facts (skipped outside a checkout that has the tags) ----
+    def git(*a):
+        r_ = subprocess.run(['git', *a], capture_output=True, text=True, cwd=ROOT)
+        return r_.stdout.strip() if r_.returncode == 0 else None
+    tag = git('rev-parse', 'campaign2-controller^{commit}')
+    if tag:
+        check(tag in tex, f'tag commit of campaign2-controller ({tag}) not quoted in the paper')
+    v1 = git('rev-parse', 'paper-v1^{commit}')
+    if v1:
+        check(v1 in tex, f'tag commit of paper-v1 ({v1}) not quoted in the paper')
+
+    # ---- README / CITATION agree with the paper ----
+    readme = (ROOT / 'README.md').read_text()
+    check('5 of 6' in readme and '0.0152' in readme and 'one simulated host' in readme and '80%' in readme,
+          'README does not carry the live headline and the 80% mirror headline')
+    check('no live run has yet reached its goal' not in readme.lower(), 'README still says no live run reached its goal')
+    cff = (ROOT / 'CITATION.cff').read_text()
+    check('SE-MPPI: Coordinating Online Local-Minima Escape with Control-Barrier-Function Safety in a Nav2-Native Controller' in cff,
+          'CITATION.cff title differs from the paper title')
+    outside = re.sub(r'\\begin\{quote\}.*?\\end\{quote\}', '', tex, flags=re.S)
+    check('no live run has yet' not in outside.lower(), 'paper still says that no live run has reached its goal')
+
 # --- forbidden tokens in the paper source ---
 for tok in FORBIDDEN_IN_TEX:
     check(tok not in tex, f'forbidden token in main.tex: {tok!r}')
 
 # --- forbidden tokens in the compiled PDF (best effort) ---
 pdf = TEX.with_suffix('.pdf')
-if pdf.exists():
+PDF_TOKENS = (FORBIDDEN_IN_TEX[0], FORBIDDEN_IN_TEX[2], FORBIDDEN_IN_TEX[5])
+
+
+def pdf_text(path):
+    """Text of the compiled PDF from pypdf or, failing that, the pdftotext binary.
+
+    Returns None when neither reader is installed (the caller fails the guard with a clear
+    message; a missing reader must not pass the sweep silently)."""
     try:
         from pypdf import PdfReader
-        text = ''.join(p.extract_text() for p in PdfReader(str(pdf)).pages)
-        for tok in (FORBIDDEN_IN_TEX[0], FORBIDDEN_IN_TEX[2], FORBIDDEN_IN_TEX[5]):
-            check(tok not in text, f'forbidden token in main.pdf: {tok!r}')
+        return ''.join(p.extract_text() for p in PdfReader(str(path)).pages)
     except ImportError:
-        print('note: pypdf unavailable — PDF token sweep skipped', file=sys.stderr)
+        pass
+    try:
+        r_ = subprocess.run(['pdftotext', str(path), '-'], capture_output=True, text=True)
+    except FileNotFoundError:
+        return None
+    return r_.stdout if r_.returncode == 0 else None
+
+
+if pdf.exists():
+    text = pdf_text(pdf)
+    if text is None:
+        check(False, f'cannot read {pdf.name} for the forbidden-token sweep: neither the pypdf '
+                     'module nor a working pdftotext binary is available '
+                     '(install poppler-utils or pypdf)')
+    else:
+        for tok in PDF_TOKENS:
+            check(tok not in text, f'forbidden token in main.pdf: {tok!r}')
 
 if fails:
     print('NUMBER GUARD: FAIL')

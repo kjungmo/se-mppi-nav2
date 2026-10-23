@@ -19,8 +19,23 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Every headline figure traces to a committed artifact
+      # The guard sweeps the compiled main.pdf for forbidden tokens. The runner image has
+      # neither pypdf nor pdftotext, and the guard fails when it finds no PDF reader.
+      # poppler-utils comes from the ubuntu-24.04 archive, so the runner image pins its
+      # version.
+      - name: PDF reader for the token sweep (poppler-utils, pdftotext)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          pdftotext -v
+      - name: Every headline figure traces to a committed artifact (companion copy)
         run: python3 scripts/check_paper_numbers.py
+      - name: The same for the submission master (docs/papers/arxiv_ref), tables regenerated and compared
+        run: python3 scripts/check_paper_numbers.py --arxiv
+      - name: The live re-run's numbers regenerate from its raw files
+        # The committed files come from Python 3.8; the runner has 3.12, whose float sums differ
+        # in the last digit. --digits 9 compares floats to 9 significant digits.
+        run: python3 experiments/results_pilot_rerun/analyze.py --check --digits 9
 
   jazzy:
     name: ROS 2 Jazzy (RoboStack) build, test and parameter binding
@@ -120,6 +135,38 @@ jobs:
             src/nav2_se_controller/config/nav2_se_controller_params.yaml > bogus.yaml
           grep -q se_not_a_parameter bogus.yaml
           check bogus.yaml fail
+
+      # An environment without the conda toolchain activation has no LDFLAGS,
+      # so nothing passes --as-needed to the linker. The package must ask for it
+      # itself: a plugin library that keeps a DT_NEEDED entry for
+      # libmppi_critics.so makes the stock critics register with the wrong class
+      # loader and controller_server fails to configure.
+      - name: Built without the toolchain's LDFLAGS, the plugin still loads the stock critics
+        timeout-minutes: 15
+        run: |
+          mkdir -p ws_noflags/src && ln -s "$PWD/src/nav2_se_controller" ws_noflags/src/nav2_se_controller
+          (cd ws_noflags && env -u LDFLAGS colcon build --packages-select nav2_se_controller \
+             --event-handlers console_cohesion+ --cmake-args -DBUILD_TESTING=OFF)
+          for lib in libsafe_escape_controller.so libescape_critic.so libmppi_rollout_check.so; do
+            needed=$(readelf -d "ws_noflags/install/nav2_se_controller/lib/$lib" | grep NEEDED)
+            if echo "$needed" | grep -q "libmppi_critics"; then
+              echo "$lib has a DT_NEEDED entry for libmppi_critics.so"; exit 1
+            fi
+          done
+          source ws_noflags/install/setup.bash
+          yaml=src/nav2_se_controller/config/nav2_se_controller_params.yaml
+          setsid ros2 run nav2_controller controller_server --ros-args --params-file "$yaml" \
+            > noflags_server.log 2>&1 &
+          pid=$!
+          status=0
+          timeout 90 python3 scripts/check_param_binding.py "$yaml" --configure > noflags_binding.log 2>&1 || status=$?
+          kill -TERM -- "-$pid" 2>/dev/null || true
+          for _ in $(seq 15); do kill -0 "$pid" 2>/dev/null || break; sleep 1; done
+          kill -KILL -- "-$pid" 2>/dev/null || true
+          cat noflags_binding.log
+          if [ "$status" -ne 0 ]; then cat noflags_server.log; exit 1; fi
+          [ "$(grep -c "Critic loaded" noflags_server.log)" -eq 9 ] \
+            || { echo "expected the nine critics of the shipped YAML to load"; cat noflags_server.log; exit 1; }
 
   jazzy-asan:
     name: ROS 2 Jazzy deployment tests under AddressSanitizer

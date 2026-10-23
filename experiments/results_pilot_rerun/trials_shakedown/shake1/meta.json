@@ -1,0 +1,69 @@
+{
+  "trial_id": "correct__s1_utrap__F_se_full__P__rep0",
+  "env_label": "correct",
+  "scenario": "s1_utrap",
+  "config": "F_se_full",
+  "param_set": "P",
+  "rep": 0,
+  "override_guard": false,
+  "launch_argv": [
+    "ros2",
+    "launch",
+    "se_mppi_utrap",
+    "utrap_bench.launch.py",
+    "headless:=True",
+    "use_rviz:=False",
+    "params_file:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/results_pilot_rerun/trials_shakedown/correct__s1_utrap__F_se_full__P__rep0/params.yaml",
+    "use_sim_time:=True",
+    "map:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/se_mppi_utrap/maps/utrap_loc.yaml",
+    "x_pose:=-3.0",
+    "y_pose:=0.0",
+    "yaw:=0.0"
+  ],
+  "start": [
+    -3.0,
+    0.0,
+    0.0
+  ],
+  "goal": [
+    3.0,
+    0.0,
+    0.0
+  ],
+  "watchdog_s": 300.0,
+  "setup_timeout_s": 120.0,
+  "ros_domain_id": "87",
+  "env": {
+    "conda_env": "semppi_rerun",
+    "package_builds": [
+      "gz-sim8-8.10.0-hfc2019e_3",
+      "gz-sim8-python-8.10.0-py312hce064e6_3",
+      "libgz-sim8-8.10.0-py312h50b3465_3",
+      "libgz-sim8-8.10.0-py312h50b3465_3",
+      "ros-jazzy-nav2-mppi-controller-1.3.13-hb0f4dca_25",
+      "ros2-distro-mutex-0.19.0-jazzy_25",
+      "ros2-nav2-mppi-controller-1.3.13-np2py312h405a742_25",
+      "ros2-ros-gz-sim-1.0.24-np2py312h7224bc2_25",
+      "xsimd-11.2.0-h00ab1b0_0",
+      "xtensor-0.25.0-h00ab1b0_0"
+    ],
+    "check_mppi_rollout": "OK: /home/cona/micromamba/envs/semppi_rerun/lib/libmppi_controller.so rolls trajectories out correctly (24576 rollout points within 1e-03 m of the closed form, worst 8.3e-07 m).",
+    "check_mppi_rollout_exit": 0,
+    "repo_commit": "92209c75d5ff39f9b5e6431db2899e2cfcef8769",
+    "tracked_inputs_modified": "",
+    "kernel": "6.18.40.1-microsoft-standard-WSL2",
+    "cpu": "AMD Ryzen 5 5500GT with Radeon Graphics",
+    "cpus": 12
+  },
+  "wall_start": 1791775722.4154778,
+  "complete": true,
+  "setup_attempts": 1,
+  "active": true,
+  "launch_log": "launch.log",
+  "drive_wall_start": 1791775730.435534,
+  "drive_returncode": null,
+  "drive_killed_by_driver": true,
+  "drive_wall_end": 1791776090.4434276,
+  "swept_pids": [],
+  "wall_end": 1791776097.9705596
+}

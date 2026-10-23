@@ -1,0 +1,1738 @@
+{
+ "all_n": 88,
+ "all_rows": [
+  {
+   "amcl_minus_gt_m": 0.013,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C1__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.04,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C1__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.043,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.004,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C1__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.038,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C1__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.039,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.04,
+   "peak_abs_nav_wz_rad_s": 0.04,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C1__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.039,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.001,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.039,
+   "peak_abs_nav_wz_rad_s": 0.039,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C1__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C2",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C2__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.039,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C2",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.004,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C2__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.025,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C2",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.005,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.039,
+   "peak_abs_nav_wz_rad_s": 0.039,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C2__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C2",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C2__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.015,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C2",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C2__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C2",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.005,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C2__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.04,
+   "peak_abs_nav_wz_rad_s": 0.04,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C3__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.039,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C3__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.006,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.039,
+   "peak_abs_nav_wz_rad_s": 0.039,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C3__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.013,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.039,
+   "peak_abs_nav_wz_rad_s": 0.039,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C3__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C3__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.042,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C3__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C4",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.001,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.039,
+   "peak_abs_nav_wz_rad_s": 0.039,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C4__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.016,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C4",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C4__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.041,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C4",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.006,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.043,
+   "peak_abs_nav_wz_rad_s": 0.043,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C4__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.04,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C4",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.006,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C4__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.038,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C4",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C4__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.039,
+   "class": "trap-free control (s0_open, all four configurations)",
+   "config": "C4",
+   "left_pocket_s_set": false,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 0.039,
+   "peak_abs_nav_wz_rad_s": 0.035,
+   "scenario": "s0_open",
+   "trial": "correct__s0_open__C4__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.318,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.001,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C1__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.233,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.024,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C1__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.243,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.006,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C1__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.375,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.019,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C1__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.353,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.03,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C1__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.344,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.023,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C1__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 1.559,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 1.594,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.625,
+   "peak_abs_nav_wz_rad_s": 1.625,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C2__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.901,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.939,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.414,
+   "peak_abs_nav_wz_rad_s": 1.414,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C2__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.18,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.238,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.611,
+   "peak_abs_nav_wz_rad_s": 1.611,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C2__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.154,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.088,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.409,
+   "peak_abs_nav_wz_rad_s": 1.409,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C2__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.396,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.294,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.523,
+   "peak_abs_nav_wz_rad_s": 1.523,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C2__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.253,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.187,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.419,
+   "peak_abs_nav_wz_rad_s": 1.419,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C2__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.012,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C3__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.011,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.042,
+   "peak_abs_nav_wz_rad_s": 0.042,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C3__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.011,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.041,
+   "peak_abs_nav_wz_rad_s": 0.041,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C3__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.013,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.005,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.083,
+   "peak_abs_nav_wz_rad_s": 0.083,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C3__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.015,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.001,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.052,
+   "peak_abs_nav_wz_rad_s": 0.052,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C3__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.01,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.039,
+   "peak_abs_nav_wz_rad_s": 0.039,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C3__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.247,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.178,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.406,
+   "peak_abs_nav_wz_rad_s": 1.406,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C4__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.127,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.127,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.413,
+   "peak_abs_nav_wz_rad_s": 1.413,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C4__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.2,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.146,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.578,
+   "peak_abs_nav_wz_rad_s": 1.578,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C4__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.156,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.196,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.429,
+   "peak_abs_nav_wz_rad_s": 1.429,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C4__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.691,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.696,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.416,
+   "peak_abs_nav_wz_rad_s": 1.416,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C4__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.175,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.188,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.41,
+   "peak_abs_nav_wz_rad_s": 1.41,
+   "scenario": "s1_utrap",
+   "trial": "correct__s1_utrap__C4__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.504,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.928,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.504,
+   "peak_abs_nav_wz_rad_s": 1.504,
+   "scenario": "s1_utrap_evidence",
+   "trial": "correct__s1_utrap_evidence__C2__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.223,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.215,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.383,
+   "peak_abs_nav_wz_rad_s": 1.383,
+   "scenario": "s1_utrap_evidence",
+   "trial": "correct__s1_utrap_evidence__C2__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.926,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.962,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.567,
+   "peak_abs_nav_wz_rad_s": 1.567,
+   "scenario": "s1_utrap_evidence",
+   "trial": "correct__s1_utrap_evidence__C4__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.341,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.355,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.388,
+   "peak_abs_nav_wz_rad_s": 1.388,
+   "scenario": "s1_utrap_evidence",
+   "trial": "correct__s1_utrap_evidence__C4__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.222,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.007,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C1__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.23,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.016,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C1__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.215,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.007,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C1__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.223,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.067,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C1__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.2,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C1__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.159,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C1",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.006,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.0,
+   "peak_abs_nav_wz_rad_s": 1.0,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C1__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.358,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.322,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.698,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C2__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.695,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 1.344,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.578,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C2__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.784,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.852,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.805,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C2__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.364,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.299,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.897,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C2__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.733,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.772,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.393,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C2__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.575,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C2",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.79,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.9,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C2__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.086,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.011,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.179,
+   "peak_abs_nav_wz_rad_s": 0.179,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C3__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.024,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.007,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.176,
+   "peak_abs_nav_wz_rad_s": 0.176,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C3__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.056,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.009,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.174,
+   "peak_abs_nav_wz_rad_s": 0.174,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C3__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.02,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.007,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.195,
+   "peak_abs_nav_wz_rad_s": 0.195,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C3__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.023,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.007,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.189,
+   "peak_abs_nav_wz_rad_s": 0.189,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C3__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.036,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.008,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.174,
+   "peak_abs_nav_wz_rad_s": 0.174,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C3__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.062,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.13,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.411,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C4__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.704,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.747,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.558,
+   "peak_abs_nav_wz_rad_s": 1.828,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C4__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.454,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.435,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.896,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C4__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.108,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.127,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.627,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C4__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.173,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.291,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.895,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C4__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.986,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.88,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.228,
+   "peak_abs_nav_wz_rad_s": 1.9,
+   "scenario": "s3_ctrap",
+   "trial": "correct__s3_ctrap__C4__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.13,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.131,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.198,
+   "peak_abs_nav_wz_rad_s": 0.198,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C3__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.018,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.002,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.222,
+   "peak_abs_nav_wz_rad_s": 0.222,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C3__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.003,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.006,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.447,
+   "peak_abs_nav_wz_rad_s": 0.447,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C3__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.021,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.003,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.219,
+   "peak_abs_nav_wz_rad_s": 0.219,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C3__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.012,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.004,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.237,
+   "peak_abs_nav_wz_rad_s": 0.237,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C3__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.029,
+   "class": "stock controller in a pocket (C1, C3)",
+   "config": "C3",
+   "left_pocket_s_set": false,
+   "nav2_result": "FAILED",
+   "odom_minus_gt_m": 0.013,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 0.2,
+   "peak_abs_nav_wz_rad_s": 0.2,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C3__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.328,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.439,
+   "outcome": "NOT_REACHED_ABORTED",
+   "peak_abs_cmd_wz_rad_s": 1.369,
+   "peak_abs_nav_wz_rad_s": 1.369,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C4__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.152,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.247,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.339,
+   "peak_abs_nav_wz_rad_s": 1.339,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C4__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.216,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.092,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.42,
+   "peak_abs_nav_wz_rad_s": 1.42,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C4__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.535,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.543,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.354,
+   "peak_abs_nav_wz_rad_s": 1.507,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C4__rep3"
+  },
+  {
+   "amcl_minus_gt_m": 0.241,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.443,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.366,
+   "peak_abs_nav_wz_rad_s": 1.366,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C4__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.14,
+   "class": "SE-MPPI in a pocket (C2, C4)",
+   "config": "C4",
+   "left_pocket_s_set": true,
+   "nav2_result": "SUCCEEDED",
+   "odom_minus_gt_m": 0.162,
+   "outcome": "REACHED",
+   "peak_abs_cmd_wz_rad_s": 1.366,
+   "peak_abs_nav_wz_rad_s": 1.37,
+   "scenario": "s4_ltrap",
+   "trial": "correct__s4_ltrap__C4__rep5"
+  }
+ ],
+ "by_cell": {
+  "s0_open/C1": {
+   "amcl_minus_gt_m": {
+    "max": 0.043,
+    "min": 0.013,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.004,
+    "min": 0.001,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.042,
+    "min": 0.038,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.042,
+    "min": 0.039,
+    "n": 6
+   }
+  },
+  "s0_open/C2": {
+   "amcl_minus_gt_m": {
+    "max": 0.039,
+    "min": 0.015,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.005,
+    "min": 0.002,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.042,
+    "min": 0.039,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.042,
+    "min": 0.039,
+    "n": 6
+   }
+  },
+  "s0_open/C3": {
+   "amcl_minus_gt_m": {
+    "max": 0.042,
+    "min": 0.013,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.006,
+    "min": 0.002,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.042,
+    "min": 0.039,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.042,
+    "min": 0.039,
+    "n": 6
+   }
+  },
+  "s0_open/C4": {
+   "amcl_minus_gt_m": {
+    "max": 0.041,
+    "min": 0.016,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.006,
+    "min": 0.001,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.043,
+    "min": 0.039,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.043,
+    "min": 0.035,
+    "n": 6
+   }
+  },
+  "s1_utrap/C1": {
+   "amcl_minus_gt_m": {
+    "max": 0.375,
+    "min": 0.233,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.03,
+    "min": 0.001,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.0,
+    "min": 1.0,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.0,
+    "min": 1.0,
+    "n": 6
+   }
+  },
+  "s1_utrap/C2": {
+   "amcl_minus_gt_m": {
+    "max": 1.559,
+    "min": 0.154,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 1.594,
+    "min": 0.088,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.625,
+    "min": 1.409,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.625,
+    "min": 1.409,
+    "n": 6
+   }
+  },
+  "s1_utrap/C3": {
+   "amcl_minus_gt_m": {
+    "max": 0.015,
+    "min": 0.01,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.005,
+    "min": 0.001,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.083,
+    "min": 0.039,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.083,
+    "min": 0.039,
+    "n": 6
+   }
+  },
+  "s1_utrap/C4": {
+   "amcl_minus_gt_m": {
+    "max": 0.691,
+    "min": 0.127,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.696,
+    "min": 0.127,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.578,
+    "min": 1.406,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.578,
+    "min": 1.406,
+    "n": 6
+   }
+  },
+  "s1_utrap_evidence/C2": {
+   "amcl_minus_gt_m": {
+    "max": 0.504,
+    "min": 0.223,
+    "n": 2
+   },
+   "odom_minus_gt_m": {
+    "max": 0.928,
+    "min": 0.215,
+    "n": 2
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.504,
+    "min": 1.383,
+    "n": 2
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.504,
+    "min": 1.383,
+    "n": 2
+   }
+  },
+  "s1_utrap_evidence/C4": {
+   "amcl_minus_gt_m": {
+    "max": 0.926,
+    "min": 0.341,
+    "n": 2
+   },
+   "odom_minus_gt_m": {
+    "max": 0.962,
+    "min": 0.355,
+    "n": 2
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.567,
+    "min": 1.388,
+    "n": 2
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.567,
+    "min": 1.388,
+    "n": 2
+   }
+  },
+  "s3_ctrap/C1": {
+   "amcl_minus_gt_m": {
+    "max": 0.23,
+    "min": 0.159,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.067,
+    "min": 0.002,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.0,
+    "min": 1.0,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.0,
+    "min": 1.0,
+    "n": 6
+   }
+  },
+  "s3_ctrap/C2": {
+   "amcl_minus_gt_m": {
+    "max": 0.784,
+    "min": 0.358,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 1.344,
+    "min": 0.299,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.9,
+    "min": 1.393,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.9,
+    "min": 1.9,
+    "n": 6
+   }
+  },
+  "s3_ctrap/C3": {
+   "amcl_minus_gt_m": {
+    "max": 0.086,
+    "min": 0.02,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.011,
+    "min": 0.007,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.195,
+    "min": 0.174,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.195,
+    "min": 0.174,
+    "n": 6
+   }
+  },
+  "s3_ctrap/C4": {
+   "amcl_minus_gt_m": {
+    "max": 0.986,
+    "min": 0.062,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.88,
+    "min": 0.127,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.896,
+    "min": 1.228,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.9,
+    "min": 1.828,
+    "n": 6
+   }
+  },
+  "s4_ltrap/C3": {
+   "amcl_minus_gt_m": {
+    "max": 0.13,
+    "min": 0.003,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.131,
+    "min": 0.002,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.447,
+    "min": 0.198,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.447,
+    "min": 0.198,
+    "n": 6
+   }
+  },
+  "s4_ltrap/C4": {
+   "amcl_minus_gt_m": {
+    "max": 0.535,
+    "min": 0.14,
+    "n": 6
+   },
+   "odom_minus_gt_m": {
+    "max": 0.543,
+    "min": 0.092,
+    "n": 6
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.42,
+    "min": 1.339,
+    "n": 6
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.507,
+    "min": 1.339,
+    "n": 6
+   }
+  }
+ },
+ "by_class": {
+  "SE-MPPI in a pocket (C2, C4)": {
+   "amcl_minus_gt_m": {
+    "max": 1.559,
+    "min": 0.062,
+    "n": 34
+   },
+   "odom_minus_gt_m": {
+    "max": 1.594,
+    "min": 0.088,
+    "n": 34
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.9,
+    "min": 1.228,
+    "n": 34
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.9,
+    "min": 1.339,
+    "n": 34
+   }
+  },
+  "stock controller in a pocket (C1, C3)": {
+   "amcl_minus_gt_m": {
+    "max": 0.375,
+    "min": 0.003,
+    "n": 30
+   },
+   "odom_minus_gt_m": {
+    "max": 0.131,
+    "min": 0.001,
+    "n": 30
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.0,
+    "min": 0.039,
+    "n": 30
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.0,
+    "min": 0.039,
+    "n": 30
+   }
+  },
+  "trap-free control (s0_open, all four configurations)": {
+   "amcl_minus_gt_m": {
+    "max": 0.043,
+    "min": 0.013,
+    "n": 24
+   },
+   "odom_minus_gt_m": {
+    "max": 0.006,
+    "min": 0.001,
+    "n": 24
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.043,
+    "min": 0.038,
+    "n": 24
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.043,
+    "min": 0.035,
+    "n": 24
+   }
+  }
+ },
+ "by_class_reached": {
+  "SE-MPPI in a pocket (C2, C4)": {
+   "amcl_minus_gt_m": {
+    "max": 0.535,
+    "min": 0.062,
+    "n": 21
+   },
+   "odom_minus_gt_m": {
+    "max": 0.543,
+    "min": 0.088,
+    "n": 21
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 1.897,
+    "min": 1.339,
+    "n": 21
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 1.9,
+    "min": 1.339,
+    "n": 21
+   }
+  },
+  "trap-free control (s0_open, all four configurations)": {
+   "amcl_minus_gt_m": {
+    "max": 0.043,
+    "min": 0.013,
+    "n": 24
+   },
+   "odom_minus_gt_m": {
+    "max": 0.006,
+    "min": 0.001,
+    "n": 24
+   },
+   "peak_abs_cmd_wz_rad_s": {
+    "max": 0.043,
+    "min": 0.038,
+    "n": 24
+   },
+   "peak_abs_nav_wz_rad_s": {
+    "max": 0.043,
+    "min": 0.035,
+    "n": 24
+   }
+  }
+ },
+ "left_pocket": {
+  "SE-MPPI in a pocket (C2, C4)": {
+   "left_pocket_s_set": 34,
+   "n": 34
+  },
+  "stock controller in a pocket (C1, C3)": {
+   "left_pocket_s_set": 0,
+   "n": 30
+  },
+  "trap-free control (s0_open, all four configurations)": {
+   "left_pocket_s_set": 0,
+   "n": 24
+  }
+ },
+ "n": 13,
+ "rows": [
+  {
+   "amcl_minus_gt_m": 1.559,
+   "final_gt_distance_m": 1.659,
+   "nav2_amcl_distance_m": 0.1,
+   "odom_distance_m": 0.096,
+   "odom_minus_gt_m": 1.594,
+   "trial": "correct__s1_utrap__C2__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.901,
+   "final_gt_distance_m": 1.01,
+   "nav2_amcl_distance_m": 0.12,
+   "odom_distance_m": 0.112,
+   "odom_minus_gt_m": 0.939,
+   "trial": "correct__s1_utrap__C2__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.396,
+   "final_gt_distance_m": 0.55,
+   "nav2_amcl_distance_m": 0.17,
+   "odom_distance_m": 0.281,
+   "odom_minus_gt_m": 0.294,
+   "trial": "correct__s1_utrap__C2__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.691,
+   "final_gt_distance_m": 0.79,
+   "nav2_amcl_distance_m": 0.12,
+   "odom_distance_m": 0.129,
+   "odom_minus_gt_m": 0.696,
+   "trial": "correct__s1_utrap__C4__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.504,
+   "final_gt_distance_m": 0.565,
+   "nav2_amcl_distance_m": 0.07,
+   "odom_distance_m": 0.376,
+   "odom_minus_gt_m": 0.928,
+   "trial": "correct__s1_utrap_evidence__C2__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.926,
+   "final_gt_distance_m": 1.03,
+   "nav2_amcl_distance_m": 0.1,
+   "odom_distance_m": 0.116,
+   "odom_minus_gt_m": 0.962,
+   "trial": "correct__s1_utrap_evidence__C4__rep0"
+  },
+  {
+   "amcl_minus_gt_m": 0.695,
+   "final_gt_distance_m": 0.748,
+   "nav2_amcl_distance_m": 0.05,
+   "odom_distance_m": 0.728,
+   "odom_minus_gt_m": 1.344,
+   "trial": "correct__s3_ctrap__C2__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.784,
+   "final_gt_distance_m": 0.734,
+   "nav2_amcl_distance_m": 0.0,
+   "odom_distance_m": 0.126,
+   "odom_minus_gt_m": 0.852,
+   "trial": "correct__s3_ctrap__C2__rep2"
+  },
+  {
+   "amcl_minus_gt_m": 0.733,
+   "final_gt_distance_m": 0.785,
+   "nav2_amcl_distance_m": 0.05,
+   "odom_distance_m": 0.015,
+   "odom_minus_gt_m": 0.772,
+   "trial": "correct__s3_ctrap__C2__rep4"
+  },
+  {
+   "amcl_minus_gt_m": 0.575,
+   "final_gt_distance_m": 0.802,
+   "nav2_amcl_distance_m": 0.2,
+   "odom_distance_m": 0.052,
+   "odom_minus_gt_m": 0.79,
+   "trial": "correct__s3_ctrap__C2__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.704,
+   "final_gt_distance_m": 0.875,
+   "nav2_amcl_distance_m": 0.19,
+   "odom_distance_m": 0.188,
+   "odom_minus_gt_m": 0.747,
+   "trial": "correct__s3_ctrap__C4__rep1"
+  },
+  {
+   "amcl_minus_gt_m": 0.986,
+   "final_gt_distance_m": 0.892,
+   "nav2_amcl_distance_m": 0.12,
+   "odom_distance_m": 0.013,
+   "odom_minus_gt_m": 0.88,
+   "trial": "correct__s3_ctrap__C4__rep5"
+  },
+  {
+   "amcl_minus_gt_m": 0.328,
+   "final_gt_distance_m": 0.536,
+   "nav2_amcl_distance_m": 0.18,
+   "odom_distance_m": 0.099,
+   "odom_minus_gt_m": 0.439,
+   "trial": "correct__s4_ltrap__C4__rep0"
+  }
+ ]
+}

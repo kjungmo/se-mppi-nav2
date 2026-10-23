@@ -1,18 +1,18 @@
 \begin{table}[t]
 \centering
-\caption{\textbf{Mechanism validation} (single seed-fixed runs of the 2D mirror; 40\,s budget). ``Stalled'' = budget exhausted without progress. Source: \texttt{data/mechanism\_validation.json}, regenerated from \texttt{experiments/prototype/run\_validation.py}.}
+\caption{\textbf{Mechanism validation} (single seed-fixed runs of the 2D mirror on hand-built scenes; 40\,s budget). The wall scenes are a single finite wall between robot and goal, not the U-shaped pocket of the benchmark family. ``Stalled'' = budget exhausted without progress. Times count the initial sample (one step, 0.1\,s, more than the elapsed time). Source: \texttt{data/mechanism\_validation.json}, regenerated from \texttt{experiments/prototype/run\_validation.py}.}
 \label{tab:mechanism}
 \small
 \begin{tabular}{llccccc}
 \toprule
 Scenario & Configuration & Reached & Collided & Time (s) & Min.\ clear.\ (m) & $\max_t\alpha_t$ \\
 \midrule
-U-trap & stock MPPI (A) & no (stalled) & no & -- & 0.33 & 2 \\
-U-trap & escape (C) & yes & no & 27.7 & 0.32 & 2 \\
+Finite wall & stock MPPI (A) & no (stalled) & no & -- & 0.33 & 2 \\
+Finite wall & escape (C) & yes & no & 27.7 & 0.32 & 2 \\
 Crossing mover & escape, no CBF (C) & no & yes & -- & $-$0.00 & 2 \\
 Crossing mover & \sname{} (F) & yes & no & 18.6 & 0.01 & 6 \\
-U-trap & \sname{} (F) & yes & no & 27.7 & 0.32 & 6 \\
-U-trap + mover & independent (E) & yes & no & 27.7 & 0.32 & 2 \\
+Finite wall & \sname{} (F) & yes & no & 27.7 & 0.32 & 6 \\
+Finite wall + mover & independent (E) & yes & no & 27.7 & 0.32 & 2 \\
 \bottomrule
 \end{tabular}
 \end{table}

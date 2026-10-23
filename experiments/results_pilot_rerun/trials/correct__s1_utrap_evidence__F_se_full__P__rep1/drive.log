@@ -1,0 +1,691 @@
+[INFO] [1791790988.600731631] [basic_navigator]: AMCL localizer: keeping current pose belief.
+[INFO] [1791790992.611307504] [basic_navigator]: Nav2 is ready for use!
+[INFO] [1791790992.611862867] [basic_navigator]: Nav2 active. Sending goal (3.0, 0.0).
+[INFO] [1791790992.617692807] [basic_navigator]: Navigating to goal: 3.0 0.0...
+[INFO] [1791790992.624152321] [basic_navigator]: NAVFN_PATH total=118 first5=['(0.00,0.00)', '(0.05,0.00)', '(0.08,0.00)', '(0.10,0.00)', '(0.13,0.00)'] last5=['(2.85,0.00)', '(2.88,0.00)', '(2.90,0.00)', '(2.95,0.00)', '(3.00,0.00)']
+[INFO] [1791790992.820157816] [basic_navigator]: [  0.2s] dist=3.00m amcl=(0.02,0.00 yaw=0.01rad) odom=(0.02,0.00 yaw=0.01rad) nav=vx:0.159 wz:0.041 cmd=vx:0.159 wz:0.041
+[INFO] [1791790993.021561369] [basic_navigator]: [  0.4s] dist=2.95m amcl=(0.04,0.00 yaw=0.01rad) odom=(0.04,0.00 yaw=0.01rad) nav=vx:0.160 wz:0.013 cmd=vx:0.160 wz:0.013
+[INFO] [1791790993.223476766] [basic_navigator]: [  0.6s] dist=2.92m amcl=(0.07,0.00 yaw=0.01rad) odom=(0.07,0.00 yaw=0.01rad) nav=vx:0.126 wz:0.008 cmd=vx:0.126 wz:0.008
+[INFO] [1791790993.424788435] [basic_navigator]: [  0.8s] dist=2.90m amcl=(0.10,0.00 yaw=0.01rad) odom=(0.10,0.00 yaw=0.01rad) nav=vx:0.114 wz:0.021 cmd=vx:0.114 wz:0.021
+[INFO] [1791790993.626540951] [basic_navigator]: [  1.0s] dist=2.88m amcl=(0.12,0.00 yaw=0.02rad) odom=(0.12,0.00 yaw=0.02rad) nav=vx:0.102 wz:0.021 cmd=vx:0.102 wz:0.021
+[INFO] [1791790993.828171837] [basic_navigator]: [  1.2s] dist=2.85m amcl=(0.14,0.00 yaw=0.02rad) odom=(0.14,0.00 yaw=0.02rad) nav=vx:0.100 wz:0.036 cmd=vx:0.100 wz:0.036
+[INFO] [1791790994.030556112] [basic_navigator]: [  1.4s] dist=2.85m amcl=(0.16,0.00 yaw=0.03rad) odom=(0.16,0.00 yaw=0.03rad) nav=vx:0.100 wz:0.051 cmd=vx:0.100 wz:0.051
+[INFO] [1791790994.232147523] [basic_navigator]: [  1.6s] dist=2.83m amcl=(0.18,0.00 yaw=0.04rad) odom=(0.18,0.00 yaw=0.04rad) nav=vx:0.100 wz:0.032 cmd=vx:0.100 wz:0.032
+[INFO] [1791790994.433816291] [basic_navigator]: [  1.8s] dist=2.80m amcl=(0.19,0.00 yaw=0.05rad) odom=(0.20,0.00 yaw=0.05rad) nav=vx:0.100 wz:0.019 cmd=vx:0.100 wz:0.019
+[INFO] [1791790994.636040960] [basic_navigator]: [  2.0s] dist=2.77m amcl=(0.22,0.00 yaw=0.05rad) odom=(0.22,0.00 yaw=0.05rad) nav=vx:0.100 wz:0.024 cmd=vx:0.100 wz:0.024
+[INFO] [1791790994.837637346] [basic_navigator]: [  2.2s] dist=2.75m amcl=(0.24,0.01 yaw=0.05rad) odom=(0.24,0.01 yaw=0.05rad) nav=vx:0.100 wz:0.023 cmd=vx:0.100 wz:0.023
+[INFO] [1791790995.039393966] [basic_navigator]: [  2.4s] dist=2.75m amcl=(0.26,0.01 yaw=0.06rad) odom=(0.26,0.01 yaw=0.06rad) nav=vx:0.100 wz:0.016 cmd=vx:0.100 wz:0.016
+[INFO] [1791790995.240970663] [basic_navigator]: [  2.6s] dist=2.72m amcl=(0.28,0.01 yaw=0.06rad) odom=(0.28,0.01 yaw=0.06rad) nav=vx:0.100 wz:0.027 cmd=vx:0.100 wz:0.027
+[INFO] [1791790995.442617769] [basic_navigator]: [  2.8s] dist=2.70m amcl=(0.29,0.01 yaw=0.07rad) odom=(0.29,0.01 yaw=0.07rad) nav=vx:0.100 wz:0.016 cmd=vx:0.100 wz:0.016
+[INFO] [1791790995.644133604] [basic_navigator]: [  3.0s] dist=2.67m amcl=(0.31,0.01 yaw=0.07rad) odom=(0.31,0.01 yaw=0.07rad) nav=vx:0.100 wz:0.071 cmd=vx:0.100 wz:0.048
+[INFO] [1791790995.845509688] [basic_navigator]: [  3.2s] dist=2.65m amcl=(0.33,0.01 yaw=0.08rad) odom=(0.33,0.01 yaw=0.08rad) nav=vx:0.100 wz:-0.021 cmd=vx:0.100 wz:0.020
+[INFO] [1791790996.047131657] [basic_navigator]: [  3.4s] dist=2.65m amcl=(0.35,0.01 yaw=0.08rad) odom=(0.35,0.01 yaw=0.08rad) nav=vx:0.100 wz:0.004 cmd=vx:0.100 wz:-0.010
+[INFO] [1791790996.248865819] [basic_navigator]: [  3.6s] dist=2.62m amcl=(0.37,0.02 yaw=0.08rad) odom=(0.37,0.02 yaw=0.08rad) nav=vx:0.100 wz:0.019 cmd=vx:0.100 wz:0.008
+[INFO] [1791790996.450238859] [basic_navigator]: [  3.8s] dist=2.60m amcl=(0.39,0.02 yaw=0.08rad) odom=(0.39,0.02 yaw=0.08rad) nav=vx:0.100 wz:-0.029 cmd=vx:0.100 wz:-0.023
+[INFO] [1791790996.651828197] [basic_navigator]: [  4.0s] dist=2.60m amcl=(0.41,0.02 yaw=0.08rad) odom=(0.41,0.02 yaw=0.08rad) nav=vx:0.100 wz:-0.007 cmd=vx:0.100 wz:-0.005
+[INFO] [1791790996.853272095] [basic_navigator]: [  4.2s] dist=2.55m amcl=(0.43,0.02 yaw=0.08rad) odom=(0.43,0.02 yaw=0.08rad) nav=vx:0.100 wz:-0.008 cmd=vx:0.100 wz:0.018
+[INFO] [1791790997.054997454] [basic_navigator]: [  4.4s] dist=2.55m amcl=(0.45,0.02 yaw=0.08rad) odom=(0.45,0.02 yaw=0.08rad) nav=vx:0.100 wz:-0.031 cmd=vx:0.100 wz:-0.011
+[INFO] [1791790997.256414896] [basic_navigator]: [  4.6s] dist=2.52m amcl=(0.47,0.02 yaw=0.07rad) odom=(0.47,0.02 yaw=0.07rad) nav=vx:0.100 wz:-0.009 cmd=vx:0.100 wz:-0.023
+[INFO] [1791790997.458016915] [basic_navigator]: [  4.8s] dist=2.52m amcl=(0.49,0.02 yaw=0.08rad) odom=(0.49,0.02 yaw=0.08rad) nav=vx:0.100 wz:0.062 cmd=vx:0.100 wz:0.066
+[INFO] [1791790997.660087827] [basic_navigator]: [  5.0s] dist=2.50m amcl=(0.51,0.03 yaw=0.09rad) odom=(0.51,0.03 yaw=0.09rad) nav=vx:0.100 wz:0.099 cmd=vx:0.100 wz:0.110
+[INFO] [1791790997.861515489] [basic_navigator]: [  5.2s] dist=2.47m amcl=(0.53,0.03 yaw=0.11rad) odom=(0.53,0.03 yaw=0.11rad) nav=vx:0.100 wz:0.162 cmd=vx:0.100 wz:0.118
+[INFO] [1791790998.063380235] [basic_navigator]: [  5.4s] dist=2.47m amcl=(0.55,0.03 yaw=0.15rad) odom=(0.55,0.03 yaw=0.15rad) nav=vx:0.100 wz:0.099 cmd=vx:0.100 wz:0.099
+[INFO] [1791790998.265175938] [basic_navigator]: [  5.6s] dist=2.45m amcl=(0.56,0.03 yaw=0.16rad) odom=(0.57,0.03 yaw=0.17rad) nav=vx:0.100 wz:0.249 cmd=vx:0.100 wz:0.109
+[INFO] [1791790998.468086832] [basic_navigator]: [  5.8s] dist=2.45m amcl=(0.58,0.04 yaw=0.21rad) odom=(0.58,0.04 yaw=0.21rad) nav=vx:0.100 wz:0.481 cmd=vx:0.100 wz:0.279
+[INFO] [1791790998.670409661] [basic_navigator]: [  6.1s] dist=2.42m amcl=(0.60,0.04 yaw=0.28rad) odom=(0.60,0.04 yaw=0.28rad) nav=vx:0.086 wz:0.046 cmd=vx:0.086 wz:0.046
+[INFO] [1791790998.872476094] [basic_navigator]: [  6.3s] dist=2.42m amcl=(0.61,0.04 yaw=0.28rad) odom=(0.61,0.04 yaw=0.28rad) nav=vx:0.108 wz:-0.154 cmd=vx:0.101 wz:-0.100
+[INFO] [1791790999.074264629] [basic_navigator]: [  6.5s] dist=2.42m amcl=(0.62,0.05 yaw=0.26rad) odom=(0.62,0.05 yaw=0.26rad) nav=vx:0.086 wz:-0.012 cmd=vx:0.086 wz:-0.012
+[INFO] [1791790999.276490505] [basic_navigator]: [  6.7s] dist=2.37m amcl=(0.64,0.05 yaw=0.25rad) odom=(0.64,0.05 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791790999.478114804] [basic_navigator]: [  6.9s] dist=2.37m amcl=(0.65,0.05 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.086 wz:0.026
+[INFO] [1791790999.679788152] [basic_navigator]: [  7.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791790999.881526786] [basic_navigator]: [  7.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791000.083190423] [basic_navigator]: [  7.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791000.284799579] [basic_navigator]: [  7.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791000.486814153] [basic_navigator]: [  7.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791000.688881769] [basic_navigator]: [  8.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791000.890873268] [basic_navigator]: [  8.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791001.092576427] [basic_navigator]: [  8.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791001.294515312] [basic_navigator]: [  8.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791001.496825427] [basic_navigator]: [  8.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791001.699476990] [basic_navigator]: [  9.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791001.900847297] [basic_navigator]: [  9.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791002.102933571] [basic_navigator]: [  9.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791002.304765858] [basic_navigator]: [  9.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791002.506364540] [basic_navigator]: [  9.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791002.708377632] [basic_navigator]: [ 10.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791002.910683015] [basic_navigator]: [ 10.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791003.112554126] [basic_navigator]: [ 10.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791003.313945088] [basic_navigator]: [ 10.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791003.515886230] [basic_navigator]: [ 10.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791003.717624090] [basic_navigator]: [ 11.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791003.919249545] [basic_navigator]: [ 11.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791004.120794675] [basic_navigator]: [ 11.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791004.322241212] [basic_navigator]: [ 11.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791004.524389786] [basic_navigator]: [ 11.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791004.725975278] [basic_navigator]: [ 12.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791004.927621223] [basic_navigator]: [ 12.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791005.129174921] [basic_navigator]: [ 12.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791005.330414253] [basic_navigator]: [ 12.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791005.532100474] [basic_navigator]: [ 12.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791005.733628974] [basic_navigator]: [ 13.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791005.935777066] [basic_navigator]: [ 13.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791006.137849433] [basic_navigator]: [ 13.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791006.339515544] [basic_navigator]: [ 13.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791006.540775778] [basic_navigator]: [ 13.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791006.742559192] [basic_navigator]: [ 14.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791006.944567622] [basic_navigator]: [ 14.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791007.146035097] [basic_navigator]: [ 14.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791007.347513343] [basic_navigator]: [ 14.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791007.549102317] [basic_navigator]: [ 14.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791007.750420461] [basic_navigator]: [ 15.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791007.952147569] [basic_navigator]: [ 15.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791008.153992710] [basic_navigator]: [ 15.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791008.355584470] [basic_navigator]: [ 15.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791008.557272170] [basic_navigator]: [ 15.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791008.758780917] [basic_navigator]: [ 16.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791008.961183115] [basic_navigator]: [ 16.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791009.162663065] [basic_navigator]: [ 16.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791009.363965937] [basic_navigator]: [ 16.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791009.565848615] [basic_navigator]: [ 16.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791009.767809647] [basic_navigator]: [ 17.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791009.969282492] [basic_navigator]: [ 17.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791010.170904398] [basic_navigator]: [ 17.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791010.372448769] [basic_navigator]: [ 17.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791010.574245456] [basic_navigator]: [ 18.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791010.776105789] [basic_navigator]: [ 18.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791010.978183427] [basic_navigator]: [ 18.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791011.179871482] [basic_navigator]: [ 18.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791011.381318848] [basic_navigator]: [ 18.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791011.582737129] [basic_navigator]: [ 19.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791011.784156437] [basic_navigator]: [ 19.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791011.985559619] [basic_navigator]: [ 19.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791012.187408394] [basic_navigator]: [ 19.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791012.389330161] [basic_navigator]: [ 19.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791012.591145629] [basic_navigator]: [ 20.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791012.792944383] [basic_navigator]: [ 20.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791012.994890677] [basic_navigator]: [ 20.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791013.196616532] [basic_navigator]: [ 20.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791013.398704854] [basic_navigator]: [ 20.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791013.600380209] [basic_navigator]: [ 21.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791013.803520270] [basic_navigator]: [ 21.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791014.005456404] [basic_navigator]: [ 21.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791014.207505683] [basic_navigator]: [ 21.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791014.409320105] [basic_navigator]: [ 21.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791014.611154397] [basic_navigator]: [ 22.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791014.813047620] [basic_navigator]: [ 22.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791015.014623409] [basic_navigator]: [ 22.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791015.216155477] [basic_navigator]: [ 22.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791015.418102452] [basic_navigator]: [ 22.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791015.620041379] [basic_navigator]: [ 23.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791015.821250446] [basic_navigator]: [ 23.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791016.022605397] [basic_navigator]: [ 23.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791016.224578182] [basic_navigator]: [ 23.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791016.426115730] [basic_navigator]: [ 23.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791016.628285620] [basic_navigator]: [ 24.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791016.829781530] [basic_navigator]: [ 24.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791017.031330247] [basic_navigator]: [ 24.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791017.232750803] [basic_navigator]: [ 24.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791017.434196797] [basic_navigator]: [ 24.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791017.635883807] [basic_navigator]: [ 25.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791017.837619332] [basic_navigator]: [ 25.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791018.039946015] [basic_navigator]: [ 25.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791018.241697545] [basic_navigator]: [ 25.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791018.444038548] [basic_navigator]: [ 25.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791018.644892833] [basic_navigator]: [ 26.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791018.846256389] [basic_navigator]: [ 26.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791019.047605079] [basic_navigator]: [ 26.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791019.248872102] [basic_navigator]: [ 26.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791019.450468900] [basic_navigator]: [ 26.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791019.652195866] [basic_navigator]: [ 27.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791019.853721548] [basic_navigator]: [ 27.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791020.055214720] [basic_navigator]: [ 27.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791020.256964058] [basic_navigator]: [ 27.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791020.458728223] [basic_navigator]: [ 27.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791020.660490975] [basic_navigator]: [ 28.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791020.862235204] [basic_navigator]: [ 28.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791021.063656559] [basic_navigator]: [ 28.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791021.265355898] [basic_navigator]: [ 28.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791021.466907869] [basic_navigator]: [ 28.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791021.668315953] [basic_navigator]: [ 29.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791021.870469770] [basic_navigator]: [ 29.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791022.072355675] [basic_navigator]: [ 29.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791022.274142389] [basic_navigator]: [ 29.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791022.475980048] [basic_navigator]: [ 29.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791022.677704434] [basic_navigator]: [ 30.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791022.879579304] [basic_navigator]: [ 30.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791023.080532421] [basic_navigator]: [ 30.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791023.282008399] [basic_navigator]: [ 30.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791023.483785325] [basic_navigator]: [ 30.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791023.685344636] [basic_navigator]: [ 31.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791023.886841414] [basic_navigator]: [ 31.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791024.088305650] [basic_navigator]: [ 31.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791024.290070393] [basic_navigator]: [ 31.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791024.491982754] [basic_navigator]: [ 31.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791024.693423492] [basic_navigator]: [ 32.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791024.895123881] [basic_navigator]: [ 32.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791025.097248620] [basic_navigator]: [ 32.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791025.298969162] [basic_navigator]: [ 32.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791025.501038904] [basic_navigator]: [ 32.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791025.702381373] [basic_navigator]: [ 33.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791025.903954948] [basic_navigator]: [ 33.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791026.105792450] [basic_navigator]: [ 33.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791026.307717206] [basic_navigator]: [ 33.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791026.509695713] [basic_navigator]: [ 33.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791026.710930298] [basic_navigator]: [ 34.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791026.912686290] [basic_navigator]: [ 34.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791027.114148168] [basic_navigator]: [ 34.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791027.315761603] [basic_navigator]: [ 34.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791027.517408430] [basic_navigator]: [ 34.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791027.719161229] [basic_navigator]: [ 35.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791027.920576793] [basic_navigator]: [ 35.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791028.121987757] [basic_navigator]: [ 35.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791028.323545244] [basic_navigator]: [ 35.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791028.525961528] [basic_navigator]: [ 35.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791028.727866570] [basic_navigator]: [ 36.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791028.929408904] [basic_navigator]: [ 36.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791029.130513627] [basic_navigator]: [ 36.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791029.331821563] [basic_navigator]: [ 36.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791029.533140877] [basic_navigator]: [ 36.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791029.734702113] [basic_navigator]: [ 37.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791029.936261334] [basic_navigator]: [ 37.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791030.137998212] [basic_navigator]: [ 37.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791030.339500825] [basic_navigator]: [ 37.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791030.540319011] [basic_navigator]: [ 37.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791030.742096286] [basic_navigator]: [ 38.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791030.943954611] [basic_navigator]: [ 38.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791031.145490387] [basic_navigator]: [ 38.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791031.346778589] [basic_navigator]: [ 38.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791031.548722629] [basic_navigator]: [ 38.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791031.750319353] [basic_navigator]: [ 39.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791031.951863724] [basic_navigator]: [ 39.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791032.153312417] [basic_navigator]: [ 39.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791032.354944737] [basic_navigator]: [ 39.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791032.556573765] [basic_navigator]: [ 39.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791032.758374128] [basic_navigator]: [ 40.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791032.960077553] [basic_navigator]: [ 40.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791033.161584541] [basic_navigator]: [ 40.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791033.363170167] [basic_navigator]: [ 40.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791033.564670526] [basic_navigator]: [ 40.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791033.766210801] [basic_navigator]: [ 41.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791033.967841718] [basic_navigator]: [ 41.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791034.169166313] [basic_navigator]: [ 41.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791034.370397896] [basic_navigator]: [ 41.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791034.571938275] [basic_navigator]: [ 42.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791034.773846081] [basic_navigator]: [ 42.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791034.975747059] [basic_navigator]: [ 42.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791035.177753844] [basic_navigator]: [ 42.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791035.379595893] [basic_navigator]: [ 42.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791035.580579038] [basic_navigator]: [ 43.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791035.782228393] [basic_navigator]: [ 43.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791035.983916422] [basic_navigator]: [ 43.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791036.185629318] [basic_navigator]: [ 43.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791036.387282341] [basic_navigator]: [ 43.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791036.589368243] [basic_navigator]: [ 44.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791036.790535104] [basic_navigator]: [ 44.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791036.992083928] [basic_navigator]: [ 44.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791037.193720535] [basic_navigator]: [ 44.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791037.395515891] [basic_navigator]: [ 44.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791037.597222234] [basic_navigator]: [ 45.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791037.798930772] [basic_navigator]: [ 45.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791038.000356323] [basic_navigator]: [ 45.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791038.202105578] [basic_navigator]: [ 45.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791038.403795580] [basic_navigator]: [ 45.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791038.605707092] [basic_navigator]: [ 46.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791038.807718935] [basic_navigator]: [ 46.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791039.009813214] [basic_navigator]: [ 46.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791039.210696036] [basic_navigator]: [ 46.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791039.412457082] [basic_navigator]: [ 46.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791039.614236394] [basic_navigator]: [ 47.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791039.816459769] [basic_navigator]: [ 47.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791040.018710775] [basic_navigator]: [ 47.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791040.220499114] [basic_navigator]: [ 47.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791040.422114696] [basic_navigator]: [ 47.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791040.624162046] [basic_navigator]: [ 48.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791040.825670504] [basic_navigator]: [ 48.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791041.027451765] [basic_navigator]: [ 48.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791041.228748421] [basic_navigator]: [ 48.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791041.430283143] [basic_navigator]: [ 48.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791041.632161814] [basic_navigator]: [ 49.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791041.833668348] [basic_navigator]: [ 49.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791042.035346064] [basic_navigator]: [ 49.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791042.236871559] [basic_navigator]: [ 49.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791042.438667358] [basic_navigator]: [ 49.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791042.640603554] [basic_navigator]: [ 50.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791042.842012023] [basic_navigator]: [ 50.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791043.044383397] [basic_navigator]: [ 50.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791043.245504873] [basic_navigator]: [ 50.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791043.447202360] [basic_navigator]: [ 50.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791043.649491143] [basic_navigator]: [ 51.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791043.851014656] [basic_navigator]: [ 51.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791044.052578431] [basic_navigator]: [ 51.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791044.254207617] [basic_navigator]: [ 51.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791044.456085659] [basic_navigator]: [ 51.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791044.657669307] [basic_navigator]: [ 52.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791044.859523949] [basic_navigator]: [ 52.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791045.060831787] [basic_navigator]: [ 52.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791045.262761253] [basic_navigator]: [ 52.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791045.464438306] [basic_navigator]: [ 52.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791045.666109074] [basic_navigator]: [ 53.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791045.867478709] [basic_navigator]: [ 53.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791046.069158427] [basic_navigator]: [ 53.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791046.270920903] [basic_navigator]: [ 53.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791046.472094851] [basic_navigator]: [ 53.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791046.673831539] [basic_navigator]: [ 54.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791046.875797810] [basic_navigator]: [ 54.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791047.077391822] [basic_navigator]: [ 54.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791047.279392053] [basic_navigator]: [ 54.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791047.480848026] [basic_navigator]: [ 54.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791047.682828271] [basic_navigator]: [ 55.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791047.884442429] [basic_navigator]: [ 55.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791048.086566000] [basic_navigator]: [ 55.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791048.288226533] [basic_navigator]: [ 55.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791048.490015027] [basic_navigator]: [ 55.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791048.691577823] [basic_navigator]: [ 56.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791048.893196016] [basic_navigator]: [ 56.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791049.094817651] [basic_navigator]: [ 56.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791049.296572180] [basic_navigator]: [ 56.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791049.498694203] [basic_navigator]: [ 56.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791049.700380751] [basic_navigator]: [ 57.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791049.901674509] [basic_navigator]: [ 57.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791050.103247886] [basic_navigator]: [ 57.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791050.304881502] [basic_navigator]: [ 57.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791050.506310584] [basic_navigator]: [ 57.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791050.708222690] [basic_navigator]: [ 58.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791050.909969310] [basic_navigator]: [ 58.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791051.111579896] [basic_navigator]: [ 58.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791051.313381313] [basic_navigator]: [ 58.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791051.515561915] [basic_navigator]: [ 58.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791051.717579444] [basic_navigator]: [ 59.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791051.919294665] [basic_navigator]: [ 59.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791052.121352477] [basic_navigator]: [ 59.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791052.322831222] [basic_navigator]: [ 59.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791052.524835823] [basic_navigator]: [ 59.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791052.726529322] [basic_navigator]: [ 60.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791052.927810513] [basic_navigator]: [ 60.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791053.129854571] [basic_navigator]: [ 60.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791053.331449403] [basic_navigator]: [ 60.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791053.532788854] [basic_navigator]: [ 60.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791053.734294798] [basic_navigator]: [ 61.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791053.935720066] [basic_navigator]: [ 61.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791054.137297202] [basic_navigator]: [ 61.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791054.338751999] [basic_navigator]: [ 61.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791054.540731703] [basic_navigator]: [ 61.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791054.742365712] [basic_navigator]: [ 62.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791054.944369959] [basic_navigator]: [ 62.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791055.145424802] [basic_navigator]: [ 62.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791055.347172175] [basic_navigator]: [ 62.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791055.548774885] [basic_navigator]: [ 62.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791055.750631836] [basic_navigator]: [ 63.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791055.951890734] [basic_navigator]: [ 63.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791056.153524801] [basic_navigator]: [ 63.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791056.354794315] [basic_navigator]: [ 63.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791056.556323658] [basic_navigator]: [ 63.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791056.757956023] [basic_navigator]: [ 64.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791056.959945562] [basic_navigator]: [ 64.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791057.161465217] [basic_navigator]: [ 64.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791057.362805288] [basic_navigator]: [ 64.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791057.564136069] [basic_navigator]: [ 64.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791057.765765749] [basic_navigator]: [ 65.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791057.967267910] [basic_navigator]: [ 65.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791058.168869286] [basic_navigator]: [ 65.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791058.370325583] [basic_navigator]: [ 65.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791058.571654247] [basic_navigator]: [ 66.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791058.772968055] [basic_navigator]: [ 66.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791058.974544790] [basic_navigator]: [ 66.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791059.176505806] [basic_navigator]: [ 66.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791059.378592248] [basic_navigator]: [ 66.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791059.580411042] [basic_navigator]: [ 67.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791059.782704327] [basic_navigator]: [ 67.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791059.984397244] [basic_navigator]: [ 67.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791060.186163023] [basic_navigator]: [ 67.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791060.387547207] [basic_navigator]: [ 67.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791060.589078897] [basic_navigator]: [ 68.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791060.790720055] [basic_navigator]: [ 68.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791060.992135114] [basic_navigator]: [ 68.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791061.193566112] [basic_navigator]: [ 68.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791061.395064109] [basic_navigator]: [ 68.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791061.597012736] [basic_navigator]: [ 69.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791061.798943136] [basic_navigator]: [ 69.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791062.000674993] [basic_navigator]: [ 69.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791062.202453034] [basic_navigator]: [ 69.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791062.403984183] [basic_navigator]: [ 69.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791062.605580412] [basic_navigator]: [ 70.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791062.807527885] [basic_navigator]: [ 70.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791063.009593808] [basic_navigator]: [ 70.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791063.211048392] [basic_navigator]: [ 70.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791063.412844112] [basic_navigator]: [ 70.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791063.614631315] [basic_navigator]: [ 71.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791063.816107662] [basic_navigator]: [ 71.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791064.017760974] [basic_navigator]: [ 71.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791064.219676221] [basic_navigator]: [ 71.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791064.421384372] [basic_navigator]: [ 71.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791064.623431861] [basic_navigator]: [ 72.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791064.824888953] [basic_navigator]: [ 72.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791065.026898586] [basic_navigator]: [ 72.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791065.229015191] [basic_navigator]: [ 72.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791065.430998215] [basic_navigator]: [ 72.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791065.632996220] [basic_navigator]: [ 73.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791065.834879599] [basic_navigator]: [ 73.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791066.037197450] [basic_navigator]: [ 73.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791066.238933747] [basic_navigator]: [ 73.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791066.440279466] [basic_navigator]: [ 73.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791066.641825540] [basic_navigator]: [ 74.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791066.844335674] [basic_navigator]: [ 74.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791067.045760387] [basic_navigator]: [ 74.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791067.247632036] [basic_navigator]: [ 74.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791067.450027841] [basic_navigator]: [ 74.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791067.651634946] [basic_navigator]: [ 75.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791067.853171303] [basic_navigator]: [ 75.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791068.054805080] [basic_navigator]: [ 75.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791068.256709105] [basic_navigator]: [ 75.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791068.458558683] [basic_navigator]: [ 75.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791068.660111989] [basic_navigator]: [ 76.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791068.861672300] [basic_navigator]: [ 76.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791069.063240173] [basic_navigator]: [ 76.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791069.264666364] [basic_navigator]: [ 76.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791069.465991452] [basic_navigator]: [ 76.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791069.667757589] [basic_navigator]: [ 77.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791069.869610656] [basic_navigator]: [ 77.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791070.071313753] [basic_navigator]: [ 77.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791070.272769709] [basic_navigator]: [ 77.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791070.474304149] [basic_navigator]: [ 77.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791070.676212128] [basic_navigator]: [ 78.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791070.878107824] [basic_navigator]: [ 78.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791071.079847775] [basic_navigator]: [ 78.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791071.281727480] [basic_navigator]: [ 78.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791071.483761945] [basic_navigator]: [ 78.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791071.685499144] [basic_navigator]: [ 79.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791071.887318702] [basic_navigator]: [ 79.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791072.088970940] [basic_navigator]: [ 79.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791072.291144984] [basic_navigator]: [ 79.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791072.492885325] [basic_navigator]: [ 79.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791072.694479289] [basic_navigator]: [ 80.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791072.896833856] [basic_navigator]: [ 80.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791073.098790848] [basic_navigator]: [ 80.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791073.300724031] [basic_navigator]: [ 80.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791073.502513990] [basic_navigator]: [ 80.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791073.704144652] [basic_navigator]: [ 81.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791073.905725662] [basic_navigator]: [ 81.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791074.107707837] [basic_navigator]: [ 81.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791074.309970225] [basic_navigator]: [ 81.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791074.511796953] [basic_navigator]: [ 81.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791074.714422568] [basic_navigator]: [ 82.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791074.916290023] [basic_navigator]: [ 82.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791075.118620267] [basic_navigator]: [ 82.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791075.321130589] [basic_navigator]: [ 82.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791075.522995835] [basic_navigator]: [ 82.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791075.724972027] [basic_navigator]: [ 83.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791075.926699326] [basic_navigator]: [ 83.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791076.128370992] [basic_navigator]: [ 83.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791076.329965449] [basic_navigator]: [ 83.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791076.531897820] [basic_navigator]: [ 83.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791076.733895652] [basic_navigator]: [ 84.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791076.935502594] [basic_navigator]: [ 84.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791077.136942790] [basic_navigator]: [ 84.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791077.339125794] [basic_navigator]: [ 84.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791077.541104693] [basic_navigator]: [ 84.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791077.743418911] [basic_navigator]: [ 85.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791077.945103084] [basic_navigator]: [ 85.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791078.146650841] [basic_navigator]: [ 85.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791078.348124993] [basic_navigator]: [ 85.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791078.549925813] [basic_navigator]: [ 85.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791078.751364024] [basic_navigator]: [ 86.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791078.953005882] [basic_navigator]: [ 86.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791079.154782196] [basic_navigator]: [ 86.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791079.356811428] [basic_navigator]: [ 86.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791079.559026283] [basic_navigator]: [ 86.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791079.761206009] [basic_navigator]: [ 87.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791079.962801031] [basic_navigator]: [ 87.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791080.164295265] [basic_navigator]: [ 87.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791080.365954898] [basic_navigator]: [ 87.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791080.567599965] [basic_navigator]: [ 87.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791080.768953836] [basic_navigator]: [ 88.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791080.970891131] [basic_navigator]: [ 88.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791081.172258413] [basic_navigator]: [ 88.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791081.373729997] [basic_navigator]: [ 88.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791081.576455932] [basic_navigator]: [ 89.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791081.778200214] [basic_navigator]: [ 89.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791081.980339013] [basic_navigator]: [ 89.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791082.181973239] [basic_navigator]: [ 89.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791082.383347356] [basic_navigator]: [ 89.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791082.585177197] [basic_navigator]: [ 90.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791082.787074887] [basic_navigator]: [ 90.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791082.989034255] [basic_navigator]: [ 90.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791083.190587711] [basic_navigator]: [ 90.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791083.394001705] [basic_navigator]: [ 90.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791083.596089235] [basic_navigator]: [ 91.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791083.798594951] [basic_navigator]: [ 91.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791084.000254008] [basic_navigator]: [ 91.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791084.201437293] [basic_navigator]: [ 91.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791084.403173126] [basic_navigator]: [ 91.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791084.604899721] [basic_navigator]: [ 92.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791084.806717871] [basic_navigator]: [ 92.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791085.008629556] [basic_navigator]: [ 92.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791085.210575367] [basic_navigator]: [ 92.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791085.411926360] [basic_navigator]: [ 92.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791085.613813911] [basic_navigator]: [ 93.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791085.815417002] [basic_navigator]: [ 93.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791086.017336493] [basic_navigator]: [ 93.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791086.219013024] [basic_navigator]: [ 93.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791086.421005243] [basic_navigator]: [ 93.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791086.622636224] [basic_navigator]: [ 94.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791086.824394247] [basic_navigator]: [ 94.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791087.026220176] [basic_navigator]: [ 94.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791087.228437722] [basic_navigator]: [ 94.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791087.430394283] [basic_navigator]: [ 94.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791087.632254870] [basic_navigator]: [ 95.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791087.834006883] [basic_navigator]: [ 95.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791088.036292282] [basic_navigator]: [ 95.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791088.237975593] [basic_navigator]: [ 95.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791088.439608423] [basic_navigator]: [ 95.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791088.641319315] [basic_navigator]: [ 96.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791088.843528728] [basic_navigator]: [ 96.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791089.044493079] [basic_navigator]: [ 96.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791089.245728000] [basic_navigator]: [ 96.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791089.447322653] [basic_navigator]: [ 96.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791089.648836199] [basic_navigator]: [ 97.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791089.850418055] [basic_navigator]: [ 97.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791090.052269973] [basic_navigator]: [ 97.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791090.253891598] [basic_navigator]: [ 97.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791090.455543131] [basic_navigator]: [ 97.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791090.657377139] [basic_navigator]: [ 98.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791090.859166555] [basic_navigator]: [ 98.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791091.060333606] [basic_navigator]: [ 98.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791091.261748511] [basic_navigator]: [ 98.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791091.463216425] [basic_navigator]: [ 98.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791091.665093064] [basic_navigator]: [ 99.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791091.866700133] [basic_navigator]: [ 99.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791092.068419041] [basic_navigator]: [ 99.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791092.270119408] [basic_navigator]: [ 99.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791092.471643971] [basic_navigator]: [ 99.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791092.673037731] [basic_navigator]: [100.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791092.875244379] [basic_navigator]: [100.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791093.077067417] [basic_navigator]: [100.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791093.278665980] [basic_navigator]: [100.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791093.480202964] [basic_navigator]: [100.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791093.681905575] [basic_navigator]: [101.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791093.883553510] [basic_navigator]: [101.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791094.085306315] [basic_navigator]: [101.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791094.287121648] [basic_navigator]: [101.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791094.489116478] [basic_navigator]: [101.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791094.691005274] [basic_navigator]: [102.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791094.893070782] [basic_navigator]: [102.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791095.095059033] [basic_navigator]: [102.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791095.296665446] [basic_navigator]: [102.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791095.498909803] [basic_navigator]: [102.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791095.700666317] [basic_navigator]: [103.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791095.902414475] [basic_navigator]: [103.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791096.104094392] [basic_navigator]: [103.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791096.305759490] [basic_navigator]: [103.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791096.507540499] [basic_navigator]: [103.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791096.709386299] [basic_navigator]: [104.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791096.910408277] [basic_navigator]: [104.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791097.112528870] [basic_navigator]: [104.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791097.314255214] [basic_navigator]: [104.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791097.516023168] [basic_navigator]: [104.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791097.717751807] [basic_navigator]: [105.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791097.919597989] [basic_navigator]: [105.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791098.121422529] [basic_navigator]: [105.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791098.322999060] [basic_navigator]: [105.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791098.524474504] [basic_navigator]: [105.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791098.726143153] [basic_navigator]: [106.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791098.927993821] [basic_navigator]: [106.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791099.129687696] [basic_navigator]: [106.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791099.331186267] [basic_navigator]: [106.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791099.532898253] [basic_navigator]: [106.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791099.735675201] [basic_navigator]: [107.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791099.937612971] [basic_navigator]: [107.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791100.139338832] [basic_navigator]: [107.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791100.341349355] [basic_navigator]: [107.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791100.543235485] [basic_navigator]: [107.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791100.744453491] [basic_navigator]: [108.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791100.945898051] [basic_navigator]: [108.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791101.147341022] [basic_navigator]: [108.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791101.349095410] [basic_navigator]: [108.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791101.550547565] [basic_navigator]: [108.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791101.752355101] [basic_navigator]: [109.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791101.953917505] [basic_navigator]: [109.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791102.155794988] [basic_navigator]: [109.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791102.357278480] [basic_navigator]: [109.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791102.559378145] [basic_navigator]: [109.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791102.760812162] [basic_navigator]: [110.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791102.962201600] [basic_navigator]: [110.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791103.163593160] [basic_navigator]: [110.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791103.365201268] [basic_navigator]: [110.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791103.567081948] [basic_navigator]: [110.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791103.768801579] [basic_navigator]: [111.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791103.970687573] [basic_navigator]: [111.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791104.172371120] [basic_navigator]: [111.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791104.373901423] [basic_navigator]: [111.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791104.575461171] [basic_navigator]: [112.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791104.777158347] [basic_navigator]: [112.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791104.978988111] [basic_navigator]: [112.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791105.180359403] [basic_navigator]: [112.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791105.381983609] [basic_navigator]: [112.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791105.583864569] [basic_navigator]: [113.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791105.785588419] [basic_navigator]: [113.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791105.987523521] [basic_navigator]: [113.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791106.189196954] [basic_navigator]: [113.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791106.390996439] [basic_navigator]: [113.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791106.592575044] [basic_navigator]: [114.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791106.794074148] [basic_navigator]: [114.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791106.995856865] [basic_navigator]: [114.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791107.197819230] [basic_navigator]: [114.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791107.399692526] [basic_navigator]: [114.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791107.600919252] [basic_navigator]: [115.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791107.802642101] [basic_navigator]: [115.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791108.004459759] [basic_navigator]: [115.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791108.206518816] [basic_navigator]: [115.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791108.408090983] [basic_navigator]: [115.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791108.609723210] [basic_navigator]: [116.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791108.811117518] [basic_navigator]: [116.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791109.012737663] [basic_navigator]: [116.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791109.214676097] [basic_navigator]: [116.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791109.416550801] [basic_navigator]: [116.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791109.618211405] [basic_navigator]: [117.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791109.820491942] [basic_navigator]: [117.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791110.022037409] [basic_navigator]: [117.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791110.223545445] [basic_navigator]: [117.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791110.425162932] [basic_navigator]: [117.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791110.626629141] [basic_navigator]: [118.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791110.827996015] [basic_navigator]: [118.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791111.029589219] [basic_navigator]: [118.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791111.230956613] [basic_navigator]: [118.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791111.432419699] [basic_navigator]: [118.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791111.634041205] [basic_navigator]: [119.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791111.836635726] [basic_navigator]: [119.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791112.038650569] [basic_navigator]: [119.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791112.240174931] [basic_navigator]: [119.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791112.441791306] [basic_navigator]: [119.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791112.643834402] [basic_navigator]: [120.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791112.845301555] [basic_navigator]: [120.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791113.046478018] [basic_navigator]: [120.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791113.248382690] [basic_navigator]: [120.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791113.450230656] [basic_navigator]: [120.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791113.651519059] [basic_navigator]: [121.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791113.853306972] [basic_navigator]: [121.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791114.055380873] [basic_navigator]: [121.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791114.257118322] [basic_navigator]: [121.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791114.458695832] [basic_navigator]: [121.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791114.660306686] [basic_navigator]: [122.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791114.861797578] [basic_navigator]: [122.2s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791115.063265573] [basic_navigator]: [122.4s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791115.264893157] [basic_navigator]: [122.6s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791115.466746537] [basic_navigator]: [122.8s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791115.668553144] [basic_navigator]: [123.0s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791115.870504095] [basic_navigator]: [123.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791116.072199121] [basic_navigator]: [123.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791116.273783196] [basic_navigator]: [123.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791116.475508109] [basic_navigator]: [123.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791116.677440330] [basic_navigator]: [124.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791116.879327905] [basic_navigator]: [124.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791117.080890519] [basic_navigator]: [124.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791117.282623618] [basic_navigator]: [124.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791117.484070583] [basic_navigator]: [124.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791117.685887428] [basic_navigator]: [125.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791117.887672795] [basic_navigator]: [125.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791118.089485003] [basic_navigator]: [125.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791118.290820575] [basic_navigator]: [125.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791118.492659806] [basic_navigator]: [125.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791118.694103491] [basic_navigator]: [126.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791118.895889033] [basic_navigator]: [126.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791119.097716597] [basic_navigator]: [126.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791119.299751008] [basic_navigator]: [126.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791119.501098464] [basic_navigator]: [126.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791119.702599483] [basic_navigator]: [127.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791119.904180212] [basic_navigator]: [127.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791120.106326452] [basic_navigator]: [127.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791120.308422329] [basic_navigator]: [127.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791120.510333926] [basic_navigator]: [127.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791120.712110445] [basic_navigator]: [128.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791120.913903635] [basic_navigator]: [128.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791121.115587061] [basic_navigator]: [128.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791121.317453542] [basic_navigator]: [128.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791121.519608008] [basic_navigator]: [128.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791121.720948397] [basic_navigator]: [129.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791121.922516382] [basic_navigator]: [129.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791122.123980645] [basic_navigator]: [129.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791122.325830690] [basic_navigator]: [129.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791122.527766446] [basic_navigator]: [129.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791122.730160007] [basic_navigator]: [130.1s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791122.931728199] [basic_navigator]: [130.3s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791123.133354637] [basic_navigator]: [130.5s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791123.335042820] [basic_navigator]: [130.7s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.000 wz:0.000 cmd=vx:0.000 wz:0.000
+[INFO] [1791791123.536889474] [basic_navigator]: [130.9s] dist=2.37m amcl=(0.65,0.06 yaw=0.25rad) odom=(0.65,0.06 yaw=0.25rad) nav=vx:0.086 wz:0.010 cmd=vx:0.000 wz:0.000
+[INFO] [1791791123.738627418] [basic_navigator]: [131.1s] dist=2.37m amcl=(0.66,0.06 yaw=0.25rad) odom=(0.67,0.06 yaw=0.25rad) nav=vx:0.108 wz:0.002 cmd=vx:0.108 wz:0.002
+[INFO] [1791791123.940370307] [basic_navigator]: [131.3s] dist=2.32m amcl=(0.68,0.06 yaw=0.25rad) odom=(0.68,0.06 yaw=0.25rad) nav=vx:0.101 wz:0.145 cmd=vx:0.101 wz:0.145
+[INFO] [1791791124.142755392] [basic_navigator]: [131.5s] dist=2.32m amcl=(0.70,0.07 yaw=0.28rad) odom=(0.70,0.07 yaw=0.28rad) nav=vx:0.106 wz:-0.015 cmd=vx:0.106 wz:-0.015
+[INFO] [1791791124.344830600] [basic_navigator]: [131.7s] dist=2.32m amcl=(0.71,0.07 yaw=0.25rad) odom=(0.71,0.07 yaw=0.25rad) nav=vx:0.000 wz:-1.900 cmd=vx:0.000 wz:-0.495
+[INFO] [1791791124.546829170] [basic_navigator]: [131.9s] dist=2.32m amcl=(0.72,0.07 yaw=0.17rad) odom=(0.73,0.07 yaw=0.16rad) nav=vx:0.100 wz:-0.114 cmd=vx:0.100 wz:-0.175
+[INFO] [1791791124.749073025] [basic_navigator]: [132.1s] dist=2.27m amcl=(0.74,0.08 yaw=0.14rad) odom=(0.74,0.08 yaw=0.14rad) nav=vx:0.100 wz:0.014 cmd=vx:0.100 wz:0.014
+[INFO] [1791791124.950383722] [basic_navigator]: [132.3s] dist=2.25m amcl=(0.77,0.08 yaw=0.16rad) odom=(0.77,0.08 yaw=0.16rad) nav=vx:0.231 wz:0.412 cmd=vx:0.231 wz:0.412
+[INFO] [1791791125.151994500] [basic_navigator]: [132.5s] dist=2.20m amcl=(0.83,0.09 yaw=0.24rad) odom=(0.83,0.09 yaw=0.24rad) nav=vx:0.000 wz:0.000 cmd=vx:0.314 wz:0.258
+[INFO] [1791791125.353502190] [basic_navigator]: [132.7s] dist=2.15m amcl=(0.86,0.10 yaw=0.26rad) odom=(0.87,0.10 yaw=0.26rad) nav=vx:0.285 wz:-0.070 cmd=vx:0.285 wz:-0.070
+[INFO] [1791791125.555327854] [basic_navigator]: [132.9s] dist=2.10m amcl=(0.93,0.12 yaw=0.23rad) odom=(0.93,0.12 yaw=0.23rad) nav=vx:0.500 wz:-0.261 cmd=vx:0.500 wz:-0.261
+[INFO] [1791791125.757263748] [basic_navigator]: [133.1s] dist=2.00m amcl=(1.03,0.14 yaw=0.17rad) odom=(1.03,0.14 yaw=0.17rad) nav=vx:0.500 wz:-0.289 cmd=vx:0.500 wz:-0.289
+[INFO] [1791791125.958723696] [basic_navigator]: [133.3s] dist=1.90m amcl=(1.13,0.15 yaw=0.11rad) odom=(1.13,0.15 yaw=0.11rad) nav=vx:0.500 wz:-0.230 cmd=vx:0.500 wz:-0.230
+[INFO] [1791791126.160315823] [basic_navigator]: [133.5s] dist=1.82m amcl=(1.22,0.16 yaw=0.08rad) odom=(1.23,0.16 yaw=0.07rad) nav=vx:0.500 wz:-0.186 cmd=vx:0.500 wz:-0.186
+[INFO] [1791791126.361933933] [basic_navigator]: [133.7s] dist=1.70m amcl=(1.32,0.17 yaw=0.04rad) odom=(1.32,0.17 yaw=0.04rad) nav=vx:0.500 wz:-0.162 cmd=vx:0.500 wz:-0.162
+[INFO] [1791791126.563728437] [basic_navigator]: [133.9s] dist=1.62m amcl=(1.39,0.17 yaw=0.03rad) odom=(1.39,0.17 yaw=0.03rad) nav=vx:0.000 wz:0.000 cmd=vx:0.125 wz:0.000
+[INFO] [1791791126.765096056] [basic_navigator]: [134.1s] dist=1.60m amcl=(1.43,0.17 yaw=0.02rad) odom=(1.43,0.17 yaw=0.02rad) nav=vx:0.448 wz:-0.092 cmd=vx:0.333 wz:-0.061
+[INFO] [1791791126.966499997] [basic_navigator]: [134.3s] dist=1.52m amcl=(1.50,0.17 yaw=0.00rad) odom=(1.50,0.17 yaw=0.01rad) nav=vx:0.500 wz:-0.081 cmd=vx:0.500 wz:-0.100
+[INFO] [1791791127.167875916] [basic_navigator]: [134.5s] dist=1.42m amcl=(1.60,0.17 yaw=-0.01rad) odom=(1.60,0.17 yaw=-0.01rad) nav=vx:0.500 wz:-0.088 cmd=vx:0.500 wz:-0.066
+[INFO] [1791791127.369214880] [basic_navigator]: [134.8s] dist=1.32m amcl=(1.70,0.17 yaw=-0.03rad) odom=(1.70,0.17 yaw=-0.03rad) nav=vx:0.499 wz:-0.065 cmd=vx:0.499 wz:-0.077
+[INFO] [1791791127.570890619] [basic_navigator]: [135.0s] dist=1.22m amcl=(1.80,0.16 yaw=-0.04rad) odom=(1.80,0.17 yaw=-0.04rad) nav=vx:0.500 wz:-0.034 cmd=vx:0.500 wz:-0.060
+[INFO] [1791791127.772410453] [basic_navigator]: [135.2s] dist=1.15m amcl=(1.89,0.16 yaw=-0.05rad) odom=(1.89,0.16 yaw=-0.05rad) nav=vx:0.500 wz:-0.036 cmd=vx:0.500 wz:-0.019
+[INFO] [1791791127.973965423] [basic_navigator]: [135.4s] dist=1.05m amcl=(1.99,0.15 yaw=-0.06rad) odom=(1.99,0.16 yaw=-0.05rad) nav=vx:0.500 wz:-0.054 cmd=vx:0.500 wz:-0.048
+[INFO] [1791791128.175735451] [basic_navigator]: [135.6s] dist=0.94m amcl=(2.09,0.15 yaw=-0.07rad) odom=(2.09,0.15 yaw=-0.06rad) nav=vx:0.493 wz:-0.010 cmd=vx:0.497 wz:-0.048
+[INFO] [1791791128.377823308] [basic_navigator]: [135.8s] dist=0.87m amcl=(2.17,0.14 yaw=-0.07rad) odom=(2.19,0.14 yaw=-0.07rad) nav=vx:0.471 wz:0.019 cmd=vx:0.484 wz:0.010
+[INFO] [1791791128.580071307] [basic_navigator]: [136.0s] dist=0.77m amcl=(2.27,0.13 yaw=-0.07rad) odom=(2.27,0.14 yaw=-0.06rad) nav=vx:0.495 wz:0.005 cmd=vx:0.455 wz:0.016
+[INFO] [1791791128.781941211] [basic_navigator]: [136.2s] dist=0.67m amcl=(2.37,0.13 yaw=-0.07rad) odom=(2.37,0.13 yaw=-0.06rad) nav=vx:0.476 wz:-0.003 cmd=vx:0.474 wz:0.010
+[INFO] [1791791128.983288389] [basic_navigator]: [136.4s] dist=0.59m amcl=(2.46,0.12 yaw=-0.07rad) odom=(2.46,0.13 yaw=-0.06rad) nav=vx:0.000 wz:0.000 cmd=vx:0.423 wz:-0.008
+[INFO] [1791791129.185240384] [basic_navigator]: [136.6s] dist=0.52m amcl=(2.51,0.12 yaw=-0.07rad) odom=(2.51,0.12 yaw=-0.06rad) nav=vx:0.385 wz:-0.016 cmd=vx:0.000 wz:0.000
+[INFO] [1791791129.386957781] [basic_navigator]: [136.8s] dist=0.50m amcl=(2.54,0.11 yaw=-0.07rad) odom=(2.54,0.12 yaw=-0.07rad) nav=vx:0.000 wz:0.000 cmd=vx:0.378 wz:-0.014
+[INFO] [1791791129.588576031] [basic_navigator]: [137.0s] dist=0.45m amcl=(2.58,0.11 yaw=-0.07rad) odom=(2.58,0.12 yaw=-0.07rad) nav=vx:0.086 wz:0.018 cmd=vx:0.000 wz:0.000
+[INFO] [1791791129.790359425] [basic_navigator]: [137.2s] dist=0.42m amcl=(2.59,0.11 yaw=-0.06rad) odom=(2.59,0.12 yaw=-0.06rad) nav=vx:0.189 wz:0.124 cmd=vx:0.101 wz:0.065
+[INFO] [1791791129.991941477] [basic_navigator]: [137.4s] dist=0.40m amcl=(2.62,0.11 yaw=-0.04rad) odom=(2.63,0.12 yaw=-0.04rad) nav=vx:0.000 wz:0.000 cmd=vx:0.244 wz:0.124
+[INFO] [1791791130.193830690] [basic_navigator]: [137.6s] dist=0.38m amcl=(2.65,0.11 yaw=-0.03rad) odom=(2.65,0.12 yaw=-0.03rad) nav=vx:0.128 wz:0.018 cmd=vx:0.000 wz:0.000
+[INFO] [1791791130.395788461] [basic_navigator]: [137.8s] dist=0.35m amcl=(2.67,0.11 yaw=-0.03rad) odom=(2.67,0.11 yaw=-0.03rad) nav=vx:0.237 wz:0.054 cmd=vx:0.171 wz:0.034
+[INFO] [1791791130.597830016] [basic_navigator]: [138.0s] dist=0.32m amcl=(2.71,0.11 yaw=-0.02rad) odom=(2.72,0.11 yaw=-0.02rad) nav=vx:0.301 wz:0.023 cmd=vx:0.281 wz:0.041
+[INFO] [1791791130.799486204] [basic_navigator]: [138.2s] dist=0.25m amcl=(2.77,0.11 yaw=-0.02rad) odom=(2.77,0.11 yaw=-0.01rad) nav=vx:0.383 wz:0.039 cmd=vx:0.309 wz:0.012
+SMOKE_RESULT=TaskResult.SUCCEEDED

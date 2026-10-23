@@ -30,6 +30,35 @@ controller_server:
       se_enforce_rollout_check: true
       # Entrapment detection (detect-and-switch local-minima escape).
       se_progress_stall_window: 30      # control cycles without path progress
+      # Progress is measured along the task's first plan (the anchor path), not
+      # along each replan: Nav2's behaviour tree replans a path that starts at
+      # the robot every second, and re-anchoring on it counted one path cell as
+      # progress. An event needs this much more arc length than the best so far:
+      se_progress_min_advance: 0.10     # [m] two costmap cells
+      # A replan becomes the anchor after the robot has advanced this far along
+      # the replans (a legitimate detour). Nav2's default required_movement_radius.
+      se_progress_adopt_advance: 0.5    # [m]
+      # Escape path: while entrapped, MPPI follows a short path from the robot
+      # to a waypoint along the opening chosen by the horizon-ray rule (the ray
+      # closest to the goal bearing that reaches the sensing horizon), in place
+      # of the behaviour tree's path. Published on <plugin>/se_escape_path.
+      # false: keep the behaviour tree's path (ablation).
+      se_escape_path_substitution: true
+      # Cap on the hop length; inactive while se_gap_max_range <= cap + robot radius + 0.05.
+      se_escape_waypoint_cap: 2.5       # [m]
+      se_escape_reselect_radius: 0.4    # [m] pick the next hop within this of the waypoint
+      # The next two are converted to control cycles at controller_frequency, so they
+      # stretch in wall time when the control loop misses its rate.
+      se_escape_reselect_period: 15.0   # [s] pick a new hop after this long
+      se_escape_stall_time: 3.0         # [s] no movement of se_escape_stall_distance -> new hop
+      se_escape_stall_distance: 0.15    # [m]
+      se_escape_hysteresis: 0.5         # [rad] keep the previous bearing unless clearly better
+      se_escape_avoid_radius: 1.0       # [m] no hop toward the pose where entrapment was declared
+      se_escape_avoid_hop_radius: 0.6   # [m] nor toward recent hop origins or failed waypoints
+      se_escape_avoid_hops: 3           # how many recent hop origins
+      se_gap_num_rays: 36               # rays of the opening search
+      se_gap_max_range: 2.0             # [m]
+      se_gap_min_clearance: 0.6         # [m]
       # Escape-safety coordination (CBF class-K gain modulation).
       se_alpha_base: 2.0                # conservative gain (normal driving)
       se_alpha_escape: 6.0              # relaxed gain while escaping (tighter detours)
@@ -49,6 +78,8 @@ controller_server:
       # yet (repeated grids are skipped), so ~1-2 s of costmap updates is a good
       # default.
       se_classify_static: true
+      # Until then a newly seen cell (e.g. a wall entering the rolling window) is a
+      # dynamic candidate and can reach the CBF; read cbf_obstacles in the diagnostics.
       se_static_min_frames: 10          # frames of occupancy before a cell is static
       se_static_fraction: 0.5           # static-cell fraction to call a cluster static
       # Track + horizon prediction (SE-Predict N2). Horizons are published on
@@ -100,6 +131,8 @@ controller_server:
       vx_std: 0.2
       wz_std: 0.4
       vx_max: 0.5
+      # vx_min must be <= 0: with se_enabled and vx_min > 0 the robot cannot stop
+      # or reverse, so the escape cannot act (WARN in the log and on /diagnostics).
       vx_min: -0.35
       wz_max: 1.9
       iteration_count: 1
@@ -114,6 +147,12 @@ controller_server:
         "PreferForwardCritic", "EscapeCritic"]
       EscapeCritic:
         enabled: true
+        # No effect while SafeEscapeController drives the critic (the controller's
+        # se_progress_stall_window decides entrapment).
         progress_stall_window: 30
+        # The gap bearing cost is off (0): the escape routes through the escape
+        # path above. Greater than 0 adds the legacy cost (ablation only).
+        gap_weight: 0.0
+        # Unused while use_apf is true (its default): the APF repulsion has no weight.
         repulsion_weight: 2.0
         repulsion_power: 1

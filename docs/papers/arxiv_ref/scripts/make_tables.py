@@ -188,17 +188,20 @@ def t_slack(st):
 def t_mechanism():
     with open(os.path.join(PKG, 'data', 'mechanism_validation.json')) as fh:
         m = json.load(fh)
-    rows = [('U-trap', 'stock MPPI (A)', 'utrap_stock'),
-            ('U-trap', 'escape (C)', 'utrap_escape'),
+    rows = [('Finite wall', 'stock MPPI (A)', 'utrap_stock'),
+            ('Finite wall', 'escape (C)', 'utrap_escape'),
             ('Crossing mover', 'escape, no CBF (C)', 'dynamic_nocbf'),
             ('Crossing mover', '\\sname{} (F)', 'dynamic_cbf'),
-            ('U-trap', '\\sname{} (F)', 'coord_F_utrap'),
-            ('U-trap + mover', 'independent (E)', 'coord_E_coordworld')]
+            ('Finite wall', '\\sname{} (F)', 'coord_F_utrap'),
+            ('Finite wall + mover', 'independent (E)', 'coord_E_coordworld')]
     lines = [
         '\\begin{table}[t]', '\\centering',
         '\\caption{\\textbf{Mechanism validation} (single seed-fixed runs of '
-        'the 2D mirror; 40\\,s budget). ``Stalled\'\' = budget exhausted without '
-        'progress. Source: \\texttt{data/mechanism\\_validation.json}, '
+        'the 2D mirror on hand-built scenes; 40\\,s budget). The wall scenes are a '
+        'single finite wall between robot and goal, not the U-shaped pocket of '
+        'the benchmark family. ``Stalled\'\' = budget exhausted without '
+        'progress. Times count the initial sample (one step, 0.1\\,s, more than '
+        'the elapsed time). Source: \\texttt{data/mechanism\\_validation.json}, '
         'regenerated from \\texttt{experiments/prototype/run\\_validation.py}.}',
         '\\label{tab:mechanism}', '\\small',
         '\\begin{tabular}{llccccc}', '\\toprule',

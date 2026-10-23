@@ -1,0 +1,16 @@
+# S0 — open testbed (control). Perimeter only, no pocket. Same start, goal and empty-box map.
+name: s0_open
+tier: barn
+map: ../se_mppi_utrap/maps/utrap_loc.yaml
+start: [-3.0, 0.0, 0.0]
+goal:  [3.0, 0.0, 0.0]
+world: worlds/s0_open.sdf
+meta:
+  kind: open
+  note: no obstacles besides the perimeter; control scenario
+  launch:
+    pkg: se_mppi_utrap
+    file: utrap_bench.launch.py
+    pass_map: true
+    pass_spawn: true
+    use_sim_time: true

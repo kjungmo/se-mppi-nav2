@@ -61,6 +61,19 @@ find_package(diagnostic_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OsqpEigen REQUIRED)
 
+# Link only the libraries a target really uses. ament_target_dependencies(...
+# nav2_mppi_controller ...) puts libmppi_critics.so and Nav2's behaviour-tree
+# node libraries on every link line. If that leaves a DT_NEEDED entry for
+# libmppi_critics.so in a plugin library, loading the controller through
+# pluginlib pulls libmppi_critics.so in as a dependency, the stock critics
+# register with the controller's class loader, and MPPI's CriticManager can no
+# longer create them: configure fails with "Could not create class of type
+# mppi::critics::ConstraintCritic". An activated conda toolchain passes
+# --as-needed through LDFLAGS; an environment without that activation (for
+# example one whose cxx-compiler package no longer brings the activation
+# scripts) does not, so the package asks for it itself.
+add_link_options("LINKER:--as-needed")
+
 # Optional RPATH to the nav2_mppi_controller library this package is built
 # against. OFF by default: nothing is added to what the toolchain itself puts
 # on the run path, and the installed binaries carry no extra absolute path.
@@ -133,7 +146,8 @@ add_library(se_mppi_core SHARED
   src/static_occupancy_filter.cpp
   src/trajectory_predictor.cpp
   src/dynamic_obstacle_tracker.cpp
-  src/path_progress.cpp)
+  src/path_progress.cpp
+  src/opening_search.cpp)
 target_include_directories(se_mppi_core PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -212,6 +226,18 @@ install(DIRECTORY include/
 install(DIRECTORY config/
   DESTINATION share/${PROJECT_NAME}/config)
 
+# Build stamp: the repository state of the tree that is built, rewritten at every build (not
+# only at configure time) and installed with the package. The campaign driver reads it.
+get_filename_component(SE_SOURCE_REAL "${CMAKE_CURRENT_SOURCE_DIR}" REALPATH)
+set(SE_BUILD_STAMP "${CMAKE_CURRENT_BINARY_DIR}/build_stamp.txt")
+add_custom_target(se_build_stamp ALL
+  COMMAND ${CMAKE_COMMAND} -DSRC=${SE_SOURCE_REAL} -DOUT=${SE_BUILD_STAMP}
+    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/write_build_stamp.cmake
+  BYPRODUCTS ${SE_BUILD_STAMP}
+  COMMENT "Writing the build stamp")
+install(FILES ${SE_BUILD_STAMP}
+  DESTINATION share/${PROJECT_NAME})
+
 # Export the critic plugin (loaded by nav2_mppi_controller's CriticManager) and
 # the controller plugin (loaded by nav2_core's controller server).
 pluginlib_export_plugin_description_file(nav2_mppi_controller escape_critics.xml)
@@ -259,9 +285,11 @@ if(BUILD_TESTING)
 
   ament_add_gtest(test_controller_behaviour test/deployment/test_controller_behaviour.cpp
     TIMEOUT 120)
+  target_include_directories(test_controller_behaviour PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/deployment)
   target_link_libraries(test_controller_behaviour safe_escape_controller)
   ament_target_dependencies(test_controller_behaviour
-    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros diagnostic_msgs)
 
   # Rollout direction of the installed libmppi_controller, the sign of the
   # controller's command, and the configure-time guard. Fails on a
@@ -276,6 +304,41 @@ if(BUILD_TESTING)
   ament_add_test(check_mppi_rollout_tool
     COMMAND "${CMAKE_CURRENT_BINARY_DIR}/check_mppi_rollout"
     GENERATE_RESULT_FOR_RETURN_CODE_ZERO)
+
+  # Headless closed-loop U-pocket test: the real optimizer and controller on a
+  # unicycle in development geometries (UTRAP_DEV_GEOMETRIES.md).
+  ament_add_gtest(test_closed_loop_utrap test/deployment/test_closed_loop_utrap.cpp
+    TIMEOUT 1200)
+  target_include_directories(test_closed_loop_utrap PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/deployment)
+  target_link_libraries(test_closed_loop_utrap safe_escape_controller)
+  ament_target_dependencies(test_closed_loop_utrap
+    nav2_mppi_controller nav2_costmap_2d rclcpp rclcpp_lifecycle tf2_ros)
+
+  # The held-out campaign world name must not appear outside experiments/campaign2/.
+  get_filename_component(SE_SOURCE_REAL "${CMAKE_CURRENT_SOURCE_DIR}" REALPATH)
+  get_filename_component(SE_REPO_ROOT "${SE_SOURCE_REAL}/../.." ABSOLUTE)
+  ament_add_gtest(test_heldout_guard test/deployment/test_heldout_guard.cpp)
+  target_compile_definitions(test_heldout_guard PRIVATE SE_REPO_ROOT="${SE_REPO_ROOT}")
+
+  # Opening search and path progress (defects 3 and 4 of campaign 1). Kept apart
+  # from the algorithm unit tests above, which the paper counts.
+  ament_add_gtest(test_opening_search test/deployment/test_opening_search.cpp)
+  target_include_directories(test_opening_search PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(test_opening_search se_mppi_core escape_critic)
+  ament_target_dependencies(test_opening_search nav2_mppi_controller nav2_costmap_2d nav_msgs)
+
+  ament_add_gtest(test_path_progress_tracker test/deployment/test_path_progress_tracker.cpp)
+  target_include_directories(test_path_progress_tracker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(test_path_progress_tracker se_mppi_core)
+  ament_target_dependencies(test_path_progress_tracker nav_msgs)
+
+  # Parity shim: the Python mirror calls the C++ escape logic through it
+  # (experiments/benchmark2d/tests/test_v2_cxx_parity.py). Not installed.
+  add_executable(parity_shim test/deployment/parity_shim.cpp)
+  target_include_directories(parity_shim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  target_link_libraries(parity_shim se_mppi_core escape_critic)
+  ament_target_dependencies(parity_shim nav2_mppi_controller nav2_costmap_2d nav_msgs)
 
   ament_add_gtest(test_task_boundary test/deployment/test_task_boundary.cpp)
   target_include_directories(test_task_boundary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)

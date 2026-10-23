@@ -1,0 +1,76 @@
+# experiments/campaign2
+
+Assets of campaign 2: the live test of the fixed SE-MPPI controller on a development
+pocket (`s1_utrap`), a held-out pocket (`s3_ctrap`), a second held-out pocket outside the family (`s4_ltrap`, an L-shaped dead end) and a trap-free control (`s0_open`).
+Design and rules: `PREREG.md` (frozen at the tag `campaign2-controller`). Campaign 1 is in
+`../results_pilot_rerun/`.
+
+| File | Role |
+|---|---|
+| `PREREG.md` | hypotheses, fixed inputs, plan, definitions, stopping rules, outcome wording |
+| `plan.py` | configurations C1 to C4, the 88-trial plan, parameter overlays, stopping thresholds |
+| `run_campaign2.py` | driver (derived from `../results_pilot_rerun/run_rerun.py`) |
+| `recorder.py`, `probe_escape_path.py` | 10 Hz recorder with ground truth and the escape-path topic; shakedown probe |
+| `analyze.py` | every number from the raw files; writes `results.json.gz`, `RESULTS.md`, `logs/*.log.gz` |
+| `freeze_manifest.py` | sha256 manifest of the frozen files (`FREEZE_MANIFEST.json`, written before the tag and committed with `PREREG.md`). `--check` compares the working tree and passes on a checkout of the tag; `--check --ref campaign2-controller` compares the files committed at the tag, so it also passes on later commits. Three post-campaign edits make plain `--check` report `changed:` after the tag: the Humble compile fix in the controller header (06da6ce), `--digits` in `results_pilot_rerun/analyze.py` (010f46e) and `--ref` in this tool (2d6b51f). None changes controller behaviour or a campaign input. |
+| `provenance.py` | what is installed is what is frozen: installed trees and libraries, build stamp, git state, attempt identity |
+| `make_worlds.py`, `verify_geometry.py`, `worlds/`, `*.scenario.yaml`, `s3_ctrap_geometry.png` | the new worlds and scenarios (`s3_ctrap`, `s4_ltrap`) |
+| `make_s4_ltrap.py`, `verify_s4_ltrap.py`, `s4_ltrap_geometry.png`, `s4_ltrap_verify.txt` | the s4 world generator, its geometry check and their outputs |
+| `tests/` | `python -m pytest experiments/campaign2/tests` |
+| `SHAKEDOWN.md` | the one shakedown trial (not counted) |
+
+The parameter file is `../sim/nav2_se_campaign2.yaml`. The behaviour trees are in
+`../se_mppi_utrap/behavior_trees/`. Raw data go to `/mnt/d/wsl/se-mppi/campaign2/`.
+
+## Commands
+
+Run inside the `semppi_rerun` environment with the workspace (`nav2_se_controller`,
+`se_mppi_utrap`) sourced, from the repository root.
+
+```bash
+python3 experiments/campaign2/run_campaign2.py --list             # the 88-trial plan
+python3 experiments/campaign2/run_campaign2.py --block shakedown  # one trial, not counted
+python3 experiments/campaign2/freeze_manifest.py --write          # before the tag; commit it with PREREG.md, then tag
+python3 experiments/campaign2/run_campaign2.py --block A          # Phase A (gate)
+python3 experiments/campaign2/run_campaign2.py --block B          # Phase B (refused until Phase A is complete and its gate has not fired)
+python3 experiments/campaign2/run_campaign2.py --block all        # A, gate, B; resumes
+python3 experiments/campaign2/run_campaign2.py --block all --attempt 2   # a restart after a fix: its own raw root
+python3 experiments/campaign2/analyze.py --pack                   # results.json.gz, RESULTS.md, logs/
+python3 experiments/campaign2/analyze.py --check                  # fails if they are stale
+python -m pytest experiments/campaign2/tests
+```
+
+A run needs a quiet host: the driver waits for the campaign-1 gate (load average below 2.0
+at two checks, busy CPU below 0.5 core) before every trial. The driver exits with code 3 when
+a stopping rule fires, and with code 2 when it refuses to run.
+
+A counted trial is refused (exit code 2) when the installed behaviour trees, worlds, launch files
+or controller build are not the frozen ones, when the build stamp does not name the tag
+`campaign2-controller`, when the raw root holds trials of another attempt (another freeze manifest
+or tag commit), or when it would drive `s3_ctrap` or `s4_ltrap` or run block B before Phase A is complete.
+`PREREG.md` ("Provenance", "Attempts, interruption and restart") says why.
+
+## Raw trial data
+
+`raw_trials.tar.gz` (sha256 in `raw_trials.tar.gz.sha256`) holds the raw files of the campaign:
+88 trial directories under `trials/` (84 registered trials: 24 on `s0_open`, 24 on `s1_utrap`, 24
+on `s3_ctrap`, 12 on `s4_ltrap`; and 4 evidence trials on `s1_utrap_evidence`), the 5 entries of
+`shakedown/`, the driver logs and `DEVIATIONS_LEAD.md`. Unpack it into an empty directory and pass
+the root to the scripts:
+
+```bash
+mkdir /tmp/c2raw && tar -C /tmp/c2raw -xzf experiments/campaign2/raw_trials.tar.gz
+python3 -I experiments/campaign2/analyze.py --check --raw /tmp/c2raw/campaign2_raw
+python3 experiments/campaign2/odom_gap.py --raw /tmp/c2raw/campaign2_raw --out-dir /tmp/c2gap
+```
+
+`odom_gap.py` writes `ODOM_GAP.json` and `ODOM_GAP.md` into `--out-dir`; its default is this
+directory, which overwrites the committed files. Its default `--raw` is the `/mnt/d` path of the
+host that ran the campaign. `analyze.py --check` passes only in the environment that wrote the
+committed outputs.
+
+`cbf_admissions.py` (post hoc) reads the archive itself, with no unpacking:
+`python3 experiments/campaign2/cbf_admissions.py --out-dir /tmp/c2adm`. It writes
+`CBF_ADMISSIONS.json` and `CBF_ADMISSIONS.md`: obstacles admitted to the CBF per SE-MPPI trial,
+control cycles per wall-clock and per simulated second, host load, and the level of the
+`collision_monitor` log lines. `scripts/check_paper_numbers.py` reruns it and compares.

@@ -1,0 +1,99 @@
+{
+  "trial_id": "affected__s1_utrap__A_stock__P__rep0",
+  "env_label": "affected",
+  "scenario": "s1_utrap",
+  "config": "A_stock",
+  "param_set": "P",
+  "rep": 0,
+  "override_guard": true,
+  "launch_argv": [
+    "ros2",
+    "launch",
+    "se_mppi_utrap",
+    "utrap_bench.launch.py",
+    "headless:=True",
+    "use_rviz:=False",
+    "params_file:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/results_pilot_rerun/trials/affected__s1_utrap__A_stock__P__rep0/params.yaml",
+    "use_sim_time:=True",
+    "map:=/home/cona/kangj/se-mppi-nav2/.claude/worktrees/submission-audit/experiments/se_mppi_utrap/maps/utrap_loc.yaml",
+    "x_pose:=-3.0",
+    "y_pose:=0.0",
+    "yaw:=0.0"
+  ],
+  "start": [
+    -3.0,
+    0.0,
+    0.0
+  ],
+  "goal": [
+    3.0,
+    0.0,
+    0.0
+  ],
+  "watchdog_s": 300.0,
+  "setup_timeout_s": 120.0,
+  "ros_domain_id": "87",
+  "env": {
+    "conda_env": "ros2",
+    "package_builds": [
+      "gz-sim8-8.10.0-hfc2019e_2",
+      "gz-sim8-python-8.10.0-py312hacd0b71_0",
+      "libgz-sim8-8.10.0-py312h3058125_0",
+      "libgz-sim8-8.10.0-py312h3058125_0",
+      "ros-jazzy-nav2-mppi-controller-1.3.11-np2py312h2ed9cc7_16",
+      "ros-jazzy-ros-gz-sim-1.0.19-np2py312h2ed9cc7_16",
+      "ros2-distro-mutex-0.14.0-jazzy_16",
+      "xsimd-7.6.0-h4bd325d_0",
+      "xtensor-0.23.9-h4bd325d_0"
+    ],
+    "check_mppi_rollout": "[ros2run]: Process exited with failure 1\nFAILED: the loaded nav2_mppi_controller library (/home/cona/micromamba/envs/ros2/lib/libmppi_controller.so) integrates sampled trajectories wrongly: a straight 0.3 m/s rollout at heading 0 ends at x = -0.930 m (expected +0.960 m); 20992 of 24576 rollout points are more than 1e-03 m from the closed form (worst finite deviation 1.890 m). The optimizer would s",
+    "check_mppi_rollout_exit": 1,
+    "repo_commit": "4e1be1499e8068c2da2c7baaae5bf112b8952d98",
+    "tracked_inputs_modified": "M experiments/runner/README.md",
+    "kernel": "6.18.40.1-microsoft-standard-WSL2",
+    "cpu": "AMD Ryzen 5 5500GT with Radeon Graphics",
+    "cpus": 12
+  },
+  "wall_start": 1791797182.0582943,
+  "complete": true,
+  "setup_attempts": 1,
+  "ncpu": 12,
+  "active": true,
+  "load1_at_start": 1.17,
+  "load5_at_start": 3.98,
+  "load_gate_waited_s": 105.0,
+  "top_before": [
+    "8.5 2.1.296",
+    "0.7 Xvfb",
+    "0.3 claude",
+    "0.2 x-terminal-emul",
+    "0.2 claude",
+    "0.1 x11vnc",
+    "0.1 xfwm4",
+    "0.1 xfce4-panel"
+  ],
+  "launch_log": "launch.log",
+  "drive_wall_start": 1791797192.0661538,
+  "drive_returncode": 1,
+  "drive_wall_end": 1791797384.9957194,
+  "swept_pids": [],
+  "wall_end": 1791797400.0027351,
+  "top_after": [
+    "8.5 2.1.296",
+    "0.7 Xvfb",
+    "0.3 claude",
+    "0.2 x-terminal-emul",
+    "0.2 claude",
+    "0.1 x11vnc",
+    "0.1 xfwm4",
+    "0.1 xfce4-panel"
+  ],
+  "host_load": {
+    "foreign_cores_mean": 0.598,
+    "foreign_cores_worst_window": 0.852,
+    "own_cores_mean": 3.876,
+    "load1_min": 1.06,
+    "load1_max": 8.6,
+    "valid": true
+  }
+}

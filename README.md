@@ -1,10 +1,10 @@
 # SE-MPPI
 
-**A Nav2-native local controller that unifies online local-minima escape with a
-control-barrier-function safety filter — coordinated so that an escape maneuver
-stays certified-safe.**
+**A Nav2 controller plugin that integrates online local-minima
+detection-and-escape for MPPI with a control-barrier-function safety filter for
+tracked dynamic obstacles.**
 
-Jung Mo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
+Jungmo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
 
 [![ci](https://github.com/kjungmo/se-mppi-nav2/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/kjungmo/se-mppi-nav2/actions/workflows/ci.yml)
 [![ROS 2 Jazzy](https://img.shields.io/badge/ROS%202-Jazzy-22314E?logo=ros&logoColor=white)](https://docs.ros.org/en/jazzy/)
@@ -14,12 +14,13 @@ Jung Mo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
 [![Sponsor](https://img.shields.io/github/sponsors/kjungmo?logo=githubsponsors&color=ea4aaa)](https://github.com/sponsors/kjungmo)
 
 <p align="center">
-  <img src="docs/papers/latex/figures/success_bars.png" width="880" alt="Randomized 2D benchmark: success / collision / timeout per family across configs A–F⁻">
+  <img src="docs/papers/latex/figures/success_bars_v2.png" width="880" alt="Randomized 2D benchmark of the shipped algorithm: success / collision / timeout per family across configs A–F⁻">
 </p>
 
-<p align="center"><em>Randomized 1,200-trial 2D benchmark (Wilson 95% error bars on success,
-N = 50 per cell). On the trap families the detect-and-switch escape configs (C, E, F)
-separate cleanly from stock (A), CBF-only (D), and no-gap (F⁻), which time out at 0% success.</em></p>
+<p align="center"><em>Randomized 1,200-trial benchmark on a Python 2D mirror of the shipped
+algorithm, not on the Nav2 controller (Wilson 95% error bars on success, N = 50 per cell).
+On the trap families the detect-and-switch escape configs (C, E, F) separate from the
+mirror's plain MPPI (A), CBF-only (D), and no-gap (F⁻), which time out at 0% success.</em></p>
 
 ---
 
@@ -42,26 +43,52 @@ separate cleanly from stock (A), CBF-only (D), and no-gap (F⁻), which time out
 
 ## Overview
 
-The MPPI controller shipped with ROS 2 Nav2 is among the strongest deployable
-local controllers for mobile robots, yet in narrow, crowded, dynamic spaces it
-is prone to local-minima entrapment and enforces collision avoidance only
-through soft costs, with no formal safety guarantee. **SE-MPPI** is a single
-Nav2-native controller that unifies online local-minima detection-and-escape
-with a dynamic-obstacle control-barrier-function (CBF) safety filter, reconciled
-by a coordinator that modulates the barrier's class-𝒦 gain on detected
-entrapment; forward invariance is preserved for any positive gain, so an escape
-maneuver admitted by a raised gain stays certified-safe. This repository is the
-open code, data, and manuscript accompanying a **preprint**.
+The MPPI controller shipped with ROS 2 Nav2 is a widely used deployable local
+controller for mobile robots, yet in narrow, cluttered and dynamic spaces it can
+stall in local minima, and its critics avoid collisions only through soft costs.
+**SE-MPPI** (Safe-Escape MPPI) is a Nav2 controller plugin that integrates online
+local-minima detection-and-escape for MPPI with a control-barrier-function (CBF)
+safety filter for tracked dynamic obstacles. One path-progress entrapment signal
+switches repulsion and free-space gap costs into the MPPI rollouts and, through a
+coordinator, raises the barrier's class-𝒦 gain. Each ingredient has precedent;
+what this repository adds is their integration inside one Nav2 controller. This
+repository is the code, data and manuscript of a **preprint**.
 
-We are deliberate about what is measured and what is not. In a randomized
-1,200-trial 2D benchmark that mirrors the controller math one-to-one, the
-**detection-and-escape layer is the decisive contribution** — success rises from
-**0% to 88–90%** on the static U-trap family and from **0% to 62–78%** on the
-narrow-dynamic family, with the free-space gap search load-bearing. The
-**escape–safety coordination is a certified-safe mechanism, not an empirical
-gain**: in the regime we could test it is statistically indistinguishable from an
-independent escape+CBF stack (McNemar p = 1 in every family), and we report that
-null openly rather than hide it.
+What is measured and what is not:
+
+- **Live, in simulation, one host (pre-registered campaign 2, with one post hoc
+  amendment to its crash-stop rule, after which all s4 SE-MPPI trials ran).** SE-MPPI without
+  recoveries reached the goal in 5 of 6 on s1 and 5 of 6 on the held-out s4; stock
+  without recoveries in 0 of 6; with Nav2's default recovery tree, on s1, stock 0 of 6 and
+  SE-MPPI 3 of 6 (descriptive, p = 0.1818), on one simulated host (Fisher exact p = 0.0152
+  for each of the first two contrasts). s1 is the development scenario; s4, an L-shaped dead end outside
+  the development family, carries the claim. A third pocket, s3, has a near mirror
+  twin in the development family and gave 4 of 6 against 0 of 6 (p = 0.0606, not
+  significant). Six repetitions per cell, no real robot. The first version of the plugin
+  reached the goal in none of 44 valid live trials; the four defects behind that are
+  named in the paper.
+- **The repaired escape carries four additions to the design we advised ourselves**,
+  found on a development family of pockets. Two of them, (a) avoid lists and (b) a
+  movement watchdog, were needed together for the headless development sweeps to pass
+  (ablated jointly, confounded with position in the sweep): 55 or 56 of 56 geometries
+  pass per sweep with them, 14 to 18 of 56 without in the three archived sweeps (19 in an
+  earlier, unarchived one). The other two, (c) a waypoint floor
+  and (d) a clearance threshold, are safeguards for other configurations (see the paper and
+  [`experiments/campaign2/PREREG.md`](experiments/campaign2/PREREG.md)).
+- **Measured, in a Python 2D mirror of the shipped algorithm (not the Nav2
+  controller):** in a randomized, paired 1,200-trial benchmark the escape layer lifts
+  success on the static U-trap family from **0% to 80%** (40 of 50), and to 58% (29 of 50)
+  in the arm without the four additions; the design-stage numbers of the first version
+  are in the paper's appendix only.
+- **Null:** the escape–safety coordination is statistically indistinguishable
+  from an independent escape+CBF stack (McNemar p = 1 in every family). It is
+  claimed as a mechanism, not as an empirical gain, and campaign 2 does not test it.
+- **Conditional, not a certificate:** by a standard argument for time-varying CBF
+  gains the gain schedule keeps the barrier's safe set forward invariant, but
+  only for a look-ahead point and the tracked dynamic obstacles, assuming the
+  barrier inequality holds between control updates and the QP uses no slack. In
+  the benchmark the QP uses slack at least once in most trials with moving
+  obstacles.
 
 ## System architecture
 
@@ -71,12 +98,13 @@ null openly rather than hide it.
 
 The `SafeEscapeController` subclasses the stock MPPI controller and post-processes
 its nominal command each cycle. A **shared entrapment signal** (derived from
-furthest-reached global-path progress) drives both the sampling-time
+progress along the task's anchor path) drives the escape path, the sampling-time
 `EscapeCritic` and the output-time escape–safety coordinator; the coordinator
 resolves the CBF gain α (with a time-to-collision override), and the CBF safety
 filter — fed by the `DynamicObstacleTracker` — projects the command onto the
-CBF-safe set via a small QP before it reaches `cmd_vel`, which Nav2's
-`collision_monitor` guards as a final reactive layer. The escape and safety
+CBF-safe set via a small QP before it reaches `cmd_vel`. Nav2's `collision_monitor`
+can guard it as a final reactive layer on a robot; in every live result reported here its
+only polygon was disabled, so it guarded nothing. The escape and safety
 layers thus act at complementary points, unified by one entrapment signal and the
 coordinated gain.
 
@@ -86,18 +114,25 @@ coordinated gain.
    `nav2_core::Controller` plus a pluginlib MPPI critic (`EscapeCritic` in the
    `mppi::critics` namespace), reusing the stock MPPI optimizer for the nominal
    command.
-2. **Detect-and-switch local-minima escape.** Entrapment is declared when the
-   furthest-reached path index stalls; the `EscapeCritic` then injects
-   distance-field APF and free-space gap-attraction costs **only while trapped**,
-   so free-space behavior is unchanged.
-3. **Look-ahead-point CBF safety filter (OSQP).** A per-cycle discrete CBF-QP on
-   tracked dynamic obstacles projects the nominal `(v, ω)` onto the safe set; on
-   an infeasible or relaxed barrier it brakes forward velocity rather than
-   driving into an imminent collision.
-4. **Escape–safety coordination.** The coordinator modulates the CBF class-𝒦
-   gain on detected entrapment (α_base → α_escape) with a TTC override, so the
-   robot escapes without losing forward invariance — proven for any positive,
-   bounded gain schedule (see the paper's certified-safe-escape proposition).
+2. **Detect-and-switch local-minima escape.** Entrapment is declared when
+   progress along the task's anchor path (its first plan) stalls. A replan from
+   the behaviour tree is only a candidate anchor, so replanning every second does
+   not count as progress. While trapped, the `EscapeCritic` injects
+   distance-field APF costs, and the controller hands MPPI a short escape path
+   from the robot to a waypoint along the opening chosen by the horizon-ray rule;
+   the behaviour tree's path comes back when the escape ends. Free-space behavior
+   is unchanged. The free-space gap bearing cost of the critic is off by default
+   (`gap_weight: 0`), kept for ablation.
+3. **Look-ahead-point CBF safety filter (OSQP).** A per-cycle CBF-QP on tracked
+   dynamic obstacles (static structure is left to MPPI's cost critic) filters the
+   nominal `(v, ω)`; on a failed or relaxed barrier it brakes the linear velocity (forward or reverse).
+   The barrier acts on a look-ahead point, not on the robot body.
+4. **Escape–safety coordination.** The coordinator raises the CBF class-𝒦 gain
+   on detected entrapment (α_base → α_escape) with a time-to-collision override.
+   Forward invariance under such a schedule is a known result for time-varying
+   gains; the paper restates it as a conditional lemma (slack-free QP, barrier
+   inequality assumed between samples). No outcome benefit of the coordination
+   was measured.
 5. **82 C++ unit tests across 13 files** (gtest) plus linters, covering the
    entrapment detector, CBF filter, coordinator, tracker, gap search, repulsion,
    path progress, and plugin loading. These are the algorithm unit tests in
@@ -105,10 +140,27 @@ coordinated gain.
    Deployment tests live separately in `src/nav2_se_controller/test/deployment/`
    (the controller on a lifecycle node inside the stock MPPI optimizer, runtime
    parameter changes, `/diagnostics`).
-   The paper's results and its "82 TEST cases in 13 files" (the algorithm tests
-   in `test/test_*.cpp`) refer to tag `paper-v1` (commit b21b0a5); deployment
-   tests under `test/deployment/` and later fixes are not part of the evaluated
-   code.
+   The design-stage benchmark data were generated at tag `paper-v1` (commit b21b0a5);
+   the re-run on the mirror of the shipped algorithm ran at commit 742a3df. The paper describes the
+   C++ controller at the local tag `campaign2-controller` (commit 6a50723), the code of the
+   headless sweeps and of live campaign 2; it adds the repaired escape, the rollout
+   guard and 148 deployment tests in 10 files (`test/deployment/`) to the controller of
+   `paper-v1`.
+
+   After the campaign (2026-10-22) three frozen files received edits. None of them changes
+   controller behaviour or a campaign input:
+   - `06da6ce`: the member `steady_clock_` of `SafeEscapeController` is `mutable`, because
+     Humble's `rclcpp::Clock::now()` is not `const` and the throttled log in a `const` member did
+     not compile there. Jazzy's `now()` is `const`, so nothing changes there. This is the only
+     change to the controller.
+   - `010f46e`: `experiments/results_pilot_rerun/analyze.py` gained the option `--digits N`. The
+     default check is still exact.
+   - `2d6b51f`: `experiments/campaign2/freeze_manifest.py` gained `--check --ref`.
+
+   The campaign ran the tag `campaign2-controller`, not this commit. `FREEZE_MANIFEST.json`
+   describes the tag: `python3 experiments/campaign2/freeze_manifest.py --check --ref
+   campaign2-controller` passes on any checkout that has the tag. Plain `--check` reports
+   `changed:` for those three files on this branch.
 6. **Committed benchmark artifacts.** The 1,200-trial randomized 2D benchmark
    ships its raw per-trial CSV, summary, statistics, tables, and figures; a
    number guard (`scripts/check_paper_numbers.py`) asserts that every headline
@@ -116,11 +168,12 @@ coordinated gain.
 7. **Gazebo U-trap testbed + live Nav2 integration.** A committed testbed
    (`experiments/se_mppi_utrap/`) and a one-command sim launcher run the
    controller inside a live ROS 2 Jazzy + Nav2 + Gazebo Harmonic stack.
-   *Note, 2026-10-11:* the live runs committed so far (`experiments/results_pilot/`,
-   July 2026) were made on a `nav2_mppi_controller` build with flipped rollouts
-   (see [Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds),
-   PR #6). Whether that caused their outcome is not established; they have not
-   been repeated on a corrected build.
+   The live runs of July 2026 (`experiments/results_pilot/`) were made on a
+   `nav2_mppi_controller` build with flipped rollouts (see
+   [Affected nav2_mppi_controller builds](#affected-nav2_mppi_controller-builds));
+   the paper does not use them. Campaign 1 (`experiments/results_pilot_rerun/`) repeated
+   them on a corrected build with no goal reached, and campaign 2
+   (`experiments/campaign2/`) tested the repaired controller.
 
 ## Requirements
 
@@ -149,10 +202,12 @@ on Humble (compile-time switch `NAV2_SE_CONTROLLER_HUMBLE_API`):
   `se_task_idle_threshold`, starts a new task and resets the per-task state, so
   a new task still starts clean; `reset()`'s own clearing (on goal end or
   cancel) does not happen.
-- The escape critic's gap search needs a goal bearing. Humble's `CriticData` has
-  no goal, so it uses the end of the pruned local path (MPPI's path window), not
-  the navigation goal. On a curved or long path the two can point in different directions, so
-  the gap choice is not equivalent to Jazzy's.
+- The escape critic's legacy gap bearing cost (`gap_weight` > 0, ablation only) and
+  its opening log line need a goal bearing. Humble's `CriticData` has no goal, so
+  they use the end of the pruned local path (MPPI's path window), not the
+  navigation goal. On a curved or long path the two can point in different
+  directions. The escape path of the controller uses the end of the behaviour
+  tree's path on both distributions.
 - **SE-MPPI's control performance on Humble's MPPI 1.1.x has not been
   evaluated**: every reported result comes from the Jazzy stack or the 2D
   benchmark.
@@ -427,6 +482,15 @@ the new value reaches its consumer before the next control cycle:
 - controller: `se_enabled`, `se_goal_reached_tolerance`,
   `se_dynamic_speed_threshold`, `se_max_obstacle_radius`, `se_task_idle_threshold`;
 - entrapment detector: `se_progress_stall_window`;
+- path progress: `se_progress_min_advance` (0.10 m: arc length past the best so far
+  that counts as progress), `se_progress_adopt_advance` (0.5 m: advance along the
+  replans after which a replan becomes the anchor path);
+- escape path: `se_escape_path_substitution` (false keeps the behaviour tree's
+  path), `se_escape_waypoint_cap`, `se_escape_reselect_radius`,
+  `se_escape_reselect_period`, `se_escape_stall_time`, `se_escape_stall_distance`,
+  `se_escape_hysteresis`, `se_escape_avoid_radius`, `se_escape_avoid_hop_radius`,
+  `se_escape_avoid_hops`, `se_gap_num_rays`, `se_gap_max_range`,
+  `se_gap_min_clearance`;
 - coordinator: `se_alpha_base` (also the CBF filter's default gain),
   `se_alpha_escape`, `se_ttc_override_threshold`, `se_q_trust_threshold`;
 - CBF filter: `se_cbf_lookahead`, `se_cbf_safety_margin`, `se_cbf_slack_weight`,
@@ -473,13 +537,42 @@ over-estimated (measured mean 0.17 m/s, max 0.33 m/s against a true 0.11 m/s;
 `ControllerCostmapRate.SlowMoverIsInTheCbfMoreOftenThanBefore`). That is
 conservative but can cause extra braking.
 
+**Escape path.** While entrapped, the controller replaces the path that MPPI
+follows. It casts `se_gap_num_rays` rays over the local costmap and takes the ray
+that reaches the sensing horizon (`se_gap_max_range` or the costmap edge) and is
+closest to the goal bearing; if no ray reaches the horizon it takes the longest
+ray. It keeps the previous bearing unless a new one is closer to the goal bearing
+by `se_escape_hysteresis`, and it does not choose a ray that leads back to the
+pose where entrapment was declared, to a recent hop origin or to a waypoint that
+failed. The waypoint lies `min(clearance - robot radius - 0.05 m,
+se_escape_waypoint_cap)` along the ray and stays frozen until the robot is within
+`se_escape_reselect_radius` of it, the straight line to it is blocked,
+`se_escape_reselect_period` has passed, or the robot has moved less than
+`se_escape_stall_distance` in `se_escape_stall_time`. Each selection is a hop and
+is logged (`SE escape waypoint ...`) with the bearing and clearance. The path
+(in the plan frame) is published on `<plugin name>/se_escape_path`. The
+behaviour tree's path stays in the controller for progress and for the
+near-goal test and is not forwarded to MPPI while the escape path is active; it
+goes back to MPPI when the escape ends, on `reset()`, on a new task and when
+`se_enabled` becomes false. `controller_server` checks goal arrival against its
+own copy of the behaviour tree's path, so the escape path cannot fake a goal.
+Tests: `test/deployment/test_closed_loop_utrap.cpp` (headless closed loop in the
+pocket geometries of `test/deployment/UTRAP_DEV_GEOMETRIES.md`).
+
+With `se_enabled` and `vx_min` > 0 the robot cannot stop or reverse, so the escape
+cannot act: the controller logs a WARN at configure and on every change, and the
+`/diagnostics` status is WARN.
+
 The controller publishes a status `"<node name>: se_mppi (<plugin name>)"` on
 `/diagnostics` once per second (wall clock). It turns WARN when the CBF filter
-forced the forward velocity to zero in the last second (QP failure or barrier
+set the linear velocity (forward or reverse) to zero in the last second (QP failure or barrier
 slack), and ERROR when the QP has failed on every cycle for more than 2 s (40
 cycles at Nav2's default 20 Hz, inside the default 10 s progress-checker
-allowance). It carries counters for those events, dropped obstacle tracks, escape
-entries and the current alpha. The same events are logged as throttled warnings.
+allowance). It turns WARN while `vx_min` > 0 with `se_enabled` (the escape cannot
+act). It carries counters for those events, dropped obstacle tracks, escape
+entries, cycles in which the optimizer found no valid control (`base_failures`),
+escape hops with the last selected bearing and clearance, `vx_min`, and the
+current alpha. The same events are logged as throttled warnings.
 The key `mppi_rollout_check` is `ok`, or `failed` when the loaded
 `nav2_mppi_controller` library failed the configure-time rollout check and
 `se_enforce_rollout_check` is `false`; the status is then ERROR for as long as the
@@ -515,72 +608,99 @@ cd experiments/prototype && python3 run_validation.py
 
 ## Benchmark artifacts
 
-The controlled quantitative comparison is a **randomized 2D benchmark that
-mirrors the controller math one-to-one** — it reuses the exact primitives
-validated in the mechanism study (the same MPPI sampler, distance-field APF, gap
-raycast, look-ahead CBF-QP via OSQP, α coordination with TTC override, and
-monotone-progress entrapment detector) across seed-deterministic randomized
-scenarios, so that success, collision, and clearance carry confidence intervals
-and paired significance tests. It is **not** the live Nav2 controller; a
-full-scale 3D physics benchmark (BARN / DynaBARN / HuNavSim against the deployable
-baselines) is specified but deferred to future work.
+The controlled quantitative comparison is a **randomized benchmark on a Python
+2D mirror of the shipped algorithm**: a separate NumPy/SciPy/OSQP
+implementation of an MPPI sampler, a repulsive potential, the horizon-ray escape with
+anchor-path progress, the look-ahead-point CBF-QP and the α coordination with TTC
+override, run on seed-deterministic randomized scenarios so that success carries
+confidence intervals and paired tests. It is **not** the Nav2 controller, and it differs
+from it in documented ways (the paper's appendix lists them: analytic circular geometry,
+a three-term cost instead of Nav2's critic stack, true obstacle states, no progress
+checker or behaviour tree). It imports nothing from ROS or Nav2, so the
+`nav2_mppi_controller` defect described above cannot affect it. A full-scale 3D physics
+benchmark (BARN / DynaBARN / HuNavSim against the deployable baselines) is specified but
+not run.
 
-**Regenerate** (from
-[`docs/papers/2026_2d-benchmark-results.md`](docs/papers/2026_2d-benchmark-results.md);
-the committed data uses `N=50`):
+The benchmark needs only Python with NumPy, SciPy, Matplotlib and OSQP, which
+`scripts/setup_ros2_env.sh` does not install:
+`python3 -m pip install -r experiments/requirements.txt` (any Python
+environment; ROS is not needed).
+
+**Regenerate** both arms (the shipped algorithm `v2`, and the design as advised without the
+four additions, `v2_advised`; the committed data uses `N=50`):
 
 ```bash
-export MAMBA_ROOT_PREFIX=$HOME/micromamba
-micromamba run -n ros2 python3 -m experiments.benchmark2d.runner \
-    --families utrap clutter dynamic narrowdyn -n <N> --workers 6 --max-steps 400
-micromamba run -n ros2 python3 -m experiments.benchmark2d.report      # tables + stats
-micromamba run -n ros2 python3 -c "from experiments.benchmark2d import figures, aggregate; \
-    r=aggregate.aggregate('experiments/results_2d/trials.csv','experiments/results_2d'); \
-    figures.plot_all(r['summary'], r['stats'], 'experiments/results_2d/figures')"
+# The runner resumes by default and skips scenarios already in its output file,
+# so write to a fresh directory with --no-resume and compare with the committed rows.
+for arm in v2 v2_advised; do
+  python3 -m experiments.benchmark2d.runner --variant $arm \
+      --families utrap clutter dynamic narrowdyn -n 50 --workers 6 --max-steps 400 \
+      --no-resume --out /tmp/mirror_$arm/trials.csv
+  python3 -m experiments.benchmark2d.report \
+      --trials /tmp/mirror_$arm/trials.csv --out-dir /tmp/mirror_$arm
+  sort /tmp/mirror_$arm/trials.csv > /tmp/new.csv
+  sort experiments/results_2d_$arm/trials.csv > /tmp/old.csv
+  cmp /tmp/new.csv /tmp/old.csv && echo "$arm: identical"
+done
 ```
 
-**Success rate, % (Wilson 95% CI), N = 50 per cell** — condensed from
-[`experiments/results_2d/tables.md`](experiments/results_2d/tables.md)
+**Success rate, % (Wilson 95% CI), N = 50 per cell, shipped algorithm** — condensed from
+[`experiments/results_2d_v2/tables.md`](experiments/results_2d_v2/tables.md)
 (4 families × 50 seeds × 6 configs = 1,200 paired trials):
 
 | Config | U-trap | Clutter | Dynamic | Narrow-dyn |
 |---|---|---|---|---|
-| A · stock            | 0 [0, 7]    | 52 [39, 65] | 80 [67, 89] | 0 [0, 7]    |
-| C · escape           | 90 [79, 96] | 62 [48, 74] | 76 [63, 86] | 78 [65, 87] |
-| D · CBF              | 0 [0, 7]    | 52 [39, 65] | 82 [69, 90] | 0 [0, 7]    |
-| E · escape+CBF (indep.) | 88 [76, 94] | 62 [48, 74] | 78 [65, 87] | 64 [50, 76] |
-| **F · SE-MPPI (coord.)** | **88 [76, 94]** | **62 [48, 74]** | **78 [65, 87]** | **62 [48, 74]** |
-| F⁻ · no-gap          | 0 [0, 7]    | 52 [39, 65] | 84 [71, 92] | 0 [0, 7]    |
+| A · stock            | 0 [0,7]    | 52 [39,65] | 80 [67,89] | 0 [0,7]    |
+| C · escape           | 80 [67,89] | 72 [58,83] | 80 [67,89] | 72 [58,83] |
+| D · CBF              | 0 [0,7]    | 52 [39,65] | 82 [69,90] | 0 [0,7]    |
+| E · escape+CBF (indep.) | 80 [67,89] | 72 [58,83] | 84 [71,92] | 60 [46,72] |
+| **F · SE-MPPI (coord.)** | **80 [67,89]** | **72 [58,83]** | **84 [71,92]** | **60 [46,72]** |
+| F⁻ · no-gap          | 0 [0,7]    | 52 [39,65] | 84 [71,92] | 0 [0,7]    |
 
-The escape layer is decisive on both trap families and survives Holm correction
-(U-trap 0% → 88–90%, adjusted p = 1.4×10⁻⁹; narrow-dynamic 0% → 62–78%,
-adjusted p = 1.1×10⁻⁶), and F⁻ collapsing to 0% shows the free-space gap subgoal
-is load-bearing. The **key E-vs-F contrast (independent vs. coordinated α) is
-null in every family** (McNemar p = 1): in this benchmark the coordination
-produces no measurable outcome difference over independent escape+CBF, which we
-report as an honest null and delimit where coordination should matter.
+Without the four additions (`v2_advised`, [`experiments/results_2d_v2_advised/`](experiments/results_2d_v2_advised/)),
+F scores 58 [44,71] on U-trap, 62 [48,74] on clutter, 84 [71,92] on dynamic and 44 [31,58]
+on narrow-dyn. The escape layer is decisive on both trap families and survives Holm
+correction (U-trap 0% → 80%, adjusted p = 1.1×10⁻⁸; narrow-dynamic 0% → 60%, adjusted
+p = 1.9×10⁻⁶). F⁻ (the gap search off) falls to 0% on both trap families, as expected by
+construction: without the opening search the escape has no direction to take.
+The **key E-vs-F contrast (independent vs. coordinated α) is null in every family**
+(McNemar p = 1): in this benchmark the coordination produces no measurable outcome
+difference over independent escape+CBF. The design-stage benchmark of the first version
+(`experiments/results_2d/`, tag `paper-v1`) is kept as data and in the paper's appendix;
+`experiments/results_2d_v2/COMPARE_V1.md` compares it with the re-run.
+
+**Live campaign 2** (`experiments/campaign2/`): the pre-registration with its three
+amendments (`PREREG.md`), the frozen file hashes, the driver and analyzer, `RESULTS.md`,
+`results.json.gz` and the log excerpts. `ODOM_GAP.md` documents the 13 trials in which Nav2
+reported `SUCCEEDED` while the Gazebo ground truth was more than 0.5 m from the goal; they count as
+not reached.
 
 ## Evaluation gallery
 
-| U-trap escape (mechanism) | Escape–safety coordination | Coordination contrast E vs. F |
+| Finite-wall escape (mechanism, design-stage 2D mirror) | Escape–safety coordination (design-stage 2D mirror) | Coordination contrast E vs. F (2D mirror, shipped algorithm) |
 |---|---|---|
-| <img src="docs/papers/latex/figures/utrap_escape.png" width="260" alt="U-trap escape"> | <img src="docs/papers/latex/figures/coordination.png" width="260" alt="Escape–safety coordination trace"> | <img src="experiments/results_2d/figures/e_vs_f.png" width="260" alt="E vs F coordination contrast per family"> |
-| Stock MPPI stalls at the trap mouth while SE-MPPI detects the stall and rounds the U-shaped obstacle via the gap-attraction subgoal. | During the escape phase the coordinated gain rises α: 2 → 6 while the QP slack stays ≈ 0 throughout — the escape maneuver is admitted yet remains certified-safe (h ≥ 0). | The independent (E) and coordinated (F) stacks are statistically indistinguishable in every family (McNemar p = 1) — the honest null result. |
+| <img src="docs/papers/latex/figures/utrap_escape.png" width="260" alt="U-trap escape"> | <img src="docs/papers/latex/figures/coordination.png" width="260" alt="Escape–safety coordination trace"> | <img src="docs/papers/latex/figures/e_vs_f_v2.png" width="260" alt="E vs F coordination contrast per family"> |
+| The design-stage mirror's plain MPPI stalls in front of a finite wall while the escape layer detects the stall and rounds the wall via the gap subgoal. | During the escape phase the coordinated gain rises α: 2 → 6 while the QP slack stays below 2×10⁻⁶ — the escape is admitted without relaxing the barrier in this single run. | The independent (E) and coordinated (F) stacks are statistically indistinguishable in every family (McNemar p = 1): a null result. |
 
 ## Paper and citation
 
-The manuscript is a preprint: **"Safe-Escape MPPI: Coordinating Online
-Local-Minima Escape with Control-Barrier-Function Safety in a Nav2-Native
-Controller."** Read it here: [`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf)
-(LaTeX source: [`docs/papers/latex/main.tex`](docs/papers/latex/main.tex)).
+The manuscript is a preprint: **"SE-MPPI: Coordinating Online Local-Minima
+Escape with Control-Barrier-Function Safety in a Nav2-Native Controller."** The
+current manuscript is
+[`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) (source in
+[`docs/papers/latex/`](docs/papers/latex/)); it describes the shipped controller, the
+headless development test, the mirror re-run and the pre-registered live campaign. The
+older package in [`docs/papers/arxiv_ref/`](docs/papers/arxiv_ref/) is the design-stage
+version at the tag `paper-v1`; it predates the repair and is kept for the record
+(`docs/papers/arxiv_ref/STATUS.md`).
 
 If you use SE-MPPI in your research, please cite:
 
 ```bibtex
 @misc{kang2026semppi,
-  title  = {Safe-Escape MPPI: Coordinating Online Local-Minima Escape with
-            Control-Barrier-Function Safety in a Nav2-Native Controller},
-  author = {Kang, Jung Mo},
+  title  = {{SE-MPPI}: Coordinating Online Local-Minima Escape with
+            Control-Barrier-Function Safety in a {Nav2}-Native Controller},
+  author = {Kang, Jungmo},
   year   = {2026},
   note   = {Preprint. Manuscript and artifacts at
             https://github.com/kjungmo/se-mppi-nav2},
@@ -594,7 +714,10 @@ Machine-readable metadata is in [`CITATION.cff`](CITATION.cff).
 
 | Document | Contents |
 |---|---|
-| [`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) | The preprint (PDF). |
+| [`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) | The current preprint (PDF). [`docs/papers/arxiv_ref/main.pdf`](docs/papers/arxiv_ref/main.pdf) is the earlier design-stage version. |
+| [`experiments/campaign2/`](experiments/campaign2/) | Pre-registered live campaign 2: pre-registration with amendments, driver, analysis, results. |
+| [`experiments/results_pilot_rerun/`](experiments/results_pilot_rerun/) | Live campaign 1 (negative result): pre-registration, raw trials, analysis, root cause. |
+| [`docs/architecture/2026-10_escape-v2.md`](docs/architecture/2026-10_escape-v2.md) | The repair of the four defects and the additions to the advised design. |
 | [`docs/papers/2026_2d-benchmark-results.md`](docs/papers/2026_2d-benchmark-results.md) | Randomized 2D benchmark write-up (methodology, tables, interpretation). |
 | [`docs/papers/references.bib`](docs/papers/references.bib) · [`docs/papers/reference-verification-report.md`](docs/papers/reference-verification-report.md) | Verified bibliography and its verification report. |
 | [`docs/architecture/2026-06_safe-escape-mppi-design.md`](docs/architecture/2026-06_safe-escape-mppi-design.md) | Controller architecture and module design. |

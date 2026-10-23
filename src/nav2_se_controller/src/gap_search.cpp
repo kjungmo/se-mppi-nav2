@@ -32,29 +32,6 @@ inline double angleDiff(double a, double b)
 }
 
 /// Free distance (m) from (rx, ry) along `bearing` until an obstacle / edge / max.
-double rayFreeDistance(
-  const nav2_costmap_2d::Costmap2D & costmap, double rx, double ry,
-  double bearing, double max_range, unsigned char cost_threshold)
-{
-  const double res = costmap.getResolution();
-  // Sample at half-resolution so a one-cell-thick wall on a diagonal bearing is
-  // not stepped over (full-res Euclidean steps can skip the cell between two
-  // diagonal samples and report a blocked bearing as free).
-  const double step = std::max(0.5 * res, 1e-3);
-  const double cx = std::cos(bearing);
-  const double cy = std::sin(bearing);
-  for (double r = step; r <= max_range; r += step) {
-    unsigned int mx = 0;
-    unsigned int my = 0;
-    if (!costmap.worldToMap(rx + r * cx, ry + r * cy, mx, my)) {
-      return r;  // ran off the map: free up to the edge
-    }
-    if (costmap.getCost(mx, my) >= cost_threshold) {
-      return r;
-    }
-  }
-  return max_range;
-}
 }  // namespace
 
 EscapeGap findEscapeGap(

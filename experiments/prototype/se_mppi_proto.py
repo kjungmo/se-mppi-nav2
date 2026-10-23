@@ -257,9 +257,15 @@ class MPPI:
         return pts, u
 
     def step(self, state, world, escape_costs=None, goal_scale=1.0,
-             eff_goal=None):
+             eff_goal=None, zero_on_all_collide=False):
         # eff_goal lets the escape layer steer toward a temporary subgoal (an
         # opening) instead of the real goal while entrapped.
+        # zero_on_all_collide (SE-MPPI v2, default False = paper-v1): when every
+        # sampled rollout collides, return a zero command and reset the
+        # nominal sequence, as Nav2 does when the optimizer throws
+        # NoValidControl. `last_all_collide` reports it.
+        self.last_all_collide = False
+        collide = np.zeros(self.K, bool) if zero_on_all_collide else None
         goal = world.goal if eff_goal is None else np.asarray(eff_goal, float)
         noise = self.rng.normal(0, [self.v_std, self.w_std],
                                 (self.K, self.T, 2))
@@ -276,6 +282,8 @@ class MPPI:
         for o in world.obstacles:
             d = np.linalg.norm(pts - o.p, axis=2) - o.r - world.robot_radius
             zone = getattr(o, 'soft', 0.3)
+            if collide is not None:
+                collide |= (d < 0).any(axis=1)
             cost += np.where(d < 0, 1e4, 0.0).sum(axis=1)
             cost += np.where((d >= 0) & (d < zone), 30.0 * (zone - d), 0.0).sum(axis=1)
         # prefer-forward (mirrors PreferForwardCritic), OPT-IN: the multi-robot
@@ -287,6 +295,10 @@ class MPPI:
                 np.maximum(-u[:, :, 0], 0.0).mean(axis=1) * self.T
         if escape_costs is not None:
             cost += escape_costs(pts)
+        if collide is not None and collide.all():
+            self.last_all_collide = True
+            self.u[:] = 0.0
+            return np.zeros(2)
         # --- info-theoretic update ---
         cost -= cost.min()
         w_ = np.exp(-cost / self.temp)
