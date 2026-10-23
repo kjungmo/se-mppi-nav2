@@ -710,6 +710,21 @@ placed before the trial that fired the rule.
    The tag `campaign2-controller` moves to the commit that holds this amendment and the renewed
    manifest. The tag was never pushed.
 
+## Post-campaign note (2026-10-22): the blindness period ended
+
+The rule that the held-out world names (`s3_ctrap`, `s4_ltrap`) appear nowhere outside this
+directory held until the campaign ended on 2026-10-22. It protected the controller, the family
+generator, the headless tests and the tuning from being shaped by the held-out worlds. The
+campaign is complete, and the paper, the number guard and the committed results now name the
+worlds. The C++ guard `test_heldout_guard` therefore allows the names in exactly these paths:
+`experiments/campaign2/`, `docs/papers/` and `scripts/check_paper_numbers.py`. It still fails when
+a name appears anywhere else, for example in `src/`, `experiments/sim/`, `experiments/barn/`,
+the development-family generator, the headless test worlds or a tuning config. On 2026-10-22 no
+file outside the allowed paths held a name (checked with a repository-wide search). The Python
+guard `tests/test_c2_plan.py::test_held_out_world_names_only_inside_campaign2` is unchanged: it
+scans `experiments/` only and still holds. This note does not change any registered rule, plan or
+outcome wording of the campaign.
+
 ## Shakedown (not a registered trial)
 
 One trial on `s0_open` with C2, id `correct__s0_open__C2__rep0`, raw data in

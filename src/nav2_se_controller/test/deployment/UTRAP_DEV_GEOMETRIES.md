@@ -9,8 +9,11 @@ looked at the results: a change needs a dated amendment at the end of this file.
 
 The closed-loop test needs pockets the controller was never tuned on. The live
 scenario `s1_utrap` (a 1.7 m wide, 1.85 m deep pocket) is excluded. The held-out
-campaign geometry does not appear in this repository outside `experiments/campaign2/`;
-`test_heldout_guard` fails if its world name appears anywhere else.
+campaign geometry did not appear in this repository outside `experiments/campaign2/` until the
+campaign ended on 2026-10-22. Since then `test_heldout_guard` allows the world names only in
+`experiments/campaign2/`, `docs/papers/` and `scripts/check_paper_numbers.py`, and fails if they
+appear anywhere else (controller sources, the development family generator, the headless test
+worlds, tuning configs, tests).
 
 ## Frames
 
