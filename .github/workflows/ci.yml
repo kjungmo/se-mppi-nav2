@@ -19,12 +19,23 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      # The guard sweeps the compiled main.pdf for forbidden tokens. The runner image has
+      # neither pypdf nor pdftotext, and the guard fails when it finds no PDF reader.
+      # poppler-utils comes from the ubuntu-24.04 archive, so the runner image pins its
+      # version.
+      - name: PDF reader for the token sweep (poppler-utils, pdftotext)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
+          pdftotext -v
       - name: Every headline figure traces to a committed artifact (companion copy)
         run: python3 scripts/check_paper_numbers.py
       - name: The same for the submission master (docs/papers/arxiv_ref), tables regenerated and compared
         run: python3 scripts/check_paper_numbers.py --arxiv
       - name: The live re-run's numbers regenerate from its raw files
-        run: python3 experiments/results_pilot_rerun/analyze.py --check
+        # The committed files come from Python 3.8; the runner has 3.12, whose float sums differ
+        # in the last digit. --digits 9 compares floats to 9 significant digits.
+        run: python3 experiments/results_pilot_rerun/analyze.py --check --digits 9
 
   jazzy:
     name: ROS 2 Jazzy (RoboStack) build, test and parameter binding

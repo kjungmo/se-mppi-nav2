@@ -4,6 +4,14 @@
 
     python3 experiments/results_pilot_rerun/analyze.py            # writes results.json, RESULTS.md
     python3 experiments/results_pilot_rerun/analyze.py --check    # fails if they are stale
+    python3 experiments/results_pilot_rerun/analyze.py --check --digits 9
+                                                 # same, floats compared to 9 significant digits
+
+The committed files were written by Python 3.8. Python 3.12 sums floats with compensated
+summation, so a fresh analysis there differs from the committed files in the last digit of some
+floats (for example 3.669061014814539 and 3.6690610148145404). ``--check`` alone is exact and
+passes only on the interpreter that wrote the files; ``--digits N`` rounds every float literal
+in both texts to N significant digits first and is what CI uses.
 
 Standard library only, so the paper-number guard can run it anywhere. Inputs:
 ``trials/<id>/`` and ``trials_shakedown/<id>/`` (``meta.json``, ``params.yaml``,
@@ -561,18 +569,36 @@ def render(result: dict) -> str:
     return '\n'.join(L)
 
 
+_FLOAT = re.compile(r'-?\d+\.\d+(?:[eE][+-]?\d+)?')
+
+
+def _round_floats(text: str, digits: int) -> str:
+    """Every float literal in ``text`` rounded to ``digits`` significant digits."""
+    return _FLOAT.sub(lambda m: f'{float(m.group()):.{digits}g}', text)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--check', action='store_true',
                     help='fail if results.json or RESULTS.md differ from a fresh analysis')
+    ap.add_argument('--digits', type=int, default=None,
+                    help='with --check: compare floats rounded to this many significant digits '
+                         '(for an interpreter other than the one that wrote the files)')
     args = ap.parse_args()
+    if args.digits is not None and not (args.check and 1 <= args.digits <= 15):
+        ap.error('--digits goes with --check and takes 1 to 15')
     result = build()
     js = json.dumps(result, indent=1, sort_keys=True) + '\n'
     md = render(result)
     targets = ((os.path.join(HERE, 'results.json'), js), (os.path.join(HERE, 'RESULTS.md'), md))
     if args.check:
+        def same(a, b):
+            if args.digits is None:
+                return a == b
+            return _round_floats(a, args.digits) == _round_floats(b, args.digits)
+
         stale = [p for p, text in targets
-                 if not os.path.exists(p) or open(p).read() != text]
+                 if not os.path.exists(p) or not same(open(p).read(), text)]
         if stale:
             print('stale: ' + ', '.join(os.path.relpath(p, REPO) for p in stale))
             return 1

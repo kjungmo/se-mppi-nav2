@@ -776,19 +776,35 @@ for tok in FORBIDDEN_IN_TEX:
 
 # --- forbidden tokens in the compiled PDF (best effort) ---
 pdf = TEX.with_suffix('.pdf')
-if pdf.exists():
+PDF_TOKENS = (FORBIDDEN_IN_TEX[0], FORBIDDEN_IN_TEX[2], FORBIDDEN_IN_TEX[5])
+
+
+def pdf_text(path):
+    """Text of the compiled PDF from pypdf or, failing that, the pdftotext binary.
+
+    Returns None when neither reader is installed (the caller fails the guard with a clear
+    message; a missing reader must not pass the sweep silently)."""
     try:
         from pypdf import PdfReader
-        text = ''.join(p.extract_text() for p in PdfReader(str(pdf)).pages)
-        for tok in (FORBIDDEN_IN_TEX[0], FORBIDDEN_IN_TEX[2], FORBIDDEN_IN_TEX[5]):
-            check(tok not in text, f'forbidden token in main.pdf: {tok!r}')
+        return ''.join(p.extract_text() for p in PdfReader(str(path)).pages)
     except ImportError:
-        r_ = subprocess.run(['pdftotext', str(pdf), '-'], capture_output=True, text=True)
-        if r_.returncode == 0:
-            for tok in (FORBIDDEN_IN_TEX[0], FORBIDDEN_IN_TEX[2], FORBIDDEN_IN_TEX[5]):
-                check(tok not in r_.stdout, f'forbidden token in main.pdf: {tok!r}')
-        else:
-            print('note: neither pypdf nor pdftotext available — PDF token sweep skipped', file=sys.stderr)
+        pass
+    try:
+        r_ = subprocess.run(['pdftotext', str(path), '-'], capture_output=True, text=True)
+    except FileNotFoundError:
+        return None
+    return r_.stdout if r_.returncode == 0 else None
+
+
+if pdf.exists():
+    text = pdf_text(pdf)
+    if text is None:
+        check(False, f'cannot read {pdf.name} for the forbidden-token sweep: neither the pypdf '
+                     'module nor a working pdftotext binary is available '
+                     '(install poppler-utils or pypdf)')
+    else:
+        for tok in PDF_TOKENS:
+            check(tok not in text, f'forbidden token in main.pdf: {tok!r}')
 
 if fails:
     print('NUMBER GUARD: FAIL')
