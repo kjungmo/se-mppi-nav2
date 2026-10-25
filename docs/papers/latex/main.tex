@@ -113,8 +113,11 @@ most:
   guidance: GP-MPPI recommends a free-space subgoal from a learned
   navigability surface \cite{gp_mppi}, and repulsive-potential
   augmentation adds an artificial potential field to the MPPI cost
-  \cite{drpa_sii}, which DRPA-MPPI switches on only when it detects
-  entrapment \cite{drpa_mppi}. None of these carries a safety certificate.
+  \cite{drpa_sii}. Some methods gate the escape on a detected stall:
+  DRPA-MPPI switches the repulsive cost on when it detects entrapment
+  \cite{drpa_mppi}, and MA-MPPI switches to memory-based potential fields
+  when the state stagnates \cite{ma_mppi}. None of these carries a safety
+  certificate.
 \item \textbf{No formal safety.} In Nav2 MPPI, avoidance is encoded as
   soft costs (\texttt{ObstaclesCritic}, \texttt{CostCritic}); there is no
   forward-invariance guarantee, and crucially \textbf{no prediction of
@@ -257,11 +260,18 @@ SVG-MPPI \cite{svg_mppi} change the distribution for other reasons. Others
 add guidance. GP-MPPI learns a sparse-Gaussian-process model of the
 navigable space around the robot and recommends a free-space subgoal to
 the local MPPI planner, which lets the robot escape local minima without a
-global map \cite{gp_mppi}. Fuke et~al.\ add a repulsive artificial
+global map \cite{gp_mppi}. LME selects escape subgoals from local
+observations with interpretable heuristics and hands them to an arbitrary
+local planner, a dynamic-window planner or a learned policy in its
+experiments \cite{lme}. Fuke et~al.\ add a repulsive artificial
 potential to MPPI to avoid local minima without global path guidance
 \cite{drpa_sii}, and their DRPA-MPPI detects potential entrapment on the
 predicted trajectories and only then switches to a cost with repulsion
-away from the local minimum \cite{drpa_mppi}. DRPA-MPPI is the closest
+away from the local minimum \cite{drpa_mppi}. MA-MPPI also detects
+stagnation, when the variance of recent states falls below a threshold, and
+then switches to memory-based potential fields that push the sampler out of
+the local optimum; it is evaluated on simulated control and aerial-vehicle
+tasks, not in a navigation stack \cite{ma_mppi}. DRPA-MPPI is the closest
 \emph{detect-and-switch} method and GP-MPPI the closest subgoal method;
 neither has a CBF or other formal safety layer, and neither is
 Nav2-integrated. SE-MPPI combines both ideas in a simpler form, a
