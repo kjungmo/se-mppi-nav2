@@ -41,22 +41,22 @@ for MPPI with a control-barrier-function (CBF) safety filter for tracked
 dynamic obstacles. By a standard argument for time-varying CBF gains, its
 gain schedule preserves forward invariance of the barrier's safe set, a
 conditional guarantee that covers only a look-ahead point and the tracked
-dynamic obstacles, assumes a Carath\'eodory (absolutely continuous)
-closed-loop solution and that the barrier inequality holds between control
+dynamic obstacles, assumes a Carath\'eodory closed-loop solution
+along which the barrier $h_j$ is absolutely continuous and that the barrier inequality holds between control
 updates, and requires a slack-free quadratic program. In a pre-registered
 live campaign (one simulated host, six repetitions per cell, no real robot,
-one post hoc amendment to its crash-stop rule), SE-MPPI without recoveries
+one post hoc amendment to its crash-stop rule, after which all s4 SE-MPPI trials ran), SE-MPPI without recoveries
 reached the goal in 5 of 6 on s1 (Wilson 95\% interval $[0.44, 0.97]$) and 5
 of 6 on the held-out s4, which lies outside the development family; stock
 without recoveries in 0 of 6 on each (Fisher exact $p=0.0152$ for each). With
 Nav2's default recovery tree, on s1, stock 0 of 6 and SE-MPPI 3 of 6
 ($p=0.1818$, descriptive). s1 is the development scenario; s4 carries the
-claim. A third pocket, s3,
+claim. A third pocket, s3, that has a near mirror twin in the development family,
 gave 4 of 6 against 0 of 6 ($p=0.0606$, not significant). In a randomized,
 paired $1{,}200$-trial benchmark on a Python 2D mirror that transcribes the
 shipped algorithm, not on the Nav2 controller itself, escape raises success
 on the static U-trap family from $0\%$ to $80\%$ (Wilson 95\% interval
-$[67,89]$), and to $58\%$ with its four additions switched off. The
+$[67,89]$), and, in a second paired arm of $1{,}200$ trials with the four additions to the advised design (below) switched off, to $58\%$. The
 escape--safety coordination matches an independent escape+CBF stack there, a
 null result, so we claim it only as a mechanism. A first version of the
 plugin reached the goal in none of its 44 valid live trials on a correct
@@ -184,7 +184,7 @@ such.
   for time-varying class-$\mathcal{K}$ terms \cite{ada_cbf,rt_cbf}, which
   we restate as a conditional lemma: it covers the look-ahead point and
   the tracked dynamic obstacles, assumes the barrier inequality holds
-  between samples, assumes a Carath\'eodory (absolutely continuous) closed-loop solution,
+  between samples, assumes a Carath\'eodory closed-loop solution along which $h_j$ is absolutely continuous,
   and requires a slack-free QP. In our 2D benchmark the
   schedule is empirically indistinguishable from an independent
   escape+CBF stack (Sec.~\ref{sec:evsf}), and the live campaign does not
@@ -857,8 +857,8 @@ and claim no new mathematics.
 \cite{ada_cbf}).}
 \textit{Fix an obstacle $j$, suppose the safety-filter QP is feasible
 without slack throughout the interval considered (the shared
-$\delta(t)=0$), suppose the closed-loop solution is a Carath\'eodory solution,
-so that $h_j$ is absolutely continuous (the switched command is discontinuous,
+$\delta(t)=0$), suppose the closed-loop solution is a Carath\'eodory solution along which
+$h_j$ is absolutely continuous (the switched command is discontinuous,
 so this is a hypothesis, not a consequence), and assume the continuous-time inequality
 $\dot h_j(t) \ge -\alpha(t)\,h_j(t)$ holds for almost every $t\ge0$ --
 an assumption between samples, since discrete-instant QP feasibility does
@@ -910,7 +910,7 @@ structure; it applies to an obstacle only while that obstacle stays in the
 tracked, unpruned set $\mathcal{O}$ (an obstacle that slows below the
 speed threshold for dynamic obstacles, merges into a cluster too large to
 be a movable body, or is pruned beyond the nearest few by clearance leaves
-the QP); it assumes a Carath\'eodory (absolutely continuous) closed-loop solution and the
+the QP); it assumes a Carath\'eodory closed-loop solution along which $h_j$ is absolutely continuous and the
 continuous-time inequality between samples; and it
 requires $\delta=0$, so it does not cover any cycle in which the QP uses
 slack. Because the slack is shared, one imminent obstacle can momentarily
@@ -1777,8 +1777,8 @@ non-composed bringup.
   The pre-registration file \texttt{PREREG.md} is frozen and not edited. It lists only the use of the
   $0.6$~m value on horizon candidates as an addition (line 147), whereas the shipped controller also
   uses it as a threshold on horizon rays and on the longest-ray fallback (addition (d)). It lists the
-  failed list among the parts left on (line 202), whereas the failed list excludes no rays here, so
-  (a) is off as a whole.
+  failed list among the parts left on (line 202), whereas in the joint ablation (hop radius $0.0$~m) the failed list excludes
+  no rays, so (a) is off as a whole there.
 \item \textbf{Held-out status.} \texttt{s1\_utrap} is the development scenario, and static gap tests at its
   stall pose helped set the additions. \texttt{s3\_ctrap} has a near mirror twin in the
   development family and is not decision-bearing; its result (4 of 6 against 0 of 6,
@@ -1868,8 +1868,8 @@ non-composed bringup.
   would require inflating the margin by $L$, which we avoid because it over-constrains sub-meter gaps and
   would degrade the success rate. On the \texttt{dynamic} family the look-ahead filter left body-grazing
   collisions essentially unchanged ($20\%\!\to\!16\%$, descriptive).
-\item \textbf{Sampled-data and slack caveats.} Invariance between samples, and a Carath\'eodory (absolutely continuous) closed-loop
-  solution of the switched, discontinuous command, are assumed in the Proposition,
+\item \textbf{Sampled-data and slack caveats.} Invariance between samples, and a Carath\'eodory closed-loop solution along which $h_j$ is absolutely continuous
+  (under the switched, discontinuous command), are assumed in the Proposition,
   not proven, and the shared slack couples the rows of one solve; we report slack usage instead of
   claiming an unconditional guarantee. Static structure is outside the barrier, and in cycles with
   $\delta>\epsilon$ the braking fallback sets the linear velocity of the QP command to zero
@@ -1903,7 +1903,7 @@ problems that several prior works also address together outside Nav2, in a singl
 plugin: a shared entrapment signal drives an escape that hands MPPI a path to an opening and an
 output-time CBF filter, and a coordinated gain raises the barrier's class-$\mathcal{K}$ gain during
 escape, which, by a standard argument for time-varying gains, keeps the look-ahead point's safe set with
-respect to the tracked dynamic obstacles forward invariant, assuming a Carath\'eodory (absolutely continuous) closed-loop solution, that the
+respect to the tracked dynamic obstacles forward invariant, assuming a Carath\'eodory closed-loop solution along which $h_j$ is absolutely continuous, that the
 barrier inequality holds between control updates, and that the QP uses no slack.
 
 The first version did not reach the goal live: 0 of 44 valid trials on a correct build. Four defects
