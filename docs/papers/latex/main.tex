@@ -48,15 +48,15 @@ scenario; s4 carries the claim. A third pocket, s3, a near-twin of a development
 on a Python 2D mirror, not on the Nav2 controller itself, escape raises
 success on the static U-trap family from $0\%$ to $80\%$; the escape--safety
 coordination matches an independent escape+CBF stack there, so we claim it
-only as a mechanism. By a standard argument for time-varying gains, the forward-invariance guarantee is conditional: it
+only as a mechanism. By a standard argument for time-varying gains, the gain schedule keeps the look-ahead point's safe set forward invariant, but the guarantee is conditional: it
 covers only a look-ahead point and the tracked dynamic obstacles, assumes a
 Carath\'eodory closed-loop solution along which the barrier $h_j$ is
 absolutely continuous and that the barrier inequality holds between control updates,
 and requires a slack-free quadratic program. A first version reached the goal in none of its 44 valid
 live trials; we report the four defects that we identify as the cause (one
-inferred, not logged), and four additions to the advised design, two of which were worked on until
-the development geometries passed (jointly ablated; $58\%$ without them in the mirror)
-and two safeguards. Deployment warnings are in
+inferred, not logged), and four additions to the advised design: two were worked on until
+the development geometries passed (ablated jointly in the sweeps) and two are safeguards for other configurations;
+with all four switched off, mirror U-trap success is $58\%$. Deployment warnings are in
 Sec.~\ref{sec:limitations}.
 \end{abstract}
 
