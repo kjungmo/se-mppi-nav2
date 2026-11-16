@@ -31,7 +31,7 @@ Seoul, Republic of Korea (e-mail: kangjmo91@gmail.com).}}
 The Model Predictive Path Integral (MPPI) controller shipped with ROS~2
 Nav2 can stall in local minima in narrow, crowded, dynamic spaces, and its
 critics avoid collisions only through soft costs, with no formal safety
-guarantee. We know of no public Nav2 controller plugin that
+guarantee. Several works outside Nav2 address both; we know of no public Nav2 controller plugin that
 combines local-minima escape with a barrier-based safety filter. This system
 paper presents Safe-Escape MPPI (SE-MPPI), a Nav2 plugin that adds online
 escape to MPPI and a control-barrier-function (CBF) safety filter for tracked
@@ -43,19 +43,20 @@ interval $[0.44, 0.97]$) and 5 of 6 on the held-out s4, which lies outside
 the development family; stock without recoveries in 0 of 6 on each (Fisher
 exact $p=0.0152$ for each). With Nav2's default recovery tree, on s1, stock 0
 of 6 and SE-MPPI 3 of 6 ($p=0.1818$, descriptive). s1 is the development
-scenario; s4 carries the claim. A third pocket, s3, gave 4 of 6 against 0 of 6
+scenario; s4 carries the claim. A third pocket, s3, a near-twin of a development geometry, gave 4 of 6 against 0 of 6
 ($p=0.0606$, not significant). In a randomized, paired $1{,}200$-trial benchmark
 on a Python 2D mirror, not on the Nav2 controller itself, escape raises
 success on the static U-trap family from $0\%$ to $80\%$; the escape--safety
 coordination matches an independent escape+CBF stack there, so we claim it
-only as a mechanism. The forward-invariance guarantee is conditional: it
+only as a mechanism. By a standard argument for time-varying gains, the forward-invariance guarantee is conditional: it
 covers only a look-ahead point and the tracked dynamic obstacles, assumes a
 Carath\'eodory closed-loop solution along which the barrier $h_j$ is
-absolutely continuous and the barrier inequality between control updates,
+absolutely continuous and that the barrier inequality holds between control updates,
 and requires a slack-free quadratic program. A first version reached the goal in none of its 44 valid
 live trials; we report the four defects that we identify as the cause (one
-inferred, not logged), and four additions to the advised design that were tuned
-on the development geometries. Deployment warnings are in
+inferred, not logged), and four additions to the advised design, two of which were worked on until
+the development geometries passed (jointly ablated; $58\%$ without them in the mirror)
+and two safeguards. Deployment warnings are in
 Sec.~\ref{sec:limitations}.
 \end{abstract}
 
