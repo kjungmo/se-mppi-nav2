@@ -45,10 +45,15 @@ keywords:
   - local planner
   - collision avoidance
 preferred-citation:
-  type: unpublished
+  type: article
   title: "SE-MPPI: Coordinating Online Local-Minima Escape with Control-Barrier-Function Safety in a Nav2-Native Controller"
   authors:
     - family-names: "Kang"
       given-names: "Jungmo"
+      email: "kangjmo91@gmail.com"
+      orcid: "https://orcid.org/0009-0002-0394-1861"
+  journal: "Preprints"
   year: 2026
-  notes: "Preprint, second edition (campaign 2 controller, tag campaign2-controller). Manuscript and artifacts at https://github.com/kjungmo/se-mppi-nav2"
+  doi: "10.20944/preprints202611.0375.v1"
+  url: "https://doi.org/10.20944/preprints202611.0375.v1"
+  notes: "Preprint, version 1, not peer reviewed. Describes the campaign 2 controller (tag campaign2-controller). The repository manuscript (docs/papers/latex) may be ahead of the posted version; cite the exact source commit for reproducibility."
