@@ -11,6 +11,7 @@ Jungmo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
 [![Nav2](https://img.shields.io/badge/Nav2-controller%20plugin-1f6feb)](https://docs.nav2.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-D22128)](LICENSE)
 [![Paper: preprint (PDF)](https://img.shields.io/badge/paper-preprint%20(PDF)-6f42c1)](docs/papers/latex/main.pdf)
+[![Preprint DOI](https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0375.v1-blue)](https://doi.org/10.20944/preprints202611.0375.v1)
 [![Sponsor](https://img.shields.io/github/sponsors/kjungmo?logo=githubsponsors&color=ea4aaa)](https://github.com/sponsors/kjungmo)
 
 <p align="center">
@@ -685,8 +686,10 @@ not reached.
 ## Paper and citation
 
 The manuscript is a preprint: **"SE-MPPI: Coordinating Online Local-Minima
-Escape with Control-Barrier-Function Safety in a Nav2-Native Controller."** The
-current manuscript is
+Escape with Control-Barrier-Function Safety in a Nav2-Native Controller."** It was
+posted on Preprints.org on 2026-11-04 (version 1, not peer reviewed):
+[doi:10.20944/preprints202611.0375.v1](https://doi.org/10.20944/preprints202611.0375.v1). The repository
+manuscript is
 [`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) (source in
 [`docs/papers/latex/`](docs/papers/latex/)); it describes the shipped controller, the
 headless development test, the mirror re-run and the pre-registered live campaign. The
@@ -697,14 +700,16 @@ version at the tag `paper-v1`; it predates the repair and is kept for the record
 If you use SE-MPPI in your research, please cite:
 
 ```bibtex
-@misc{kang2026semppi,
-  title  = {{SE-MPPI}: Coordinating Online Local-Minima Escape with
-            Control-Barrier-Function Safety in a {Nav2}-Native Controller},
-  author = {Kang, Jungmo},
-  year   = {2026},
-  note   = {Preprint. Manuscript and artifacts at
-            https://github.com/kjungmo/se-mppi-nav2},
-  howpublished = {\url{https://github.com/kjungmo/se-mppi-nav2}}
+@article{kang2026semppi,
+  author  = {Kang, Jungmo},
+  title   = {{SE-MPPI}: Coordinating Online Local-Minima Escape with
+             Control-Barrier-Function Safety in a {Nav2}-Native Controller},
+  journal = {Preprints},
+  year    = {2026},
+  doi     = {10.20944/preprints202611.0375.v1},
+  url     = {https://doi.org/10.20944/preprints202611.0375.v1},
+  note    = {Preprint, version 1, not peer reviewed. Source and code at
+             \url{https://github.com/kjungmo/se-mppi-nav2}},
 }
 ```
 
