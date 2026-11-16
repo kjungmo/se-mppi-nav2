@@ -29,43 +29,34 @@ Seoul, Republic of Korea (e-mail: kangjmo91@gmail.com).}}
 
 \begin{abstract}
 The Model Predictive Path Integral (MPPI) controller shipped with ROS~2
-Nav2 is a widely used deployable local controller for mobile robots, yet
-in narrow, crowded, dynamic spaces it can stall in local minima, and its
+Nav2 can stall in local minima in narrow, crowded, dynamic spaces, and its
 critics avoid collisions only through soft costs, with no formal safety
-guarantee. Methods exist for each weakness, and several works outside
-Nav2 address both together, but we know of no public Nav2 controller
-plugin that combines local-minima escape with a barrier-based safety
-filter. This system paper presents Safe-Escape MPPI (SE-MPPI), a Nav2
-controller plugin that integrates online local-minima detection-and-escape
-for MPPI with a control-barrier-function (CBF) safety filter for tracked
-dynamic obstacles. By a standard argument for time-varying CBF gains, its
-gain schedule preserves forward invariance of the barrier's safe set, a
-conditional guarantee that covers only a look-ahead point and the tracked
-dynamic obstacles, assumes a Carath\'eodory closed-loop solution
-along which the barrier $h_j$ is absolutely continuous and that the barrier inequality holds between control
-updates, and requires a slack-free quadratic program. In a pre-registered
-live campaign (one simulated host, six repetitions per cell, no real robot,
-one post hoc amendment to its crash-stop rule, after which all s4 SE-MPPI trials ran), SE-MPPI without recoveries
-reached the goal in 5 of 6 on s1 (Wilson 95\% interval $[0.44, 0.97]$) and 5
-of 6 on the held-out s4, which lies outside the development family; stock
-without recoveries in 0 of 6 on each (Fisher exact $p=0.0152$ for each). With
-Nav2's default recovery tree, on s1, stock 0 of 6 and SE-MPPI 3 of 6
-($p=0.1818$, descriptive). s1 is the development scenario; s4 carries the
-claim. A third pocket, s3, that has a near mirror twin in the development family,
-gave 4 of 6 against 0 of 6 ($p=0.0606$, not significant). In a randomized,
-paired $1{,}200$-trial benchmark on a Python 2D mirror that transcribes the
-shipped algorithm, not on the Nav2 controller itself, escape raises success
-on the static U-trap family from $0\%$ to $80\%$ (Wilson 95\% interval
-$[67,89]$), and, in a second paired arm of $1{,}200$ trials with the four additions to the advised design (below) switched off, to $58\%$. The
-escape--safety coordination matches an independent escape+CBF stack there, a
-null result, so we claim it only as a mechanism. A first version of the
-plugin reached the goal in none of its 44 valid live trials on a correct
-build; we report the four defects that we identify as the cause (one
-inferred, not logged) and the repaired controller. Two of the four additions
-to the advised design, avoid lists and a movement watchdog, were needed for the
-development sweeps to pass (ablated jointly; the ablation is confounded with
-position in the sweep), and two are safeguards for other configurations; we
-disclose all four.
+guarantee. We know of no public Nav2 controller plugin that
+combines local-minima escape with a barrier-based safety filter. This system
+paper presents Safe-Escape MPPI (SE-MPPI), a Nav2 plugin that adds online
+escape to MPPI and a control-barrier-function (CBF) safety filter for tracked
+dynamic obstacles, coordinated by a gain schedule. In a pre-registered live campaign (one
+simulated host, six repetitions per cell, no real robot, one post hoc
+amendment to its crash-stop rule, after which all s4 SE-MPPI trials ran),
+SE-MPPI without recoveries reached the goal in 5 of 6 on s1 (Wilson 95\%
+interval $[0.44, 0.97]$) and 5 of 6 on the held-out s4, which lies outside
+the development family; stock without recoveries in 0 of 6 on each (Fisher
+exact $p=0.0152$ for each). With Nav2's default recovery tree, on s1, stock 0
+of 6 and SE-MPPI 3 of 6 ($p=0.1818$, descriptive). s1 is the development
+scenario; s4 carries the claim. A third pocket, s3, gave 4 of 6 against 0 of 6
+($p=0.0606$, not significant). In a randomized, paired $1{,}200$-trial benchmark
+on a Python 2D mirror, not on the Nav2 controller itself, escape raises
+success on the static U-trap family from $0\%$ to $80\%$; the escape--safety
+coordination matches an independent escape+CBF stack there, so we claim it
+only as a mechanism. The forward-invariance guarantee is conditional: it
+covers only a look-ahead point and the tracked dynamic obstacles, assumes a
+Carath\'eodory closed-loop solution along which the barrier $h_j$ is
+absolutely continuous and the barrier inequality between control updates,
+and requires a slack-free quadratic program. A first version reached the goal in none of its 44 valid
+live trials; we report the four defects that we identify as the cause (one
+inferred, not logged), and four additions to the advised design that were tuned
+on the development geometries. Deployment warnings are in
+Sec.~\ref{sec:limitations}.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -385,33 +376,9 @@ an outcome benefit from it.
 
 \begin{table*}[t]
 \centering
-\caption{Positioning. \textbf{(a)}~ships as a Nav2 controller plugin;
-\textbf{(b)}~online local-minimum escape or avoidance; \textbf{(c)}~an
-explicit safety constraint, filter or backup enforced at run time (for
-DualGuard, Hamilton--Jacobi reachability; for Soloperto et~al., a safe
-backup trajectory; for the gap-based planners, a safety projection
-operator on the command and, in Dynamic Gap and Safer Gap, zeroing barrier
-functions);
-\textbf{(d)}~online adaptation of the CBF class-$\mathcal{K}$ gain.
-\checkmark{} = holds; \pmark{} = holds in part: stock Nav2 detects stalls
-at the stack level and runs generic recoveries rather than a steered
-escape; the 3Laws Supervisor is integrated with Nav2 as a separate node
-after the controller, not as a controller plugin; the gap-based planners
-guide the robot through free-space gaps rather than escaping a detected
-minimum; Kim et~al.\ reduce predicted
-deadlock through class-$\mathcal{K}$ parameter selection rather than
-escaping a detected minimum. For the 3Laws Supervisor, (b) is marked
-absent because neither cited source describes a local-minimum escape
-mechanism. $^{\dagger}$Concurrent work (posted in 2026). For SE-MPPI, (c)
-is marked in part because its barrier covers only tracked dynamic
-obstacles, at a look-ahead point, and its invariance argument is
-conditional (Sec.~\ref{sec:coordination}); static structure is handled
-only by MPPI costs. Its (b) is demonstrated in a simulated live Nav2 stack on one host
-(Sec.~\ref{sec:campaign2}) and in the Python 2D mirror, not on a real robot. No reviewed system holds all four; several hold
-two. The review behind this table (June 2026, extended in September 2026)
-covered the Nav2 MPPI critic ecosystem, the Nav2 documentation, the public
-issue trackers of these projects, and the works cited here; it is not
-exhaustive.}
+\caption{Positioning of the reviewed systems on four properties, (a) to (d).
+\checkmark{} = holds; \pmark{} = holds in part; -- = absent. Definitions
+and notes follow the table.}
 \label{tab:positioning}
 \footnotesize
 \setlength{\tabcolsep}{5pt}
@@ -433,6 +400,34 @@ Deadlock-aware parameter adaptation \cite{kim_adaptive_cbf} & -- & \pmark & \che
 \textbf{SE-MPPI (ours)} & \checkmark & \checkmark & \pmark & \checkmark \\
 \bottomrule
 \end{tabular}
+\par\vspace{2pt}\footnotesize\noindent\textit{Notes.} \textbf{(a)}~ships as a Nav2 controller plugin;
+\textbf{(b)}~online local-minimum escape or avoidance; \textbf{(c)}~an
+explicit safety constraint, filter or backup enforced at run time (for
+DualGuard, Hamilton--Jacobi reachability; for Soloperto et~al., a safe
+backup trajectory; for the gap-based planners, a safety projection
+operator on the command and, in Dynamic Gap and Safer Gap, zeroing barrier
+functions);
+\textbf{(d)}~online adaptation of the CBF class-$\mathcal{K}$ gain.
+Meaning of \pmark{} (holds in part): stock Nav2 detects stalls
+at the stack level and runs generic recoveries rather than a steered
+escape; the 3Laws Supervisor is integrated with Nav2 as a separate node
+after the controller, not as a controller plugin; the gap-based planners
+guide the robot through free-space gaps rather than escaping a detected
+minimum; Kim et~al.\ reduce predicted
+deadlock through class-$\mathcal{K}$ parameter selection rather than
+escaping a detected minimum. For the 3Laws Supervisor, (b) is marked
+absent because neither cited source describes a local-minimum escape
+mechanism. $^{\dagger}$Concurrent work (posted in 2026). For SE-MPPI, (c)
+is marked in part because its barrier covers only tracked dynamic
+obstacles, at a look-ahead point, and its invariance argument is
+conditional (Sec.~\ref{sec:coordination}); static structure is handled
+only by MPPI costs. Its (b) is demonstrated in a simulated live Nav2 stack on one host
+(Sec.~\ref{sec:campaign2}) and in the Python 2D mirror, not on a real robot. No reviewed system holds all four; several hold
+two. The review behind this table (June 2026, extended in September 2026)
+covered the Nav2 MPPI critic ecosystem, the Nav2 documentation, the public
+issue trackers of these projects, and the works cited here; it is not
+exhaustive.
+
 \end{table*}
 
 \section{Problem Formulation}
@@ -583,7 +578,7 @@ CBF disc (\texttt{se\_cbf\_robot\_radius}; its default $0$ takes the circumscrib
 the costmap reports for the footprint). The campaign file does not set it, and every live
 launch logged \texttt{robot\_radius=0.234} at configure, for a footprint built from
 \texttt{robot\_radius} $0.22$~m, so $r=0.234$~m live. A deployer who sets the CBF radius
-therefore also moves the escape waypoint. The waypoint is taken only if that distance is at
+therefore also moves the escape waypoint (see the box in Sec.~\ref{sec:limitations}). The waypoint is taken only if that distance is at
 least $0.2$~m. Four escape-rule values are compiled constants, not YAML values: the floor of $0.2$~m, the
 margin of $0.05$~m in the waypoint distance, the size $6$ of the failed list (below) and the
 same-goal test of Sec.~\ref{sec:entrapment} (two costmap cells).
@@ -888,8 +883,9 @@ nonnegative, locally integrable $\alpha$ already makes $\varphi$ finite
 and positive. We keep the stronger hypothesis because it matches the
 schedule of Eq.~(\ref{eq:alpha}).
 
-\noindent\textbf{Corollary.} Under the slack-free, between-sample
-and Carath\'eodory-solution conditions of the Proposition, forward invariance of
+\noindent\textbf{Corollary.} Under the slack-free and between-sample conditions of the Proposition
+and its hypothesis of a Carath\'eodory closed-loop solution along which $h_j$
+is absolutely continuous, forward invariance of
 $\mathcal{C}_j=\{h_j\ge0\}$ holds for \emph{every} positive, bounded gain
 schedule -- in particular for the coordinator's switching between
 $\alpha_\text{base}$ and $\alpha_\text{escape}$, and for the TTC override
@@ -1033,14 +1029,14 @@ July 2026 live runs & affected, according to the repository notes; not used for 
 \subsection{Live history: campaign 1 and the four defects}
 \label{sec:history}
 
-An earlier version of this paper reported live runs from July 2026 in which
-no run reached its goal, and attributed that to the host (a real-time factor of
-$0.3$ to $0.6$ and phantom costmap cells from transform smear). We withdraw
-that attribution. A pre-registered live re-run (campaign 1) drove the same
-U-pocket testbed in 48 registered trials at a real-time factor between
-$0.93$ and $0.97$: 4 on an affected build and 44 valid trials on the
-correct build. None reached the goal: the 44 valid trials ended in
-42 timeouts and 2 aborted goals, 13 of them with an escape episode. The
+A pre-registered live re-run (campaign 1) drove the U-pocket testbed in 48
+registered trials at a real-time factor between $0.93$ and $0.97$: 4 on an
+affected build and 44 valid trials on the correct build. None reached the
+goal: the 44 valid trials ended in 42 timeouts and 2 aborted goals, 13 of
+them with an escape episode. An earlier version of this paper reported
+similar July 2026 runs, also with no goal reached, and attributed that to the
+host (a real-time factor of $0.3$ to $0.6$ and phantom costmap cells from
+transform smear); we withdraw that attribution. The
 raw files, the analysis and the root-cause note are in
 \texttt{experiments/results\_pilot\_rerun/}. The note names four defects of the
 controller and its parameter file, which act in this order.
@@ -1105,9 +1101,7 @@ catch, each reported as a deployment lesson:
   batch-$2000$ configuration ran at about $5$~Hz, stalled the controller server's executor
   past the $4$~s lifecycle bond, and the lifecycle manager tore the whole stack down. With the
   stock bringup the bond timeout cannot be set from the parameter file. The released defaults
-  ($20$~Hz, $56$ steps, batch $1000$) were not evaluated. Deployment warning: measure the
-  achieved controller rate on the target (Nav2 warns when the controller misses its desired
-  rate) and expect a lifecycle teardown when the executor starves.
+  ($20$~Hz, $56$ steps, batch $1000$) were not evaluated. Deployment warning: see the box in Sec.~\ref{sec:limitations}.
 \item \textbf{xtensor ABI mismatch.} The installed
   \texttt{libmppi\_controller.so} is compiled with
   \texttt{XTENSOR\_USE\_XSIMD}~+~AVX2 (an \texttt{xsimd::aligned\_allocator}
@@ -1478,8 +1472,7 @@ sensor latency on the target. The only \texttt{collision\_monitor} polygon is di
 zone. It was disabled in the earlier smoke tests because its approach polygon
 (\texttt{time\_before\_collision} $1.2$~s) slowed the robot almost to a stop in the narrow
 testbed rooms (\texttt{RUN.md}). No escape, live or headless, ran with an active approach
-polygon. A deployer who enables it, as we advise, must test escapes again, because the monitor
-may slow or stop the turns in a pocket. The MPPI cost critic ran with
+polygon. Deployment warning: see the box in Sec.~\ref{sec:limitations}. The MPPI cost critic ran with
 \texttt{consider\_footprint} false, a point robot behind an inflation radius of $0.45$~m, at
 least the $0.22$~m radius of the circular simulated robot; a robot with a non-circular
 footprint needs \texttt{consider\_footprint} true and its own validation.
@@ -1659,9 +1652,7 @@ from the raw archive). An admitted obstacle that needs no slack can still change
 $(v,\omega)$ without a stop; no diagnostic records whether it did, so we do not know how often the
 CBF altered commands. This was
 not a designed test of the coordination, and we did not test whether the stops or the admissions
-changed any outcome. Deployment warning: a robot can be slowed, turned or stopped by obstacles that
-do not exist, in open space as well as in a pocket; read both the forced-stop counter and
-\texttt{cbf\_obstacles} of the diagnostics on the target map.
+changed any outcome. Deployment warning: see the box in Sec.~\ref{sec:limitations}.
 On the trap-free control \texttt{s0\_open} all 24 trials reached the goal and SE-MPPI logged no
 escape. The transfer contrasts are descriptive: C4 reached the goal in the same number of trials on s4 as on s1
 (5 of 6), but its median wall-clock time to goal over reached trials (the registered measure)
@@ -1690,10 +1681,8 @@ signals stay at or below $1.00$~rad/s (C1) and $0.45$~rad/s (C3). The pocket-exi
 \texttt{left\_pocket\_s} is set in all 34 SE pocket trials (30 registered, 4 evidence) and in
 none of the 30 stock pocket trials.
 These trials count as not reached, so the counts in Table~\ref{tab:c2cells} are conservative with respect to
-Nav2's own report: counting Nav2's \texttt{SUCCEEDED} would give 6 of 6 for every SE-MPPI cell, which we do not claim. Deployment warning: the limits of this campaign (\texttt{wz\_max}
-$1.9$~rad/s; velocity smoother $2.0$~rad/s and $3.2$~rad/s$^2$) are those of the simulated robot,
-a robot with other limits needs its own measurement, and Nav2's success message after an escape
-should not be trusted without an independent check of the pose.
+Nav2's own report: counting Nav2's \texttt{SUCCEEDED} would give 6 of 6 for every SE-MPPI cell, which we do not claim. Deployment warning: see the box in Sec.~\ref{sec:limitations}. The limits of this campaign (\texttt{wz\_max}
+$1.9$~rad/s; velocity smoother $2.0$~rad/s and $3.2$~rad/s$^2$) are those of the simulated robot.
 
 \begin{table}[t]
 \centering
@@ -1751,6 +1740,24 @@ non-composed bringup.
 
 \section{Limitations}
 \label{sec:limitations}
+
+\noindent\fbox{\parbox{\dimexpr\columnwidth-2\fboxsep-2\fboxrule\relax}{\footnotesize
+\textbf{Deployment warnings.} Read these before running the controller on a robot.
+\emph{(1) Measure the controller rate.} Match the per-cycle budget to the target and check the achieved
+rate (Nav2 warns when the controller misses its desired rate); expect a lifecycle teardown when the executor starves
+(Sec.~\ref{sec:integration}).
+\emph{(2) Check the build.} Run \texttt{check\_mppi\_rollout} on every target install and never set
+\texttt{se\_enforce\_rollout\_check} to false on a moving robot.
+\emph{(3) Expect phantom obstacles.} A robot can be slowed, turned, stopped or deflected by obstacles that do not
+exist, in open space as well as in a pocket; read both the forced-stop counter and \texttt{cbf\_obstacles}
+of the diagnostics on the target map (Sec.~\ref{sec:c2results}).
+\emph{(4) Do not trust Nav2's success message after an escape} without an independent check of the pose; the limits of
+the campaign (\texttt{wz\_max}, velocity smoother) are those of the simulated robot, so a robot with other limits needs its own measurement.
+\emph{(5) Validate the collision monitor and the footprint.} If you enable the \texttt{collision\_monitor} polygon,
+as we advise, test escapes again, because the monitor may slow or stop the turns in a pocket; a robot with a
+non-circular footprint needs \texttt{consider\_footprint} true and its own validation.
+\emph{(6) Setting the CBF radius moves the escape waypoint.}
+\emph{(7) Do not copy the campaign tolerances} (\texttt{transform\_tolerance}, \texttt{source\_timeout}) to a robot.}}
 
 \begin{itemize}
 \item \textbf{Simulation only, one host, no real robot.} Every live result is a
@@ -1851,9 +1858,7 @@ non-composed bringup.
   nevertheless admitted phantom obstacles in 42 of 46 SE-MPPI trials, including 8 of 12 on the
   trap-free \texttt{s0\_open}, and the brake fallback forced stops on s3 and s4 only (up to $16$
   cycles in one trial; Sec.~\ref{sec:c2results}). Whether admissions without a stop altered the
-  commands was not logged. That was not a designed test of the coordination. Deployment warning: a
-  robot can be stopped or deflected by obstacles that do not exist, in open space as well as in a
-  pocket. The idea of adapting the CBF gain online is not new
+  commands was not logged. That was not a designed test of the coordination. The idea of adapting the CBF gain online is not new
   \cite{kim_adaptive_cbf,br_mppi,rt_cbf}. Demonstrating an outcome-level benefit requires a
   regime where the $\alpha$ choice decides which escapes are admitted.
 \item \textbf{Braking is not a safe fallback when cornered.} In the cramped narrow-dynamic pocket the
