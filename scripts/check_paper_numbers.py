@@ -765,8 +765,11 @@ if not ARXIV:
           'README does not carry the live headline and the 80% mirror headline')
     check('no live run has yet reached its goal' not in readme.lower(), 'README still says no live run reached its goal')
     cff = (ROOT / 'CITATION.cff').read_text()
+    # CITATION.cff keeps the published v1 title until the v2 DOI exists; the paper carries the v2 title.
     check('SE-MPPI: Coordinating Online Local-Minima Escape with Control-Barrier-Function Safety in a Nav2-Native Controller' in cff,
-          'CITATION.cff title differs from the paper title')
+          'CITATION.cff no longer carries the published v1 title')
+    check('Online Local-Minima Escape for a Nav2-Native MPPI' in tex and 'with a CBF Safety Filter' in re.sub(r'\\\\\s*', ' ', tex),
+          'paper does not carry the v2 title')
     outside = re.sub(r'\\begin\{quote\}.*?\\end\{quote\}', '', tex, flags=re.S)
     check('no live run has yet' not in outside.lower(), 'paper still says that no live run has reached its goal')
 
