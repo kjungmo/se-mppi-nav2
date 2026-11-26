@@ -11,7 +11,7 @@ Jungmo Kang · [kangjmo91@gmail.com](mailto:kangjmo91@gmail.com)
 [![Nav2](https://img.shields.io/badge/Nav2-controller%20plugin-1f6feb)](https://docs.nav2.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-D22128)](LICENSE)
 [![Paper: preprint (PDF)](https://img.shields.io/badge/paper-preprint%20(PDF)-6f42c1)](docs/papers/latex/main.pdf)
-[![Preprint DOI](https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0375.v1-blue)](https://doi.org/10.20944/preprints202611.0375.v1)
+[![Preprint DOI](https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0375.v2-blue)](https://doi.org/10.20944/preprints202611.0375.v2)
 [![Sponsor](https://img.shields.io/github/sponsors/kjungmo?logo=githubsponsors&color=ea4aaa)](https://github.com/sponsors/kjungmo)
 
 <p align="center">
@@ -685,9 +685,13 @@ not reached.
 
 ## Paper and citation
 
-The manuscript is a preprint: **"SE-MPPI: Coordinating Online Local-Minima
-Escape with Control-Barrier-Function Safety in a Nav2-Native Controller."** It was
-posted on Preprints.org on 2026-11-04 (version 1, not peer reviewed):
+The manuscript is a preprint: **"SE-MPPI: Online Local-Minima Escape for a Nav2-Native MPPI
+Controller, with a CBF Safety Filter."** Version 2 was posted on Preprints.org on
+2026-11-23 (not peer reviewed):
+[doi:10.20944/preprints202611.0375.v2](https://doi.org/10.20944/preprints202611.0375.v2).
+Version 1 (posted 2026-11-04, under the title "SE-MPPI: Coordinating Online
+Local-Minima Escape with Control-Barrier-Function Safety in a Nav2-Native
+Controller") remains available at
 [doi:10.20944/preprints202611.0375.v1](https://doi.org/10.20944/preprints202611.0375.v1). The repository
 manuscript is
 [`docs/papers/latex/main.pdf`](docs/papers/latex/main.pdf) (source in
@@ -702,13 +706,13 @@ If you use SE-MPPI in your research, please cite:
 ```bibtex
 @article{kang2026semppi,
   author  = {Kang, Jungmo},
-  title   = {{SE-MPPI}: Coordinating Online Local-Minima Escape with
-             Control-Barrier-Function Safety in a {Nav2}-Native Controller},
+  title   = {{SE-MPPI}: Online Local-Minima Escape for a {Nav2}-Native {MPPI}
+             Controller, with a {CBF} Safety Filter},
   journal = {Preprints},
   year    = {2026},
-  doi     = {10.20944/preprints202611.0375.v1},
-  url     = {https://doi.org/10.20944/preprints202611.0375.v1},
-  note    = {Preprint, version 1, not peer reviewed. Source and code at
+  doi     = {10.20944/preprints202611.0375.v2},
+  url     = {https://doi.org/10.20944/preprints202611.0375.v2},
+  note    = {Preprint, version 2, not peer reviewed. Source and code at
              \url{https://github.com/kjungmo/se-mppi-nav2}},
 }
 ```
